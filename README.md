@@ -40,3 +40,7 @@ Approved [PR](https://github.com/dungducphan/UT3_Control_And_Data_Acquisition_Sy
 More functionalities on CameraServer. Now the data and state control should be moved into client codes, we will extend the functionalities of the device server a bit:
 - Clients can configure the devices in 3 modes: ShotMode (for production), ManualTriggerMode (for test purposes), and FreeRunMode (for alignment/test purposes).
 - Fix some major issues with server state machine (in particular, when client issues Init(), only the init_device() function is called, leading to memory leaks on dynImage.
+
+## 2023-12-07
+- System is being deployed at UT3 lab.
+- A detailed instruction regarding the Hardware Configurations, the Build and Deployment of the Software, can be found at [UT3 DAQ System Deployment](https://publish.obsidian.md/cypress/WEBPAGE/100+-+DAQ/UT3+DAQ+Software+Deployment).
