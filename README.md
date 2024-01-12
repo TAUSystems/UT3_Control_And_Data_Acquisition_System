@@ -8,12 +8,8 @@
 - OpenCV: for image preprocessing.
 - Image format library: TIFF, PNG, JPEG.
 
-## Build instruction:
-- [Installation of TANGO on Linux](https://tango-controls.readthedocs.io/en/latest/contents.html).
-- [Build instruction](https://publish.obsidian.md/ut3/Project+00+-+UT3+DAQCS/Camera+Server+Development/Build+instruction+for+CameraServer)
-
-## Deployment instruction:
-- [Deployment instruction](https://publish.obsidian.md/ut3/Project+00+-+UT3+DAQCS/Camera+Server+Development/Deployment+instruction+for+Camera+Server)
+## Build and Deployment instruction:
+- [Build and Deployment instruction](https://publish.obsidian.md/cypress/WEBPAGE/100+-+DAQ/UT3+DAQ+Software+Deployment)
 
 # Change logs
 
