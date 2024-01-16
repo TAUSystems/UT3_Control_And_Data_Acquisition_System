@@ -35,6 +35,7 @@ private:
     std::vector<DataSource*> sources;
     Tango::DevULong64 Timestamp;
     std::function<void(const Tango::DevULong64&)> callback;
+    bool AreAllCallbackSet;
 
 public:
     DataManager();

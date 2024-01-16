@@ -65,7 +65,7 @@ DataSource &DataSource::operator=(DataSource &&other) noexcept {
     return *this;
 }
 
-DataManager::DataManager() : Timestamp(0), callback(nullptr) {
+DataManager::DataManager() : Timestamp(0), callback(nullptr), AreAllCallbackSet(false) {
     sources.clear();
     // TODO: Add all data sources here
     sources.push_back(new DataSource("ut3/timing/tdu", "Timestamp"));
@@ -84,13 +84,16 @@ void DataManager::FetchDataPackage() {
         if (dataReceivedCount == sources.size()) callback(Timestamp);
     };
 
-    for (auto& aSource : sources) {
-        if (!aSource->callback) aSource->SetCallback(Callback);
+    if (!AreAllCallbackSet) {
+        for (auto& aSource : sources) {
+            if (!aSource->callback) aSource->SetCallback(Callback);
+        }
+        AreAllCallbackSet = true;
     }
 
     unsigned int sleep_cycle = 0;
     while (dataReceivedCount < sources.size() && sleep_cycle < 10) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         sleep_cycle++;
     }
 }

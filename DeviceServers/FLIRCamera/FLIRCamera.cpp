@@ -424,13 +424,13 @@ void FLIRCamera::ConfigureFLIRCamera() {
     try {
         std::cout << "Set acquisition mode to continuous." << std::endl;
         SpinnakerCameraPtr->AcquisitionMode.SetValue(Spinnaker::AcquisitionModeEnums::AcquisitionMode_Continuous);
-        std::cout << "Set device link throughput limit to mininmum:" << SpinnakerCameraPtr->DeviceLinkThroughputLimit.GetMin() * 4 << std::endl;
-        SpinnakerCameraPtr->DeviceLinkThroughputLimit.SetValue(SpinnakerCameraPtr->DeviceLinkThroughputLimit.GetMin() * 4);
+        std::cout << "Set device link throughput limit to: " << SpinnakerCameraPtr->DeviceLinkThroughputLimit.GetMin() * 10 << "bps" << std::endl;
+        SpinnakerCameraPtr->DeviceLinkThroughputLimit.SetValue(SpinnakerCameraPtr->DeviceLinkThroughputLimit.GetMin() * 10);
         std::cout << "Set exposure mode to timed." << std::endl;
         SpinnakerCameraPtr->ExposureMode.SetValue(Spinnaker::ExposureModeEnums::ExposureMode_Timed);
-        std::cout << "Set exposure time to 50 ms." << std::endl;
+        std::cout << "Set exposure time to 25 ms." << std::endl;
         SpinnakerCameraPtr->ExposureAuto.SetValue(Spinnaker::ExposureAutoEnums::ExposureAuto_Off);
-        SpinnakerCameraPtr->ExposureTime.SetValue(5E4);
+        SpinnakerCameraPtr->ExposureTime.SetValue(2.5E4);
         std::cout << "Set gain to 0." << std::endl;
         SpinnakerCameraPtr->GainAuto.SetValue(Spinnaker::GainAutoEnums::GainAuto_Off);
         SpinnakerCameraPtr->Gain.SetValue(0);
@@ -461,17 +461,17 @@ void FLIRCamera::GenerateImageOnTrigger() {
 	if (get_state() == Tango::RUNNING) {
 		ResultImagePtr = SpinnakerCameraPtr->GetNextImage();
 		if (ResultImagePtr->IsIncomplete()) {
-			std::cout << "Image from " << device_name << " incomplete with error status: " << ResultImagePtr->GetImageStatus() << std::endl;
+			std::cout << device_name << " incomplete with err: " << ResultImagePtr->GetImageStatus() << std::endl;
 			ResultImagePtr->Release();
 		} else {
-			push_data_ready_event("image");
 			const std::string filename = boost::str(boost::format("%1%/ts_%2%.tiff") % FolderPath % TriggerCallbackInstance.Timestamp);
 			ResultImagePtr->Save(filename.c_str());
-			std::cout << "Saving " << filename << "\n";
+			push_data_ready_event("image");
+			std::cout << "Saved " << filename << "\n";
 			if (ResultImagePtr.IsValid()) ResultImagePtr->Release();
 		}
 	} else {
-		std::cout << device_name << " has not began acquisition.\n";
+		std::cout << device_name << " DAQ not started.\n";
 		return;
 	}
 }
