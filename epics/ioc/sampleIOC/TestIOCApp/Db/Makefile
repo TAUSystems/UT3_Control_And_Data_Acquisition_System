@@ -1,18 +1,20 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 #----------------------------------------
-#  ADD MACRO DEFINITIONS AFTER THIS LINE
+#  ADD MACRO DEFINITIONS BELOW HERE
 
-#----------------------------------------------------
-# Create and install (or just install) into <top>/db
-# databases, templates, substitutions like this
-#DB += xxx.db
+# Install databases, templates & substitutions like this
+DB += circle.db
+DB += dbExample1.db
+DB += dbExample2.db
+DB += TestIOCVersion.db
+DB += dbSubExample.db
+DB += user.substitutions
 
-#----------------------------------------------------
 # If <anyname>.db template is not named <anyname>*.template add
-# <anyname>_template = <templatename>
+# <anyname>_TEMPLATE = <templatename>
 
 include $(TOP)/configure/RULES
 #----------------------------------------
-#  ADD RULES AFTER THIS LINE
+#  ADD EXTRA GNUMAKE RULES BELOW HERE
 

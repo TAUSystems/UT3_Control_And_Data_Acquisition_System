@@ -12,10 +12,18 @@ dbLoadDatabase "dbd/TestIOC.dbd"
 TestIOC_registerRecordDeviceDriver pdbbase
 
 ## Load record instances
-#dbLoadRecords("db/TestIOC.db","user=dphan")
+dbLoadTemplate "db/user.substitutions"
+dbLoadRecords "db/TestIOCVersion.db", "user=dphan"
+dbLoadRecords "db/dbSubExample.db", "user=dphan"
+
+#- Set this to see messages from mySub
+#-var mySubDebug 1
+
+#- Run this to trace the stages of iocInit
+#-traceIocInit
 
 cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
 ## Start any sequence programs
-#seq sncxxx,"user=dphan"
+#seq sncExample, "user=dphan"
