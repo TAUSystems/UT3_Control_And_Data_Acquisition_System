@@ -1,0 +1,3 @@
+[submodule "epics/epics-base"]
+	path = epics/epics-base
+	url = https://github.com/epics-base/epics-base.git
