@@ -1,3 +1,6 @@
 [submodule "epics/epics-base"]
 	path = epics/epics-base
 	url = https://github.com/epics-base/epics-base.git
+[submodule "epics/support/areaDetector"]
+	path = epics/support/areaDetector
+	url = https://github.com/areaDetector/areaDetector.git
