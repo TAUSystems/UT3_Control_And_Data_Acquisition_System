@@ -1,0 +1,42 @@
+#RELEASE Location of external products
+# Run "make clean uninstall install" in the application
+# top directory each time this file is changed.
+#
+# NOTE: The build does not check dependancies on files
+# external to this application. Thus you should run
+# "make clean uninstall install" in the top directory
+# each time EPICS_BASE, SNCSEQ, or any other external
+# module defined in the RELEASE file is rebuilt.
+
+TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
+
+# If you don't want to install into $(TOP) then
+# define INSTALL_LOCATION_APP here
+#INSTALL_LOCATION_APP=$(TOP)/target
+
+# synApps support modules
+SUPPORT=/APSshare/epics/synApps_5_8/support
+
+# Modules required for building module
+ASYN=$(SUPPORT)/asyn-4-26
+IP=$(SUPPORT)/ip-2-17
+IPAC=$(SUPPORT)/ipac-2-13
+
+# Modules needed by some devices for records
+##### Colby needs sseq
+CALC=$(SUPPORT)/calc-3-4-2-1
+##### BNC 505
+STREAM=$(SUPPORT)/stream-2-6a
+
+# EPICS_BASE usually appears last so other apps can override stuff:
+EPICS_BASE=/APSshare/epics/base-3.14.12.5
+
+#Capfast users may need the following definitions
+#CAPFAST_TEMPLATES=
+#SCH2EDIF_PATH=
+
+# These lines allow developers to override these RELEASE settings
+# without having to modify this file directly.
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local
