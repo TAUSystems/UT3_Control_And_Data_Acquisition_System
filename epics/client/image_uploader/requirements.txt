@@ -13,3 +13,7 @@ certifi==2023.11.17
 charset-normalizer==3.3.2
 idna==3.6
 urllib3==2.1.0
+
+# for pulling image analysis done messages
+redis==5.0.1
+python-dotenv
