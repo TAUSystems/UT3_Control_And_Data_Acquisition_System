@@ -2,6 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import os
+import json
+
+import logging
+logging.basicConfig(level=logging.INFO, force=True)
 
 import requests
 from utils.redis import get_redis_client
@@ -9,8 +13,8 @@ from utils.redis import get_redis_client
 from utils.types import ImageAnalysisFinishedMessage
 
 IMAGE_PVS = [
-    "device1/image",
-    "device2/image",
+    #"device1/image",
+    #"device2/image",
 ]
 
 WORK_QUEUE_NUM_WORKERS = 12
@@ -47,17 +51,22 @@ def listen_for_and_process_analysis_complete_messages():
     ps.subscribe('image_analysis_finished_ch')
 
     while True:
-        message: ImageAnalysisFinishedMessage = ps.get_message()
+        message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
 
-        try:
-            pv_name = last_analyzed_pv_from_device_name[message['device_name']]
-        except KeyError:
+        if message is None:
             continue
 
-        p4p_context.set(pv_name, message['shot_id'])
+        image_finished_message = json.loads(message['data'])
+	
+        try:
+            pv_name = last_analyzed_pv_from_device_name[image_finished_message['device_name']]
+        except KeyError:
+            logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
+            continue
 
+        p4p_context.put(pv_name, image_finished_message['shot_id'])
+        logging.info(f"Set PV {pv_name} to '{image_finished_message['shotid']}'")
 
 if __name__ == '__main__':
     subscribe_to_PVs_for_upload()
     listen_for_and_process_analysis_complete_messages()
-
