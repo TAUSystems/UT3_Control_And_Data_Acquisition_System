@@ -1,7 +1,0 @@
-$(P)PresetMode
-$(P)PresetReal
-$(P)PresetEvents
-$(P)PresetTriggers
-$(P)StatusAll.SCAN
-$(P)ReadAll.SCAN
-$(P)EnableClientWait
