@@ -15,6 +15,8 @@ cd $HOME
 git clone --recursive https://github.com/TAUSystems/UT3_Control_And_Data_Acquisition_System.git
 ```
 
+Notice that in this instruction, the source is cloned to `$HOME` for simplicity. Users can install this source repo to any location on your system, as long as they make sure to set the `${EPICS_BASE}` and `${SUPPORT}` paths correspondingly.
+
 # EPICS Base Installation
 
 EPICS is designed to work on both regular PC OS and real-time OS. As, the UT3 CDAQ system relies on regular PCs, the instruction here will only address the installation process for Linux and Windows.
@@ -48,7 +50,7 @@ Testing the build by open a new terminal and run `softIoc`. If encountering no p
 
 ## On Windows systems
 
-Please follow the EPICS documentation for installation on Windows machines. We will update this documentation at a later time.
+For the moment, please follow the EPICS documentation for installation on Windows machines. We will update this documentation for Windows at a later time.
 
 # EPICS Modules and IOCs
 
@@ -82,6 +84,7 @@ The following modules are needed for UT3 CDAQ:
 	- ADSUPPORT
 	- ADGENICAM
 	- ADSPINNAKER
+	- PVADRIVER
 - MOTOR
 	- MOTOR_THORLABS
 - SNCSEQ
@@ -102,55 +105,56 @@ ASYN=$(SUPPORT)/asyn-R4-44-2
 AUTOSAVE=$(SUPPORT)/autosave-R5-10
 BUSY=$(SUPPORT)/busy-R1-7-2
 CALC=$(SUPPORT)/calc-R3-7-3
-#CAMAC=$(SUPPORT)/camac-R2-7-1
-#CAPUTRECORDER=$(SUPPORT)/caputRecorder-R1-7-2
-#DAC128V=$(SUPPORT)/dac128V-R2-9
 DELAYGEN=$(SUPPORT)/delaygen-R1-2-4
-#DXP=$(SUPPORT)/dxp-R6-0
-#DXPSITORO=$(SUPPORT)/dxpSITORO-R1-2
 DEVIOCSTATS=$(SUPPORT)/iocStats-3-1-16
-#IP=$(SUPPORT)/ip-R2-20-1
 IPAC=$(SUPPORT)/ipac-2-15
-#IP330=$(SUPPORT)/ip330-R2-9
-#IPUNIDIG=$(SUPPORT)/ipUnidig-R2-11
-#LOVE=$(SUPPORT)/love-R3-2-7
-#LUA=$(SUPPORT)/lua-R2-0
-#MCA=$(SUPPORT)/mca-R7-8
-#MEASCOMP=$(SUPPORT)/measComp-R2-3
-#MODBUS=$(SUPPORT)/modbus-R3-0
 MOTOR=$(SUPPORT)/motor-R7-3-1
-#OPTICS=$(SUPPORT)/optics-R2-13-3
-#QUADEM=$(SUPPORT)/quadEM-R9-2-1
-#SOFTGLUE=$(SUPPORT)/softGlue-R2-8-2
-#SOFTGLUEZYNQ=$(SUPPORT)/softGlueZynq-R2-0-2
+MOTOR_THORLABS=$(MOTOR)/modules/motorThorLabs-R1-0-2
+SNCSEQ=$(SUPPORT)/seq-2-2-6
 SSCAN=$(SUPPORT)/sscan-R2-11-6
-#STD=$(SUPPORT)/std-R3-6
 STREAM=$(SUPPORT)/StreamDevice-2-8-24
-#VAC=$(SUPPORT)/vac-R1-9
-#VME=$(SUPPORT)/vme-R2-9-2
-#YOKOGAWA_DAS=$(SUPPORT)/Yokogawa_DAS-R2-0-1
-#XXX=$(SUPPORT)/xxx-R6-1
-AREA_DETECTOR=$(SUPPORT)/areaDetector-R3-12-1
+
+AREA_DETECTOR=$(SUPPORT)/areaDetector
 ADCORE=$(AREA_DETECTOR)/ADCore
 ADSUPPORT=$(AREA_DETECTOR)/ADSupport
 ADSIMDETECTOR=$(AREA_DETECTOR)/ADSimDetector
 ADGENICAM=$(AREA_DETECTOR)/ADGenICam
 ADSPINNAKER=$(AREA_DETECTOR)/ADSpinnaker
-SNCSEQ=$(SUPPORT)/seq-2-2-6
-#ALLEN_BRADLEY=$(SUPPORT)/allenBradley-2-3
+PVADRIVER=$(AREA_DETECTOR)/pvaDriver
+NDDRIVERSTDARRAYS=$(AREA_DETECTOR)/NDDriverStdArrays
 ```
 
 To populate the `PATH` for the build to the subcomponent directories, run `make release`:
-```
+```bash
 cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support
 make release
 ```
 
+To start build most of the modules
+```bash
+cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support
+make
+```
 
+To build the Thorlabs motor module:
+```bash
+cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support/motor-R7-3-1/modules/motorThorLabs-R1-0-2
+make
+```
 
+## IOCs
 
+The IOCs are packaged with these modules. For the `areaDetector` module, users need to select the option `BUILD_IOCS=YES` in the `$(TOP)/configure/CONFIG_SITE.local`.
 
+# Maintenance
 
+To upgrade the modules, we recommend to use `.tar.gz` files from the GitHub release pages. 
 
+# References:
+
+1. [synApps | Advanced Photon Source](https://www.aps.anl.gov/BCDA/synApps)
+2. [Installation on Linux / MacOS — EPICS Documentation documentation](https://docs.epics-controls.org/en/latest/getting-started/installation-linux.html#install-epics)
+3. [GitHub - epics-modules/sscan: APS BCDA synApps module: sscan](https://github.com/epics-modules/sscan)
+4. [GitHub - areaDetector/areaDetector: Top-level repository for the EPICS areaDetector project](https://github.com/areaDetector/areaDetector)
 
 
