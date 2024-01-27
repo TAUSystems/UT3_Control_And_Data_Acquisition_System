@@ -93,7 +93,7 @@ NEXUS_EXTERNAL = NO
 #NEXUS_LIB     =
 
 # OPENCV is required for the ADPluginEdge plugin
-WITH_OPENCV     = NO
+WITH_OPENCV     = YES
 OPENCV_EXTERNAL = YES
 #OPENCV_INCLUDE =
 #OPENCV_LIB     =
