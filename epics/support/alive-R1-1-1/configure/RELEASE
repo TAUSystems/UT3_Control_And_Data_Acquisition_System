@@ -21,10 +21,10 @@
 
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
-SUPPORT=.
+SUPPORT=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=./../epics-base
+EPICS_BASE=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 -include $(TOP)/../configure/EPICS_BASE.$(EPICS_HOST_ARCH)
 
 # Set RULES here if you want to take build rules from somewhere

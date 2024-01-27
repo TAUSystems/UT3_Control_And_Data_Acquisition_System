@@ -11,7 +11,7 @@ MAKE_TEST_IOC_APP=YES
 # Define the version of modules needed by
 # IOC apps or other Support apps - used by testIocStatsApp
 # =============================================================
-SUPPORT=.
+SUPPORT=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
 -include $(TOP)/../configure/SUPPORT.$(EPICS_HOST_ARCH)
 
 SNCSEQ=$(SUPPORT)/seq-2-2-6
@@ -20,7 +20,7 @@ SNCSEQ=$(SUPPORT)/seq-2-2-6
 #SNCSEQ = /afs/slac/g/lcls/epics/R3-16-0/modules/seq/seq-2.2.3
 
 #EPICS_BASE = /usr/local/epics/R3.14.11/base
-EPICS_BASE=./../epics-base
+EPICS_BASE=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 #EPICS_BASE=/afs/slac/g/lcls/epics/R3-15-1_1-0/base/base-R3-15-1_1-0
 #EPICS_BASE=/afs/slac/g/lcls/epics/R3-16-0/base/base-R3-16-0
 

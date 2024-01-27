@@ -1,6 +1,6 @@
-SUPPORT=$(TOP)
+SUPPORT=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
 -include $(TOP)/configure/SUPPORT.$(EPICS_HOST_ARCH)
-EPICS_BASE=$(TOP)/../epics-base
+EPICS_BASE=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 -include $(TOP)/configure/EPICS_BASE
 -include $(TOP)/configure/EPICS_BASE.$(EPICS_HOST_ARCH)
 
