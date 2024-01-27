@@ -15,21 +15,21 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 #INSTALL_LOCATION_APP=$(TOP)/target
 
 # synApps support modules
-SUPPORT=/APSshare/epics/synApps_5_8/support
+SUPPORT=.
 
 # Modules required for building module
-ASYN=$(SUPPORT)/asyn-4-26
+ASYN=$(SUPPORT)/asyn-R4-44-2
 IP=$(SUPPORT)/ip-2-17
-IPAC=$(SUPPORT)/ipac-2-13
+IPAC=$(SUPPORT)/ipac-2-15
 
 # Modules needed by some devices for records
 ##### Colby needs sseq
-CALC=$(SUPPORT)/calc-3-4-2-1
+CALC=$(SUPPORT)/calc-R3-7-3
 ##### BNC 505
-STREAM=$(SUPPORT)/stream-2-6a
+STREAM=$(SUPPORT)/StreamDevice-2-8-24
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=/APSshare/epics/base-3.14.12.5
+EPICS_BASE=./../epics-base
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
