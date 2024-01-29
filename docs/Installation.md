@@ -25,10 +25,10 @@ We provided a copy of EPICS base source in `epics/` but users can also choose to
 
 ## On Linux systems
 
-To compile `epics-base` on Linux systems, you need GNU C++ compiler `g++` and GNU `make` tool. On Ubuntu, this can be installed with
+To compile `epics-base` on Linux systems, you need GNU C++ compiler `g++` and GNU `make` tool. `re2c` is needed for `sequencer` and `streamDevice`. On Ubuntu, these packages can be installed with
 
 ```bash
-sudo apt install build-essential
+sudo apt install build-essential re2c
 ```
 
 To compile
