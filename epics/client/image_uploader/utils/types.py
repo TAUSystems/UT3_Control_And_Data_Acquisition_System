@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import TypedDict, NamedTuple
 
 class ImageAnalysisFinishedMessage(TypedDict):
     device_name: str
@@ -9,3 +9,7 @@ class ImageAnalysisFinishedMessage(TypedDict):
     num_arrays: int
     num_scalars: int
     errors: list[str]
+
+class ImageDeviceDirectoryEntry(NamedTuple):
+    image_pv_name: str
+    last_analyzed_pv_name: str
