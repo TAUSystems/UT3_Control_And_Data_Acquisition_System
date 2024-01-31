@@ -30,12 +30,12 @@ namespace Spinnaker
 	/**
 	* @defgroup SpinnakerQuickSpinClasses Spinnaker QuickSpin Classes
 	*/
-	/**@{*/
+	/*@{*/
 
 	/**
 	* @defgroup TransportLayerInterface_h TransportLayerInterface Class
 	*/
-	/**@{*/
+	/*@{*/
 
 	/**
 	*@brief Part of the QuickSpin API to provide access to camera information without having to first initialize the camera.
@@ -129,12 +129,6 @@ namespace Spinnaker
 		GenApi::IInteger &GevInterfaceMTU;
 
 		/**
-		 * Description: Indicates whether the adapter has an IP conflict
-		 * Visibility: Expert
-		 */
-		GenApi::IBoolean &GevInterfaceIsIPConflict;
-
-		/**
 		 * Description: Reports and controls the interface's power over Ethernet status.
 		 * Visibility: Expert
 		 */
@@ -144,13 +138,7 @@ namespace Spinnaker
 		 * Description: Reports whether FLIR Light Weight Filter Driver is enabled, disabled, or not installed.
 		 * Visibility: Expert
 		 */
-		GenApi::IEnumerationT<FLIRFilterDriverStatusEnum> &FLIRFilterDriverStatus;
-
-		/**
-		 * Description: Reports whether Teledyne Gige Vision Filter Driver is enabled, disabled, or not installed.
-		 * Visibility: Expert
-		 */
-		GenApi::IEnumerationT<TeledyneGigeVisionFilterDriverStatusEnum> &TeledyneGigeVisionFilterDriverStatus;
+		GenApi::IEnumerationT<FilterDriverStatusEnum> &FilterDriverStatus;
 
 		/**
 		 * Description: Key to authorize the action for the device.
@@ -175,12 +163,6 @@ namespace Spinnaker
 		 * Visibility: Expert
 		 */
 		GenApi::IInteger &GevActionTime;
-
-		/**
-		 * Description: Indicates whether an ACK is required from the device after receiving an action command
-		 * Visibility: Expert
-		 */
-		GenApi::IBoolean &GevActionAckRequired;
 
 		/**
 		 * Description: Issues an Action Command to attached GEV devices on interface.
@@ -345,24 +327,6 @@ namespace Spinnaker
 		GenApi::ICommand &GevDeviceAutoForceIP;
 
 		/**
-		 * Description: Enables or disables discovery of GEV devices on the interface.
-		 * Visibility: Expert
-		 */
-		GenApi::IBoolean &GevDeviceDiscoveryEnabled;
-
-		/**
-		 * Description: Enables discovery of GEV devices on the interface.
-		 * Visibility: Expert
-		 */
-		GenApi::ICommand &GevDeviceEnableDiscovery;
-
-		/**
-		 * Description: Disables discovery of GEV devices on the interface.
-		 * Visibility: Expert
-		 */
-		GenApi::ICommand &GevDeviceDisableDiscovery;
-
-		/**
 		 * Description: User readable name of the interface's host adapter.
 		 * Visibility: Expert
 		 */
@@ -387,9 +351,9 @@ namespace Spinnaker
 		friend class InterfaceInternal;
 
 	};
-	/**@}*/
+	/*@}*/
 
-	/**@}*/
+	/*@}*/
 
 }
 #endif // FLIR_SPINNAKER_TRANSPORTLAYERINTERFACE_H

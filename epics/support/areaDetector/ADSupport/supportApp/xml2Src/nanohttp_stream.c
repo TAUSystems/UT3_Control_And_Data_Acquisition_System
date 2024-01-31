@@ -12,6 +12,7 @@
  */
 
 #define NEED_SOCKETS
+#define IN_LIBXML
 #include "libxml.h"
 
 #ifdef LIBXML_HTTP_ENABLED

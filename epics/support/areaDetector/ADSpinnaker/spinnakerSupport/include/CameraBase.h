@@ -186,9 +186,6 @@ namespace Spinnaker
          * Starts the image acquisition engine. The camera must be initialized via
          * a call to Init() before starting an acquisition.
          *
-         * Note that an error SPINNAKER_ERR_NOT_IMPLEMENTED will be thrown if an
-         * unsupported combination of stream mode and buffer ownership is set.
-         *
          * @see Init()
          */
         void BeginAcquisition();
@@ -217,12 +214,12 @@ namespace Spinnaker
          * If the system owns the buffers, the memory required for the buffers are
          * allocated and freed by the library.  If user owns the buffers, the user is
          * responsible for allocating and ultimately freeing the memory.  By default,
-         * data buffers are owned by the System.
+         * data buffers are owned by the library.
          *
          * @see SetBufferOwnership()
          * @see SetUserBuffers()
          *
-         * @return Buffer ownership
+         * @return Buffer ownership (system or user)
          */
         BufferOwnership GetBufferOwnership() const;
 
@@ -234,14 +231,10 @@ namespace Spinnaker
          * responsible for allocating and ultimately freeing the memory.  By default,
          * data buffers are owned by the library.
          *
-         * Note that an error SPINNAKER_ERR_NOT_IMPLEMENTED will be thrown during
-         * BeginAcquisition() if an unsupported combination of stream mode and buffer
-         * ownership is set.
-         *
          * @see GetBufferOwnership()
          * @see SetUserBuffers()
          *
-         * @param mode Buffer ownership to set
+         * @param mode System owned or User owned buffers
          */
         void SetBufferOwnership(const BufferOwnership mode);
 
@@ -298,14 +291,6 @@ namespace Spinnaker
          * buffer should be equal to:
          *     ((unsigned int) (bufferSize + 1024 - 1) / 1024) * 1024
          * where 1024 is the USB3 packet size.
-         *
-         * When working with GigE cameras, allocate memory and set at least 2 buffers
-         * for OldestFirst and NewestFirst stream modes, and 3 buffers for
-         * OldestFirstOverwrite and NewestOnly modes
-         *
-         * Note that an error SPINNAKER_ERR_NOT_IMPLEMENTED will be thrown during
-         * BeginAcquisition() if an unsupported combination of stream mode and buffer
-         * ownership is set.
          *
          * @see GetBufferOwnership()
          * @see SetBufferOwnership()
@@ -372,21 +357,13 @@ namespace Spinnaker
         ImageList GetNextImageSync(uint64_t grabTimeout = EVENT_TIMEOUT_INFINITE);
 
         /**
-         * GetDeviceID
-         * This returns a unique id string that identifies the camera;
-         * a unique string for USB devices, and MAC address for GEV devices.
-         *
-         * @return string that uniquely identifies the camera
-         */
-        GenICam::gcstring GetDeviceID();
-
-        /**
          * GetUniqueID
-         * This returns a unique id string that identifies the camera.
+         * This returns a unique id string that identifies the camera.  This is the
+         * camera serial number.
          *
          * @return string that uniquely identifies the camera (serial number)
          */
-        DEPRECATED_FUNC("Use GetDeviceID() instead.", GenICam::gcstring GetUniqueID(););
+        GenICam::gcstring GetUniqueID();
 
         /**
          * IsStreaming
@@ -515,9 +492,9 @@ namespace Spinnaker
         /**
          * IsValidEventHandlerType(EventType)
          * Validate the type of the event handler
-         *
+         * 
          * @param type The type of the handler
-         *
+         * 
          * @return True if the type is valid, otherwise false
          */
         bool IsValidEventHandlerType(EventType type);

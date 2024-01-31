@@ -12,7 +12,7 @@
 # define INSTALL_LOCATION_APP here
 #INSTALL_LOCATION_APP=<fullpathname>
 
-SUPPORT=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
+SUPPORT=/home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/support
 
 # ASYN is needed for base classes 
 ASYN=$(SUPPORT)/asyn-R4-44-2
@@ -25,7 +25,7 @@ ADSUPPORT=$(AREA_DETECTOR)/ADSupport
 # ADCORE for base classes and plugins
 ADCORE=$(AREA_DETECTOR)/ADCore
 
-EPICS_BASE=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
+EPICS_BASE=/home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 
 # If CONFIG_SITE.local defines WITH_PVA=YES and EPICS_BASE is prior to 7.0 then define the path here
 # If using EPICS_BASE 7.0 or later the PVA files are in base itself and no additional definitions are needed.

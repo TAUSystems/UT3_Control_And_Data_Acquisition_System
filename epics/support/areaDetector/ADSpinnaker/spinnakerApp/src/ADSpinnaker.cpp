@@ -123,7 +123,7 @@ ADSpinnaker::ADSpinnaker(const char *portName, int cameraId, int numSPBuffers,
     //pasynTrace->setTraceMask(pasynUserSelf, ASYN_TRACE_ERROR | ASYN_TRACE_WARNING | ASYN_TRACEIO_DRIVER);
     
     if (numSPBuffers_ == 0) numSPBuffers_ = 100;
-    //if (numSPBuffers_ < 10) numSPBuffers_ = 10;
+    if (numSPBuffers_ < 10) numSPBuffers_ = 10;
 
     // Retrieve singleton reference to system object
     system_ = System::GetInstance();
@@ -174,7 +174,7 @@ ADSpinnaker::ADSpinnaker(const char *portName, int cameraId, int numSPBuffers,
 
     startEventId_ = epicsEventCreate(epicsEventEmpty);
 
-    // launch image read taskp
+    // launch image read task
     epicsThreadCreate("ADSpinnakerImageTask", 
                       epicsThreadPriorityMedium,
                       epicsThreadGetStackSize(epicsThreadStackMedium),
@@ -321,23 +321,6 @@ asynStatus ADSpinnaker::connectCamera(void)
     return asynSuccess;
 }
 
-void ADSpinnaker::updateStreamStat(const char *nodeName, int param)
-{
-    static const char *functionName = "updateStreamStat";
-    try {
-        CIntegerPtr pNode = pTLStreamNodeMap_->GetNode(nodeName);
-        if (IsReadable(pNode)) {
-            setIntegerParam(param, (int)pNode->GetValue());
-        } else {
-            setIntegerParam(param, 0);
-        }
-    }
-    catch (Spinnaker::Exception &e) {
-        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR, 
-            "%s::%s exception %s\n",
-            driverName, functionName, e.what());
-    }
-}
 
 /** Task to grab images off the camera and send them up to areaDetector
  *
@@ -425,26 +408,27 @@ void ADSpinnaker::imageGrabTask()
             setIntegerParam(ADStatus, ADStatusIdle);
             status = stopCapture();
         }
-        //epicsTimeStamp tstart, tend;
-        //epicsTimeGetCurrent(&tstart);
-        pTLStreamNodeMap_->InvalidateNodes();
-        updateStreamStat("StreamStartedFrameCount",                 SPStartedFrameCount);
-        updateStreamStat("StreamDeliveredFrameCount",               SPDeliveredFrameCount);
-        updateStreamStat("StreamReceivedFrameCount",                SPReceivedFrameCount);
-        updateStreamStat("StreamIncompleteFrameCount",              SPIncompleteFrameCount);
-        updateStreamStat("StreamLostFrameCount",                    SPLostFrameCount);
-        updateStreamStat("StreamDroppedFrameCount",                 SPDroppedFrameCount);
-        updateStreamStat("StreamInputBufferCount",                  SPInputBufferCount);
-        updateStreamStat("StreamOutputBufferCount",                 SPOutputBufferCount);
-        updateStreamStat("StreamReceivedPacketCount",               SPReceivedPacketCount);
-        updateStreamStat("StreamMissedPacketCount",                 SPMissedPacketCount);
-        updateStreamStat("StreamPacketResendRequestedPacketCount",  SPResendRequestedPacketCount);
-        updateStreamStat("StreamPacketResendReceivedPacketCount",   SPResendReceivedPacketCount);
-        //epicsTimeGetCurrent(&tend);
-        //asynPrint(pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s time to read stats=%f\n", 
-        //          driverName, functionName, epicsTimeDiffInSeconds(&tend, &tstart));
-        // NOTE: Using above timing code I found that it took 120 microseconds to read the stats
-        // It could probably be faster by only checking IsReadable() once when connecting camera, but not worth the complexity
+        try {
+            const TransportLayerStream& streamStats = pCamera_->TLStream;
+            pTLStreamNodeMap_->InvalidateNodes();
+            setIntegerParam(SPStartedFrameCount,          (int)streamStats.StreamStartedFrameCount.GetValue());
+            setIntegerParam(SPDeliveredFrameCount,        (int)streamStats.StreamDeliveredFrameCount.GetValue());
+            setIntegerParam(SPReceivedFrameCount,         (int)streamStats.StreamReceivedFrameCount.GetValue());
+            setIntegerParam(SPIncompleteFrameCount,       (int)streamStats.StreamIncompleteFrameCount.GetValue());
+            setIntegerParam(SPLostFrameCount,             (int)streamStats.StreamLostFrameCount.GetValue());
+            setIntegerParam(SPDroppedFrameCount,          (int)streamStats.StreamDroppedFrameCount.GetValue());
+            setIntegerParam(SPInputBufferCount,           (int)streamStats.StreamInputBufferCount.GetValue());
+            setIntegerParam(SPOutputBufferCount,          (int)streamStats.StreamOutputBufferCount.GetValue());
+            setIntegerParam(SPReceivedPacketCount,        (int)streamStats.StreamReceivedPacketCount.GetValue());
+            setIntegerParam(SPMissedPacketCount,          (int)streamStats.StreamMissedPacketCount.GetValue());
+            setIntegerParam(SPResendRequestedPacketCount, (int)streamStats.StreamPacketResendRequestedPacketCount.GetValue());
+            setIntegerParam(SPResendReceivedPacketCount,  (int)streamStats.StreamPacketResendReceivedPacketCount.GetValue());
+        }
+        catch (Spinnaker::Exception &e) {
+            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR, 
+                "%s::%s exception %s\n",
+                driverName, functionName, e.what());
+        }
         callParamCallbacks();
     }
 }
@@ -465,7 +449,6 @@ asynStatus ADSpinnaker::grabImage()
     PixelFormatEnums pixelFormat;
     int pixelSize;
     size_t dataSize, dataSizePG;
-    int acquiring;
     void *pData;
     int nDims;
     ImagePtr pImage;
@@ -504,18 +487,6 @@ asynStatus ADSpinnaker::grabImage()
             pImage->Release();
             return asynError;
         }
-        // There is a problem on Windows in SDK 4.0.  
-        // If acquisition has stopped we can receive an image, 
-        // but when we try to read the data we get an access violation
-        // Prevent that by ignoring this image.
-        getIntegerParam(ADAcquire, &acquiring);
-        if (!acquiring) {
-            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s::%s received image after acquisition stopped, ignoring\n",
-                driverName, functionName);
-            return asynError;
-        }
-        
         nCols = pImage->GetWidth();
         nRows = pImage->GetHeight();
         // Print the first 16 bytes of the buffer in hex
@@ -779,7 +750,7 @@ asynStatus ADSpinnaker::stopCapture()
     setIntegerParam(ADAcquire, 0);
     setShutter(0);
 
-    // Send a null image pointer to grabImage to make it exit if it is waiting for an image
+    // Send a null image poiner to grabImage to make it exit if it is waiting for an image
     if (pCallbackMsgQ_->send(&dummy, sizeof(dummy)) != 0) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR, 
             "%s::%s error calling pCallbackMsgQ_->send()\n",
