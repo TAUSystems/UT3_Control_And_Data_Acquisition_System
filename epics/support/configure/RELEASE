@@ -1,6 +1,6 @@
-SUPPORT=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
+SUPPORT=/home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/support
 -include $(TOP)/configure/SUPPORT.$(EPICS_HOST_ARCH)
-EPICS_BASE=/home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
+EPICS_BASE=/home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 -include $(TOP)/configure/EPICS_BASE
 -include $(TOP)/configure/EPICS_BASE.$(EPICS_HOST_ARCH)
 
@@ -18,7 +18,6 @@ MOTORTHORLABS=$(MOTOR)/modules/motorThorLabs-R1-0-2
 SNCSEQ=$(SUPPORT)/seq-2-2-6
 SSCAN=$(SUPPORT)/sscan-R2-11-6
 STREAM=$(SUPPORT)/StreamDevice-2-8-24
-
 AREA_DETECTOR=$(SUPPORT)/areaDetector
 ADCORE=$(AREA_DETECTOR)/ADCore
 ADSUPPORT=$(AREA_DETECTOR)/ADSupport
