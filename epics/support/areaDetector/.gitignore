@@ -6,3 +6,17 @@ lib/
 documentation/html
 documentation/xml
 Doxyfile.bak
+ADGenICam/GenICamApp/Db/espec_back_cam.template
+ADGenICam/GenICamApp/Db/espec_front_cam.template
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_1.adl
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_2.adl
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_3.adl
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_4.adl
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_5.adl
+ADGenICam/GenICamApp/op/adl/espec_back_cam-features_6.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_1.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_2.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_3.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_4.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_5.adl
+ADGenICam/GenICamApp/op/adl/espec_front_cam-features_6.adl
