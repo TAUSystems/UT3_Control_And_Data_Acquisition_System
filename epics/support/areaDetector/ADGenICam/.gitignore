@@ -13,3 +13,9 @@ configure/*.local
 O.*/
 *~
 *.swp
+GenICamApp/op/adl/epointing_cam-features_1.adl
+GenICamApp/op/adl/epointing_cam-features_2.adl
+GenICamApp/op/adl/epointing_cam-features_3.adl
+GenICamApp/op/adl/epointing_cam-features_4.adl
+GenICamApp/op/adl/epointing_cam-features_5.adl
+GenICamApp/op/adl/epointing_cam-features_6.adl
