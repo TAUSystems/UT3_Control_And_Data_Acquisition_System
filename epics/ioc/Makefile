@@ -5,6 +5,7 @@ include $(TOP)/configure/CONFIG
 # Directories to build, any order
 DIRS += configure
 DIRS += $(wildcard *Sup)
+DIRS += $(wildcard *Support)
 DIRS += $(wildcard *App)
 DIRS += $(wildcard *Top)
 DIRS += $(wildcard iocBoot)
