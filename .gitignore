@@ -51,3 +51,6 @@ log/
 # QtCreator
 build-*/
 CMakeLists.txt.user
+
+# Environment
+.env

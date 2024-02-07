@@ -1,0 +1,6 @@
+Electrons:Spectrometer:Pointing:CentroidX
+Electrons:Spectrometer:Pointing:CentroidY
+Electrons:Spectrometer:Spectrum:MeanEnergy
+Electrons:Spectrometer:Spectrum:PeakEnergy
+Plasma:PressureController:Pressure
+Plasma:WavefrontSensor:PeakDensity
