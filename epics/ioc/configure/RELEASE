@@ -27,6 +27,13 @@
 
 # If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ = $(MODULES)/seq-ver
+SUPPORT = /home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/support
+ASYN = $(SUPPORT)/asyn-R4-44-2
+AREADETECTOR = $(SUPPORT)/areaDetector
+ADCORE = $(AREADETECTOR)/ADCore
+ADSUPPORT = $(AREADETECTOR)/ADSupport
+ADGENICAM = $(AREADETECTOR)/ADGenICam
+ADSPINNAKER = $(AREADETECTOR)/ADSpinnaker
 
 # EPICS_BASE should appear last so earlier modules can override stuff:
 EPICS_BASE = /home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
