@@ -89,66 +89,27 @@ The following modules are needed for UT3 CDAQ:
 	- MOTOR_THORLABS
 - SNCSEQ
 
-In `epicss/support/configure/RELEASE`, modify the `SUPPORT` and `EPICS_BASE` variables to be the absolute path to the `support` and the `epics-base` installation, respectively:
-```
-SUPPORT=/absolute/path/to/support/
--include $(TOP)/configure/SUPPORT.$(EPICS_HOST_ARCH)
-EPICS_BASE=/absolute/path/to/epics/base
--include $(TOP)/configure/EPICS_BASE
--include $(TOP)/configure/EPICS_BASE.$(EPICS_HOST_ARCH)
-```
-
-Comment out the packages that are not needed for the build:
-```
-ALIVE=$(SUPPORT)/alive-R1-1-1
-ASYN=$(SUPPORT)/asyn-R4-44-2
-AUTOSAVE=$(SUPPORT)/autosave-R5-10
-BUSY=$(SUPPORT)/busy-R1-7-2
-CALC=$(SUPPORT)/calc-R3-7-3
-DELAYGEN=$(SUPPORT)/delaygen-R1-2-4
-DEVIOCSTATS=$(SUPPORT)/iocStats-3-1-16
-IPAC=$(SUPPORT)/ipac-2-15
-MOTOR=$(SUPPORT)/motor-R7-3-1
-MOTOR_THORLABS=$(MOTOR)/modules/motorThorLabs-R1-0-2
-SNCSEQ=$(SUPPORT)/seq-2-2-6
-SSCAN=$(SUPPORT)/sscan-R2-11-6
-STREAM=$(SUPPORT)/StreamDevice-2-8-24
-
-AREA_DETECTOR=$(SUPPORT)/areaDetector
-ADCORE=$(AREA_DETECTOR)/ADCore
-ADSUPPORT=$(AREA_DETECTOR)/ADSupport
-ADSIMDETECTOR=$(AREA_DETECTOR)/ADSimDetector
-ADGENICAM=$(AREA_DETECTOR)/ADGenICam
-ADSPINNAKER=$(AREA_DETECTOR)/ADSpinnaker
-PVADRIVER=$(AREA_DETECTOR)/pvaDriver
-NDDRIVERSTDARRAYS=$(AREA_DETECTOR)/NDDriverStdArrays
-```
-
-To populate the `PATH` for the build to the subcomponent directories, run `make release`:
+To install the synApps modules:
 ```bash
-cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support
+cd $HOME/UT3_Control_And_Data_Acquisition_System/epics
+chmod a+x ./assemble_synApps
+mkdir synApps
+./assemble_synApps --base=$EPICS_BASE --dir=synApps
+```
+By running the `assemble_synApps` script, you will grab the modules needed for UT3 CDAQ. You can set the specific version of each module by either modifying the script or using `--set <module>=<tag>` argument. The script also automatically sets up the correct `$EPICS_BASE` and `$SUPPORT` variables for you so you don't have to manually change those variables on different systems.
+
+Next you need to build the modules:
+```bash
+cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/synApps/support
 make release
-```
-
-To start build most of the modules
-```bash
-cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support
 make
 ```
-
-To build the Thorlabs motor module:
-```bash
-cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/support/motor-R7-3-1/modules/motorThorLabs-R1-0-2
-make
-```
-
-## IOCs
-
-The IOCs are packaged with these modules. For the `areaDetector` module, users need to select the option `BUILD_IOCS=YES` in the `$(TOP)/configure/CONFIG_SITE.local`.
 
 # Maintenance
 
-To upgrade the modules, we recommend to use `.tar.gz` files from the GitHub release pages. 
+- Make sure you have the updated version of `assemble_synApps` script from https://github.com/EPICS-synApps/assemble_synApps/releases/. 
+- Modify the tag numbers for the modules that you want to upgrade. Rerun the script as described above to upgrade the modules. Test the modules.
+- You can make the commit of your upgrade (commit to the `assemble_synApps` script only, do not add the `synApps/support` directory into the repo) if you're sure the upgrade does not break UT3 CDAQ code.
 
 # References:
 
@@ -156,5 +117,6 @@ To upgrade the modules, we recommend to use `.tar.gz` files from the GitHub rele
 2. [Installation on Linux / MacOS — EPICS Documentation documentation](https://docs.epics-controls.org/en/latest/getting-started/installation-linux.html#install-epics)
 3. [GitHub - epics-modules/sscan: APS BCDA synApps module: sscan](https://github.com/epics-modules/sscan)
 4. [GitHub - areaDetector/areaDetector: Top-level repository for the EPICS areaDetector project](https://github.com/areaDetector/areaDetector)
+5. [GitHub - EPICS synApps](https://github.com/EPICS-synApps/assemble_synApps/releases/)
 
 
