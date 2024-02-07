@@ -111,6 +111,24 @@ make
 - Modify the tag numbers for the modules that you want to upgrade. Rerun the script as described above to upgrade the modules. Test the modules.
 - You can make the commit of your upgrade (commit to the `assemble_synApps` script only, do not add the `synApps/support` directory into the repo) if you're sure the upgrade does not break UT3 CDAQ code.
 
+## On `AreaDetector` and `Motor`
+There are several submodules in `areaDetector`. For these submodules, `assemble_synApps` checkouts the commit that is associated with the developer's working directory at the time a tag of `areaDetector` is created (just my guess from examining the script and the checked-out submodule versioning). To bring these submodules to a release tag or origin/HEAD, you need to go to each of the module and run
+```bash
+git checkout <main-branch-name>[main/master]
+```
+or
+```
+git checkout <tag-id>[R3-4]
+```
+Same logic applies for submodules in `Motor`.
+
+As of 02-07-2024, the latest stable releases for `areaDetector` submodules:
+```bash
+cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/synApps/support/areaDetector-R3-12-1
+cd ADCore
+git checkout R3-12-1
+```
+
 # References:
 
 1. [synApps | Advanced Photon Source](https://www.aps.anl.gov/BCDA/synApps)
