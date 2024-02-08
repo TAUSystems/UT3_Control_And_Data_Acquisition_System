@@ -4,3 +4,5 @@ Electrons:Spectrometer:Spectrum:MeanEnergy
 Electrons:Spectrometer:Spectrum:PeakEnergy
 Plasma:PressureController:Pressure
 Plasma:WavefrontSensor:PeakDensity
+test:key1
+test:key2
