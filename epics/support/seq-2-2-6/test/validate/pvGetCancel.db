@@ -1,4 +1,0 @@
-record(longout,"pvGetCancel1") {
-}
-record(longout,"pvGetCancel2") {
-}

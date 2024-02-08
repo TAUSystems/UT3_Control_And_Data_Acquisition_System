@@ -1,6 +1,0 @@
-$(P)PollTime
-$(P)NumSCAs
-$(P)SaveSystemFile
-$(P)MCARefreshPeriod
-$(P)SCATriggerMode
-$(P)SCAPulseDuration

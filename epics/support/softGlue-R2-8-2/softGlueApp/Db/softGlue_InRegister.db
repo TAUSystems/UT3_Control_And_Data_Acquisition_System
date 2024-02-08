@@ -1,9 +1,0 @@
-record(longin,"$(P)$(H)$(SIG)") {
-	field(DTYP,"asynUInt32Digital")
-	field(INP,"@asynMask($(PORT),$(ADDR),0xffff)")
-}
-record(bo,"$(P)$(H)$(SIG)_SCAN") {
-	field(SCAN,"Event")
-	field(EVNT,"$(READEVENT)")
-	field(FLNK,"$(P)$(H)$(SIG)")
-}

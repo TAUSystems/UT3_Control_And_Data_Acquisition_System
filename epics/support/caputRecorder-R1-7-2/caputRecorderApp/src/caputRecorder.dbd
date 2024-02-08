@@ -1,4 +1,0 @@
-registrar(caputRecorderRegister)
-variable(caputRecorderDebug, int)
-variable(debugSubMLIS, int)
-registrar(SubMLISRegister)
