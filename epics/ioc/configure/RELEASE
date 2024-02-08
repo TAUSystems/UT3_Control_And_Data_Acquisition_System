@@ -34,6 +34,7 @@ ADCORE = $(AREADETECTOR)/ADCore
 ADSUPPORT = $(AREADETECTOR)/ADSupport
 ADGENICAM = $(AREADETECTOR)/ADGenICam
 ADSPINNAKER = $(AREADETECTOR)/ADSpinnaker
+ADSPINNAKER_SUPPORT = $(AREADETECTOR)/ADSpinnaker/spinnakerSupport
 
 # EPICS_BASE should appear last so earlier modules can override stuff:
 EPICS_BASE = /home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/epics-base
