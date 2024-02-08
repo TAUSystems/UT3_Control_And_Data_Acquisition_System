@@ -40,7 +40,7 @@ dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/$(PREFIX)$(PORT_ESpecLE).te
 dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT_ESpecLE):,PORT=$(PORT_ESpecLE)")
 
 NDStdArraysConfigure("$(PREFIX)$(PORT_ESpecLE):Image", 5, 0, "$(PORT_ESpecLE)", 0, 0)
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PREFIX)$(PORT_ESpecLE):Image:,PORT=$(PREFIX)$(PORT_ESpecLE):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecLE),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT_ESpecLE):Image:,PORT=$(PREFIX)$(PORT_ESpecLE):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecLE),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
 
 # Settings for Electron Spectrometer High Energy Screen Camera
@@ -51,7 +51,7 @@ dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/$(PREFIX)$(PORT_ESpecHE).te
 dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT_ESpecHE):,PORT=$(PORT_ESpecHE)")
 
 NDStdArraysConfigure("$(PREFIX)$(PORT_ESpecHE):Image", 5, 0, "$(PORT_ESpecHE)", 0, 0)
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PREFIX)$(PORT_ESpecHE):Image:,PORT=$(PREFIX)$(PORT_ESpecHE):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecHE),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT_ESpecHE):Image:,PORT=$(PREFIX)$(PORT_ESpecHE):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecHE),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
 
 # Settings for Electron Spectrometer Pointing Screen Camera
@@ -62,7 +62,7 @@ dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/$(PREFIX)$(PORT_ESpecPoint)
 dbLoadRecords("$(GENICAM_DB_FIPoint)", "P=$(PREFIX),R=$(PORT_ESpecPoint):,PORT=$(PORT_ESpecPoint)")
 
 NDStdArraysConfigure("$(PREFIX)$(PORT_ESpecPoint):Image", 5, 0, "$(PORT_ESpecPoint)", 0, 0)
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PREFIX)$(PORT_ESpecPoint):Image:,PORT=$(PREFIX)$(PORT_ESpecPoint):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecPoint),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT_ESpecPoint):Image:,PORT=$(PREFIX)$(PORT_ESpecPoint):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecPoint),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
 # Starting common plugins and start IOC
 #################################################################################################################################################
