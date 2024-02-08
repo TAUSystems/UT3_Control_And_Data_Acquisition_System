@@ -89,7 +89,7 @@ if ($releasefile eq "default")
 	# $modules{'SOFTGLUEZYNQ'} = 'R2-0-5';
 	$modules{'SSCAN'} = 'R2-11-6';
 	# $modules{'SCALER'} = '4.1';
-	# $modules{'STD'} = 'R3-6-4';
+	$modules{'STD'} = 'R3-6-4';
 	$modules{'STREAM'} = '2.8.24';
 	# $modules{'VAC'} = 'R1-9-2';
 	# $modules{'VME'} = 'R2-9-5';
