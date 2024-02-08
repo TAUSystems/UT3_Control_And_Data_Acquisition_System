@@ -126,7 +126,15 @@ As of 02-07-2024, the latest stable releases for `areaDetector` submodules:
 ```bash
 cd $HOME/UT3_Control_And_Data_Acquisition_System/epics/synApps/support/areaDetector-R3-12-1
 cd ADCore
-git checkout R3-12-1
+git checkout master
+cd ../ADSupport
+git checkout master
+cd ../ADSimDetector
+git checkout master
+cd ../ADGenICam
+git checkout master
+cd ../ADSpinnaker
+git checkout master
 ```
 
 # References:
