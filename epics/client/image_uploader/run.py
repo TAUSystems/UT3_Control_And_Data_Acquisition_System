@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import os
 import json
 from io import BytesIO
 from functools import partial
@@ -11,6 +10,8 @@ import logging
 logging.basicConfig(level=logging.INFO, force=True)
 
 from tifffile import imwrite as write_tiff
+from dotenv import dotenv_values
+env = dotenv_values()
 
 import requests
 from utils.redis import get_redis_client
@@ -35,14 +36,6 @@ IMAGE_DEVICES = {
 }
 
 WORK_QUEUE_NUM_WORKERS = 12
-IMAGE_BACKEND_ENDPOINT_URL = "http://localhost:5000"
-
-# the PV whose value to set to shot ID given an image_analysis_finished message 
-# device_name field
-last_analyzed_pv_from_device_name = {
-    'Spectrometer_LowEnergy': "Electrons:Spectrometer_SpectrumPNG:LastAnalyzedShotID",
-    'eScreenA': "Electrons:Spectrometer_SpectrumPNG:LastAnalyzedShotID",
-}
 
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
@@ -69,7 +62,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
     write_tiff(tiff_bytes, image_data)
 
     # fire POST request
-    requests.post(IMAGE_BACKEND_ENDPOINT_URL, 
+    requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
                     data={'device_name': device_name, 'shot_id': shot_id},
                     files={'image_data': tiff_bytes},
                  )

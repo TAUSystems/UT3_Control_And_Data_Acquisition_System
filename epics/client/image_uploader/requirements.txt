@@ -19,4 +19,4 @@ tifffile==2024.1.30
 
 # for pulling image analysis done messages
 redis==5.0.1
-python-dotenv
+python-dotenv==1.0.1
