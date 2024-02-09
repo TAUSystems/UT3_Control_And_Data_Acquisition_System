@@ -12,4 +12,5 @@ class ImageAnalysisFinishedMessage(TypedDict):
 
 class ImageDeviceDirectoryEntry(NamedTuple):
     image_pv_name: str
+    array_counter_pv_name: str
     last_analyzed_pv_name: str

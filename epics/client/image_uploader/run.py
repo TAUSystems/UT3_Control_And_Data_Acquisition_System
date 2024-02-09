@@ -10,7 +10,6 @@ from datetime import datetime, timezone, timedelta
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
 
-from numpy.typing import NDArray
 from tifffile import imwrite as write_tiff
 
 import requests
@@ -18,7 +17,21 @@ from utils.redis import get_redis_client
 from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
 IMAGE_DEVICES = {
-    'Spectrometer_LowEnergy': ImageDeviceDirectoryEntry("Electrons:Spectrometer_LowEnergy:ImageArrayData", "Electrons:Spectrometer_SpectrumPNG:LastAnalyzedShotID"),
+    'Electron:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
+        "Electrons:Spectrometer:LowEnergy:PVA:Image", 
+        "Electrons:Spectrometer:LowEnergy:PVA:ArrayCounter_RBV", 
+        "Electrons:Spectrometer:LastAnalyzedShotID"
+    ),
+    'Electron:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
+        "Electrons:Spectrometer:HighEnergy:PVA:Image", 
+        "Electrons:Spectrometer:HighEnergy:PVA:ArrayCounter_RBV", 
+        None
+    ),
+    'Electron:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
+        "Electrons:Spectrometer:Pointing:PVA:Image", 
+        "Electrons:Spectrometer:Pointing:PVA:ArrayCounter_RBV", 
+        None
+    ),
 }
 
 WORK_QUEUE_NUM_WORKERS = 12
@@ -35,16 +48,16 @@ from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
 
 if TYPE_CHECKING:
-    from p4p import Value as P4PValue
+    from p4p.nt import NTNDArray
 
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva', queue=work_queue)
 
-def send_to_image_backend(device_name: str, image_data: NDArray):
+def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # get shot number
     burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp", 
                                                                     "Timing:TriggerGeneration:Frequency", 
-                                                                    "Timing:TriggerGeneration:ShotIndex",
+                                                                    IMAGE_DEVICES[device_name].array_counter_pv_name,
                                                                   ])
     burst_datetime = datetime.fromtimestamp(burst_timestamp_ms / 1e3, timezone.utc)
     shot_datetime = burst_datetime + timedelta(seconds=shot_index / frequency_Hz)
@@ -84,8 +97,9 @@ def listen_for_and_process_analysis_complete_messages():
             logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
             continue
 
-        p4p_context.put(last_analyzed_pv_name, image_finished_message['shot_id'])
-        logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shotid']}'")
+        if last_analyzed_pv_name is not None:
+            p4p_context.put(last_analyzed_pv_name, image_finished_message['shot_id'])
+            logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shotid']}'")
 
 if __name__ == '__main__':
     subscribe_to_PVs_for_upload()
