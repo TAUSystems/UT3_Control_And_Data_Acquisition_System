@@ -45,9 +45,9 @@ record(ao, TakeNShots:SetTriggerGeneratorFrequency) {
 
 record(calcout, TakeNShots:CheckCamerasAcquiring) {
   field(CALC, "A && B && C && D && E && F")
-  field(INPA, "Electrons:Spectrometer_Pointing:Acquire_RBV")
-  field(INPB, "Electrons:Spectrometer_LowEnergy:Acquire_RBV")
-  field(INPC, "Electrons:Spectrometer_HighEnergy:Acquire_RBV")
+  field(INPA, "E:Spectrometer_Pointing:Acquire_RBV")
+  field(INPB, "E:Spectrometer_LowEnergy:Acquire_RBV")
+  field(INPC, "E:Spectrometer_HighEnergy:Acquire_RBV")
   field(INPD, "Laser:Steering_Pointing:Acquire_RBV")
   field(INPE, "Laser:XrayCCD:Acquire_RBV")
   field(INPF, "Plasma:TopView:Acquire_RBV")
@@ -68,9 +68,9 @@ record(bi, TakeNShots:WaitTriggerGeneratorComplete) {
 
 record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DESC, "Starts acquisition on cameras")
-  field(OUTA, "Electrons:Spectrometer_Pointing:Acquire")
-  field(OUTB, "Electrons:Spectrometer_LowEnergy:Acquire")
-  field(OUTC, "Electrons:Spectrometer_HighEnergy:Acquire")
+  field(OUTA, "E:Spectrometer_Pointing:Acquire")
+  field(OUTB, "E:Spectrometer_LowEnergy:Acquire")
+  field(OUTC, "E:Spectrometer_HighEnergy:Acquire")
   field(OUTD, "Laser:Steering_Pointing:Acquire")
   field(OUTE, "Laser:XrayCCD:Acquire")
   field(OUTF, "Plasma:TopView:Acquire")
@@ -79,9 +79,9 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 
 record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
   field(DESC, "Starts acquisition on cameras")
-  field(OUTA, "Electrons:Spectrometer_Pointing:Acquire")
-  field(OUTB, "Electrons:Spectrometer_LowEnergy:Acquire")
-  field(OUTC, "Electrons:Spectrometer_HighEnergy:Acquire")
+  field(OUTA, "E:Spectrometer_Pointing:Acquire")
+  field(OUTB, "E:Spectrometer_LowEnergy:Acquire")
+  field(OUTC, "E:Spectrometer_HighEnergy:Acquire")
   field(OUTD, "Laser:Steering_Pointing:Acquire")
   field(OUTE, "Laser:XrayCCD:Acquire")
   field(OUTF, "Plasma:TopView:Acquire")

@@ -19,18 +19,18 @@ from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
 IMAGE_DEVICES = {
     'Electron:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:LowEnergy:PVA:Image", 
-        "Electrons:Spectrometer:LowEnergy:PVA:ArrayCounter_RBV", 
-        "Electrons:Spectrometer:LastAnalyzedShotID"
+        "E:Spectrometer:LowEnergy:PVA:Image", 
+        "E:Spectrometer:LowEnergy:PVA:ArrayCounter_RBV", 
+        "E:Spectrometer:LastAnalyzedShotID"
     ),
     'Electron:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:HighEnergy:PVA:Image", 
-        "Electrons:Spectrometer:HighEnergy:PVA:ArrayCounter_RBV", 
+        "E:Spectrometer:HighEnergy:PVA:Image", 
+        "E:Spectrometer:HighEnergy:PVA:ArrayCounter_RBV", 
         None
     ),
     'Electron:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:Pointing:PVA:Image", 
-        "Electrons:Spectrometer:Pointing:PVA:ArrayCounter_RBV", 
+        "E:Spectrometer:Pointing:PVA:Image", 
+        "E:Spectrometer:Pointing:PVA:ArrayCounter_RBV", 
         None
     ),
 }
