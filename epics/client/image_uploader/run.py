@@ -5,6 +5,7 @@ import os
 import json
 from io import BytesIO
 from functools import partial
+from datetime import datetime, timezone, timedelta
 
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
@@ -41,8 +42,15 @@ p4p_context = P4PContext('pva', queue=work_queue)
 
 def send_to_image_backend(device_name: str, image_data: NDArray):
     # get shot number
-    shot_id = p4p_context.get("ShotIDPV")
-    
+    burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp", 
+                                                                    "Timing:TriggerGeneration:Frequency", 
+                                                                    "Timing:TriggerGeneration:ShotIndex",
+                                                                  ])
+    burst_datetime = datetime.fromtimestamp(burst_timestamp_ms / 1e3, timezone.utc)
+    shot_datetime = burst_datetime + timedelta(seconds=shot_index / frequency_Hz)
+
+    shot_id = f"burst-{burst_datetime:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
+
     # convert NDArray to tiff file byte array
     tiff_bytes = BytesIO()    
     write_tiff(tiff_bytes, image_data)
@@ -72,7 +80,7 @@ def listen_for_and_process_analysis_complete_messages():
 	
         try:
             last_analyzed_pv_name = IMAGE_DEVICES[image_finished_message['device_name']].last_analyzed_pv_name
-        except KeyError, AttributeError:
+        except (KeyError, AttributeError):
             logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
             continue
 
