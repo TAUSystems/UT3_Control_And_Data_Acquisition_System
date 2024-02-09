@@ -31,6 +31,7 @@ SUPPORT = /home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epic
 AUTOSAVE = $(SUPPORT)/autosave-R5-11
 ASYN = $(SUPPORT)/asyn-R4-44-2
 BUSY = $(SUPPORT)/busy-R1-7-4
+CALC = $(SUPPORT)/calc-R3-7-5
 SSCAN = $(SUPPORT)/sscan-R2-11-6
 STD = $(SUPPORT)/std-R3-6-4
 STREAMDEVICE = $(SUPPORT)/StreamDevice-2-8-24
