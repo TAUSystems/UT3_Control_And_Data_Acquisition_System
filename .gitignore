@@ -54,3 +54,6 @@ CMakeLists.txt.user
 
 # Environment
 .env
+
+# epics synApps
+epics/git/support
