@@ -10,6 +10,7 @@ PROD_IOC_Linux += $(PROD_NAME)
 # <name>.dbd will be created from <name>Include.dbd
 DBD += $(PROD_NAME).dbd
 $(PROD_NAME)_DBD += ADSpinnakerSupport.dbd
+$(PROD_NAME)_DBD += $(ADCORE)/dbd/NDPluginPva.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 $(PROD_NAME)_SRCS += $(PROD_NAME)_registerRecordDeviceDriver.cpp $(PROD_NAME)Main.cpp
@@ -35,6 +36,7 @@ PROD_SYS_LIBS_Linux += XmlParser_gcc11_v3_0
 PROD_SYS_LIBS_Linux += Log_gcc11_v3_0
 
 include $(ADCORE)/ADApp/commonDriverMakefile
+include $(ADCORE)/ADApp/commonLibraryMakefile
 
 #=============================
 

@@ -6,9 +6,6 @@ spinnakerApp_registerRecordDeviceDriver(pdbbase)
 
 # Common to all cameras
 #################################################################################################################################################
-# Prefix for all records
-epicsEnvSet("PREFIX", "Electrons:")
-
 # Really large queue so we can stream to disk at full camera speed
 epicsEnvSet("QSIZE",  "200")   
 # The maximim image width; used for row profiles in the NDPluginStats plugin
@@ -26,48 +23,61 @@ epicsEnvSet("NELEMENTS", "3145728")
 # FLIR_BFS_31S4M.template
 epicsEnvSet("GENICAM_DB_FILE", "$(ADGENICAM)/db/FLIR_BFS_31S4M.template")
 
+# Prefix for all records
+epicsEnvSet("PREFIX", "E:")
+
 # Camera-specific parameters
 #################################################################################################################################################
-epicsEnvSet("PORT_ESpecLE", "Spectrometer:LowEnergy")
+#epicsEnvSet("PORT_ESpecLE", "Spectrometer:LowEnergy")
+epicsEnvSet("PORT_ESpecLE", "SpecLE")
+
+#epicsEnvSet("PORT_ESpecHE", "Spectrometer:HighEnergy")
+epicsEnvSet("PORT_ESpecHE", "SpecHE")
+
+#epicsEnvSet("PORT_ESpecPointing", "Spectrometer:Pointing")
+epicsEnvSet("PORT_ESpecPointing", "SpecPointing")
+
 epicsEnvSet("CAMERA_ID_ESpecLE", "20541743")
-
-epicsEnvSet("PORT_ESpecHE", "Spectrometer:HighEnergy")
 epicsEnvSet("CAMERA_ID_ESpecHE", "20125390")
-
-epicsEnvSet("PORT_ESpecPoint", "Spectrometer:Pointing")
-epicsEnvSet("CAMERA_ID_ESpecPoint", "20057635")
+epicsEnvSet("CAMERA_ID_ESpecPointing", "20057635")
 
 # Settings for Electron Spectrometer Low Energy Screen Camera
 #################################################################################################################################################
 ADSpinnakerConfig($(PORT_ESpecLE), $(CAMERA_ID_ESpecLE))
 asynSetTraceIOMask($(PORT_ESpecLE), 0, 2)
-dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX),R=$(PORT_ESpecLE):,PORT=$(PORT_ESpecLE)")
-
-# Create a standard arrays plugin
-NDStdArraysConfigure("$(PREFIX)$(PORT_ESpecLE):Image", 5, 0, "$(PORT_ESpecLE)", 0, 0)
-# Use this line for 8-bit or 16-bit data
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT_ESpecLE):Image:,PORT=$(PREFIX)$(PORT_ESpecLE):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecLE),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX), R=$(PORT_ESpecLE):, PORT=$(PORT_ESpecLE)")
 
 # Settings for Electron Spectrometer High Energy Screen Camera
 #################################################################################################################################################
 ADSpinnakerConfig($(PORT_ESpecHE), $(CAMERA_ID_ESpecHE))
 asynSetTraceIOMask($(PORT_ESpecHE), 0, 2)
-dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX),R=$(PORT_ESpecHE):,PORT=$(PORT_ESpecHE)")
+dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX), R=$(PORT_ESpecHE):, PORT=$(PORT_ESpecHE)")
 
 # Settings for Electron Spectrometer Pointing Screen Camera
 #################################################################################################################################################
-ADSpinnakerConfig($(PORT_ESpecPoint), $(CAMERA_ID_ESpecPoint))
-asynSetTraceIOMask($(PORT_ESpecPoint), 0, 2)
-dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX),R=$(PORT_ESpecPoint):,PORT=$(PORT_ESpecPoint)")
+#ADSpinnakerConfig($(PORT_ESpecPointing), $(CAMERA_ID_ESpecPointing))
+#asynSetTraceIOMask($(PORT_ESpecPointing), 0, 2)
+#dbLoadRecords("$(TOP)/iocBoot/iocFLIRCamera/template/Electrons-Spectrometer.template", "P=$(PREFIX), R=$(PORT_ESpecPointing):, PORT=$(PORT_ESpecPointing)")
 
 # Starting plugins and the IOC
 #################################################################################################################################################
-# Load NDPluginPva plugin (see ADCore/iocBoot/commonPlugins.cmd for more plugins)
-# NDPvaConfigure(const char *portName, int queueSize, int blockingCallbacks, const char *NDArrayPort, int NDArrayAddr, const char *pvName, size_t maxMemory, int priority, int stackSize) 
-# NDPvaConfigure("PVA1", $(QSIZE), 0, "$(PORT_ESpecLE)", 0, $(PREFIX)Pva1:Image, 0, 0, 0)
-# dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva1:, PORT=PVA1,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_ESpecLE)")
+
+epicsEnvSet("PORT_PVA_ESpecLE", "PVA_ESpecLE")
+epicsEnvSet("PORT_PVA_ESpecHE", "PVA_ESpecHE")
+epicsEnvSet("PORT_PVA_ESpecPointing", "PVA_ESpecPointing")
+
+# Load NDPluginPva plugin: prototype NDPvaConfigure(const char *portName, int queueSize, int blockingCallbacks, const char *NDArrayPort, int NDArrayAddr, const char *pvName, size_t maxMemory, int priority, int stackSize) 
+NDPvaConfigure($(PORT_PVA_ESpecLE), $(QSIZE), 0, $(PORT_ESpecLE), 0, $(PREFIX)$(PORT_ESpecLE):PVA:Image, 0, 0, 0)
+dbLoadRecords("NDPva.template", "P=$(PREFIX), R=$(PORT_ESpecLE):PVA:, PORT=$(PORT_PVA_ESpecLE), ADDR=0, TIMEOUT=1, NDARRAY_PORT=$(PORT_ESpecLE)")
+
+NDPvaConfigure($(PORT_PVA_ESpecHE), $(QSIZE), 0, $(PORT_ESpecHE), 0, $(PREFIX)$(PORT_ESpecHE):PVA:Image, 0, 0, 0)
+dbLoadRecords("NDPva.template", "P=$(PREFIX), R=$(PORT_ESpecHE):PVA:, PORT=$(PORT_PVA_ESpecHE), ADDR=0, TIMEOUT=1, NDARRAY_PORT=$(PORT_ESpecHE)")
+
+#NDPvaConfigure($(PORT_PVA_ESpecPointing), $(QSIZE), 0, $(PORT_ESpecPointing), 0, $(PREFIX)$(PORT_ESpecPointing):PVA:Image, 0, 0, 0)
+#dbLoadRecords("NDPva.template", "P=$(PREFIX), R=$(PORT_ESpecPointing):PVA:, PORT=$(PORT_PVA_ESpecPointing), ADDR=0, TIMEOUT=1, NDARRAY_PORT=$(PORT_ESpecPointing)")
+
 # Must start PVA server if this is enabled
-# startPVAServer
+startPVAServer
 
 set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
 set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
@@ -83,4 +93,8 @@ epicsThreadSleep(1.0)
 # Wait for callbacks on the property limits (DRVL, DRVH) to complete
 epicsThreadSleep(1.0)
 
+# Enable PV callbacks
+dbpf $(PREFIX)$(PORT_ESpecLE):PVA:EnableCallbacks 1
+dbpf $(PREFIX)$(PORT_ESpecHE):PVA:EnableCallbacks 1
+# dbpf $(PREFIX)$(PORT_ESpecPointing):PVA:EnableCallbacks 1
 
