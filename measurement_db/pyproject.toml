@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "measurement-db"
-version = "0.1.0"
+version = "1.0.2"
 description = "Definition and utilities for the UT3 Measurement database"
 authors = ["Reinier van Mourik <reinier.vanmourik@tausystems.com>"]
 readme = "README.md"
