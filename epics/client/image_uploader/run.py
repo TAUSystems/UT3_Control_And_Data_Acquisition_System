@@ -18,17 +18,17 @@ from utils.redis import get_redis_client
 from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
 IMAGE_DEVICES = {
-    'Electron:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
+    'E:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
         "E:Spectrometer:LowEnergy:PVA:Image", 
         "E:Spectrometer:LowEnergy:PVA:ArrayCounter_RBV", 
         "E:Spectrometer:LastAnalyzedShotID"
     ),
-    'Electron:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
+    'E:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
         "E:Spectrometer:HighEnergy:PVA:Image", 
         "E:Spectrometer:HighEnergy:PVA:ArrayCounter_RBV", 
         None
     ),
-    'Electron:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
+    'E:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
         "E:Spectrometer:Pointing:PVA:Image", 
         "E:Spectrometer:Pointing:PVA:ArrayCounter_RBV", 
         None
