@@ -62,14 +62,22 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
     write_tiff(tiff_bytes, image_data)
 
     # fire POST request
-    requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                    data={'device_name': device_name, 'shot_id': shot_id},
-                    files={'image_data': tiff_bytes},
-                 )
+    response = requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
+                             data={'device_name': device_name, 'shot_id': shot_id},
+                             files={'image_data': tiff_bytes},
+                            )
+
+    if ('message' not in response) or (response['message'] != "received image data"):
+        logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response}")
+    
+    else:
+        logging.info(f"Posted image data for {shot_id} / {device_name}")
+
 
 def subscribe_to_PVs_for_upload():
     for device_name, device_directory_entry in IMAGE_DEVICES.items():
         p4p_context.monitor(device_directory_entry.image_pv_name, partial(send_to_image_backend, device_name))
+        logging.info(f"Monitoring {device_directory_entry.image_pv_name}.")
 
 def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
