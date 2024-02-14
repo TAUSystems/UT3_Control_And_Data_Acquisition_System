@@ -67,8 +67,10 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
                              files={'image_data': tiff_bytes},
                             )
 
-    if ('message' not in response) or (response['message'] != "received image data"):
-        logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response}")
+    response_data = response.json()
+
+    if ('message' not in response_data) or (response_data['message'] != "received image data"):
+        logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response_data}")
     
     else:
         logging.info(f"Posted image data for {shot_id} / {device_name}")
