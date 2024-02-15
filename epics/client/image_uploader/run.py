@@ -84,7 +84,7 @@ def subscribe_to_PVs_for_upload():
 def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
     ps = redis_client.pubsub()
-    ps.subscribe('image_analysis_finished_ch')
+    ps.subscribe('image_analysis_complete_ch')
 
     while True:
         message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
