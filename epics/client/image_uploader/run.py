@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import json
 from io import BytesIO
 from functools import partial
 from datetime import datetime, timezone, timedelta
+from time import sleep
 
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
@@ -14,7 +14,6 @@ from dotenv import dotenv_values
 env = dotenv_values()
 
 import requests
-from utils.redis import get_redis_client
 from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
 IMAGE_DEVICES = {
@@ -81,29 +80,7 @@ def subscribe_to_PVs_for_upload():
         p4p_context.monitor(device_directory_entry.image_pv_name, partial(send_to_image_backend, device_name))
         logging.info(f"Monitoring {device_directory_entry.image_pv_name}.")
 
-def listen_for_and_process_analysis_complete_messages():
-    redis_client = get_redis_client()
-    ps = redis_client.pubsub()
-    ps.subscribe('image_analysis_complete_ch')
-
-    while True:
-        message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
-
-        if message is None:
-            continue
-
-        image_finished_message = json.loads(message['data'])
-	
-        try:
-            last_analyzed_pv_name = IMAGE_DEVICES[image_finished_message['device_name']].last_analyzed_pv_name
-        except (KeyError, AttributeError):
-            logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
-            continue
-
-        if last_analyzed_pv_name is not None:
-            p4p_context.put(last_analyzed_pv_name, image_finished_message['shot_id'])
-            logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shotid']}'")
-
 if __name__ == '__main__':
     subscribe_to_PVs_for_upload()
-    listen_for_and_process_analysis_complete_messages()
+    while True:
+        sleep(1e9)

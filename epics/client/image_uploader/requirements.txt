@@ -16,7 +16,4 @@ urllib3==2.1.0
 
 # for uploading images to image backend
 tifffile==2024.1.30 
-
-# for pulling image analysis done messages
-redis==5.0.1
 python-dotenv==1.0.1
