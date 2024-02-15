@@ -5,13 +5,12 @@ from io import BytesIO
 from functools import partial
 from datetime import datetime, timezone, timedelta
 from time import sleep
+from os import environ as env
 
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
 
 from tifffile import imwrite as write_tiff
-from dotenv import dotenv_values
-env = dotenv_values()
 
 import requests
 from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry

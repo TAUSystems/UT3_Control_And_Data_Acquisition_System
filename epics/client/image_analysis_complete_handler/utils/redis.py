@@ -1,12 +1,10 @@
 from redis import Redis
-from dotenv import dotenv_values
+from os import environ as env
 
 def get_redis_client():
     
-    env = dotenv_values()
-
-    REDIS_HOST = env['REDIS_HOST']
-    REDIS_PORT = env['REDIS_PORT']
-    REDIS_PASSWORD = env['REDIS_PASSWORD']
+    REDIS_HOST = env['IMAGE_BACKEND_REDIS_HOST']
+    REDIS_PORT = env['IMAGE_BACKEND_REDIS_PORT']
+    REDIS_PASSWORD = env['IMAGE_BACKEND_REDIS_PASSWORD']
 
     return Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)

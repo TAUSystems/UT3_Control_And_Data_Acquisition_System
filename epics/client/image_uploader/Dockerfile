@@ -36,16 +36,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
+# Add environment variables
+ARG IMAGE_BACKEND_ENDPOINT_URL
+ENV IMAGE_BACKEND_ENDPOINT_URL=${IMAGE_BACKEND_ENDPOINT_URL}
+
 # Copy the source code into the container.
 COPY . .
-
-# Add .env file for Redis.
-# This is TEMPORARY because the Redis image_analysis_complete_ch will be replaced
-# eventually
-RUN touch .env
-RUN echo "REDIS_HOST = redis-master.image-backend.svc.cluster.local" >> .env
-RUN echo "REDIS_PORT = 6379" >> .env
-RUN echo "REDIS_PASSWORD = xxxxxxx" >> .env
 
 # Switch to the non-privileged user to run the application.
 USER appuser
