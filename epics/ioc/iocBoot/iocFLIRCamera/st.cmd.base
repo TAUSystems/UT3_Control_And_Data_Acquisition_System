@@ -45,10 +45,9 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 # Use this line for 8-bit or 16-bit data
 # dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT):Image:,PORT=$(PORT):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
-# Load all other plugins using commonPlugins.cmd
-< $(ADCORE)/iocBoot/commonPlugins.cmd
-
-
+# Optional: load NDPluginPva plugin
+NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)$(PORT):Pva:Image, 0, 0, 0)
+dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=$(PORT):Pva:, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 
 
@@ -76,12 +75,9 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 # Use this line for 8-bit or 16-bit data
 # dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT):Image:,PORT=$(PORT):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
-# Load all other plugins using commonPlugins.cmd
-< $(ADCORE)/iocBoot/commonPlugins.cmd
-
-
-
-
+# Optional: load NDPluginPva plugin
+NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)$(PORT):Pva:Image, 0, 0, 0)
+dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=$(PORT):Pva:, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 
 
@@ -109,21 +105,18 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 # Use this line for 8-bit or 16-bit data
 # dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=$(PORT):Image:,PORT=$(PORT):Image,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
 
-# Load all other plugins using commonPlugins.cmd
-< $(ADCORE)/iocBoot/commonPlugins.cmd
+# Optional: load NDPluginPva plugin
+NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)$(PORT):Pva:Image, 0, 0, 0)
+dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=$(PORT):Pva:, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 
 
-
-
-
-
-
-
-
+#####################################################################################################
 set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
 set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
 
+callbackSetQueueSize(5000)
+startPVAServer
 iocInit()
 
 # save things every thirty seconds
