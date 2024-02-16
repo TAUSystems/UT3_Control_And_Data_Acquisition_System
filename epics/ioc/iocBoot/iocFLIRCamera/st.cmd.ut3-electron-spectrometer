@@ -4,56 +4,7 @@ errlogInit(20000)
 dbLoadDatabase("$(TOP)/dbd/spinnakerApp.dbd")
 spinnakerApp_registerRecordDeviceDriver(pdbbase) 
 
-# Common to all cameras
-#################################################################################################################################################
-# Really large queue so we can stream to disk at full camera speed
-epicsEnvSet("QSIZE",  "200")   
-# The maximim image width; used for row profiles in the NDPluginStats plugin
-epicsEnvSet("XSIZE",  "2048")
-# The maximim image height; used for column profiles in the NDPluginStats plugin
-epicsEnvSet("YSIZE",  "1536")
-# The maximum number of time series points in the NDPluginStats plugin
-epicsEnvSet("NCHANS", "2048")
-# The maximum number of frames buffered in the NDPluginCircularBuff plugin
-epicsEnvSet("CBUFFS", "500")
-# The search path for database files
-epicsEnvSet("EPICS_DB_INCLUDE_PATH", "$(ADCORE)/db:$(ADGENICAM)/db:$(ADSPINNAKER)/db")
-# Define NELEMENTS to be enough for a 2048x1536x1 monochrome image
-epicsEnvSet("NELEMENTS", "3145728")
-# FLIR_BFS_31S4M.template
 epicsEnvSet("GENICAM_DB_FILE", "$(ADGENICAM)/db/FLIR_BFS_31S4M.template")
 
-# Prefix for all records
-epicsEnvSet("PREFIX", "EBeam:")
-
-# Adding cameras
-< TestCamera.cmd
-#< Electrons.Spectrometer.Pointing.cmd
-#< Electrons.Spectrometer.LowEnergy.cmd
-#< Electrons.Spectrometer.HighEnergy.cmd
-
-# Using NDPva, need to start PVA server
-startPVAServer
-
-set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
-set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
-
-# Staring IOC
-iocInit()
-
-# save things every thirty seconds
-create_monitor_set("auto_settings.req", 30,"P=$(PREFIX)")
-
-# Wait for enum callbacks to complete
-epicsThreadSleep(1.0)
-
-# Wait for callbacks on the property limits (DRVL, DRVH) to complete
-epicsThreadSleep(1.0)
-
-# Enable PV callbacks
-dbpf $(PREFIX)$(PORT_TestCamera):PVA:EnableCallbacks 1
-# dbpf $(PREFIX)$(PORT_ESpecLE):PVA:EnableCallbacks 1
-# dbpf $(PREFIX)$(PORT_ESpecHE):PVA:EnableCallbacks 1
-# dbpf $(PREFIX)$(PORT_ESpecPointing):PVA:EnableCallbacks 1
-epicsThreadSleep(1.0)
+< st.cmd.base
 
