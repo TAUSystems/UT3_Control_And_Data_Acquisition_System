@@ -43,8 +43,8 @@ from p4p.rpc import WorkQueue
 if TYPE_CHECKING:
     from p4p.nt import NTNDArray
 
-work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
-p4p_context = P4PContext('pva', queue=work_queue)
+# work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
+p4p_context = P4PContext('pva') #, queue=work_queue)
 
 def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # get shot number
@@ -60,6 +60,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # convert NDArray to tiff file byte array
     tiff_bytes = BytesIO()    
     write_tiff(tiff_bytes, image_data)
+    tiff_bytes.seek(0)
 
     # fire POST request
     response = requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
@@ -71,7 +72,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
 
     if ('message' not in response_data) or (response_data['message'] != "received image data"):
         logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response_data}")
-    
+
     else:
         logging.info(f"Posted image data for {shot_id} / {device_name}")
 
