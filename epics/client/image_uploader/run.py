@@ -43,8 +43,8 @@ from p4p.rpc import WorkQueue
 if TYPE_CHECKING:
     from p4p.nt import NTNDArray
 
-work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
-p4p_context = P4PContext('pva', queue=work_queue)
+# work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
+p4p_context = P4PContext('pva') #, queue=work_queue)
 
 def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # get shot number
