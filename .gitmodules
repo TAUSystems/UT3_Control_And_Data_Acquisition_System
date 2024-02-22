@@ -4,3 +4,6 @@
 [submodule "epics/gui-tools/qwt"]
 	path = epics/gui-tools/qwt
 	url = https://github.com/opencor/qwt.git
+[submodule "epics/gui-tools/acai"]
+	path = epics/gui-tools/acai
+	url = https://github.com/andrewstarritt/acai.git
