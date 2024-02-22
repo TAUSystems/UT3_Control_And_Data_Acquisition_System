@@ -7,3 +7,9 @@
 [submodule "epics/gui-tools/acai"]
 	path = epics/gui-tools/acai
 	url = https://github.com/andrewstarritt/acai.git
+[submodule "epics/gui-tools/qeframework"]
+	path = epics/gui-tools/qeframework
+	url = https://github.com/qtepics/qeframework.git
+[submodule "epics/gui-tools/qegui"]
+	path = epics/gui-tools/qegui
+	url = https://github.com/qtepics/qegui.git
