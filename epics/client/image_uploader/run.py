@@ -15,20 +15,21 @@ from tifffile import imwrite as write_tiff
 import requests
 from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
+# TODO: replace by config file
 IMAGE_DEVICES = {
-    'Electron:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:LowEnergy:PVA:Image", 
-        "Electrons:Spectrometer:LowEnergy:PVA:ArrayCounter_RBV", 
-        "Electrons:Spectrometer:LastAnalyzedShotID"
+    'E:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
+        "E:Pva:Spectrometer:LowEnergy:Image", 
+        "E:Pva:Spectrometer:LowEnergy:ArrayCounter_RBV", 
+        "E:Spectrometer:LastAnalyzedShotID"
     ),
-    'Electron:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:HighEnergy:PVA:Image", 
-        "Electrons:Spectrometer:HighEnergy:PVA:ArrayCounter_RBV", 
+    'E:Spectrometer:HighEnergy': ImageDeviceDirectoryEntry(
+        "E:Pva:Spectrometer:HighEnergy:Image", 
+        "E:Pva:Spectrometer:HighEnergy:ArrayCounter_RBV", 
         None
     ),
-    'Electron:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
-        "Electrons:Spectrometer:Pointing:PVA:Image", 
-        "Electrons:Spectrometer:Pointing:PVA:ArrayCounter_RBV", 
+    'E:Spectrometer:Pointing': ImageDeviceDirectoryEntry(
+        "E:Pva:Spectrometer:Pointing:Image", 
+        "E:Pva:Spectrometer:Pointing:ArrayCounter_RBV", 
         None
     ),
 }
