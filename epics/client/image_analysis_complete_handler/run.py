@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from p4p.nt import NTNDArray
 
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
-p4p_context = P4PContext('pva', queue=work_queue)
+p4p_context = P4PContext('pva') #, queue=work_queue)
 
 def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
