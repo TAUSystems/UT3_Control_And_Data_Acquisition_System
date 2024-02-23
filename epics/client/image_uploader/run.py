@@ -8,12 +8,12 @@ from time import sleep
 from os import environ as env
 
 import logging
-logging.basicConfig(level=logging.INFO, force=True)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 from tifffile import imwrite as write_tiff
 
 import requests
-from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
+from utils.types import ImageDeviceDirectoryEntry
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -69,7 +69,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
 
     response_data = response.json()
 
-    if ('message' not in response_data) or (response_data['message'] != "received image data"):
+    if ('message' not in response_data) or (not response_data['message'].startswith("received image data")):
         logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response_data}")
     
     else:

@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import json
 
 import logging
-logging.basicConfig(level=logging.INFO, force=True)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 from dotenv import dotenv_values
 env = dotenv_values()
@@ -36,9 +35,6 @@ WORK_QUEUE_NUM_WORKERS = 12
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
 
-if TYPE_CHECKING:
-    from p4p.nt import NTNDArray
-
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
 
@@ -63,7 +59,7 @@ def listen_for_and_process_analysis_complete_messages():
 
         if last_analyzed_pv_name is not None:
             p4p_context.put(last_analyzed_pv_name, image_finished_message['shot_id'])
-            logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shotid']}'")
+            logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shot_id']}'")
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
