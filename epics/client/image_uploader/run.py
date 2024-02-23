@@ -59,6 +59,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # convert NDArray to tiff file byte array
     tiff_bytes = BytesIO()    
     write_tiff(tiff_bytes, image_data)
+    tiff_bytes.seek(0)
 
     # fire POST request
     response = requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
