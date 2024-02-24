@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(mess
 from tifffile import imwrite as write_tiff
 
 import requests
+requests_session = requests.Session()
+
 from utils.types import ImageDeviceDirectoryEntry
 
 # TODO: replace by config file
@@ -62,10 +64,10 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
     tiff_bytes.seek(0)
 
     # fire POST request
-    response = requests.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                             data={'device_name': device_name, 'shot_id': shot_id},
-                             files={'image_data': tiff_bytes},
-                            )
+    response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
+                                     data={'device_name': device_name, 'shot_id': shot_id},
+                                     files={'image_data': tiff_bytes},
+                                    )
 
     response_data = response.json()
 
