@@ -15,9 +15,9 @@ from tifffile import imwrite as write_tiff
 import requests
 requests_session = requests.Session()
 
+# TODO: replace by config file
 from utils.types import ImageDeviceDirectoryEntry
 
-# TODO: replace by config file
 IMAGE_DEVICES = {
     'E:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
         "E:Pva:Spectrometer:LowEnergy:Image", 
@@ -41,18 +41,23 @@ WORK_QUEUE_NUM_WORKERS = 12
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
 
+from epics import caget, caput
+
 if TYPE_CHECKING:
     from p4p.nt import NTNDArray
 
-work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
+# work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
+
+burst_timestamp_ms = int(datetime.now().timestamp() * 1000)
 
 def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # get shot number
-    burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp", 
-                                                                    "Timing:TriggerGeneration:Frequency", 
-                                                                    IMAGE_DEVICES[device_name].array_counter_pv_name,
-                                                                  ])
+    #burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp_SET", 
+    #                                                                "Timing:TriggerGeneration:Frequency_GET", 
+    #                                                               IMAGE_DEVICES[device_name].array_counter_pv_name,
+    #                                                              ])
+    frequency_Hz, shot_index = 1.0, p4p_context.get(IMAGE_DEVICES[device_name].array_counter_pv_name)
     burst_datetime = datetime.fromtimestamp(burst_timestamp_ms / 1e3, timezone.utc)
     shot_datetime = burst_datetime + timedelta(seconds=shot_index / frequency_Hz)
 
@@ -73,7 +78,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
 
     if ('message' not in response_data) or (not response_data['message'].startswith("received")):
         logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response_data}")
-    
+
     else:
         logging.info(f"Posted image data for {shot_id} / {device_name}")
 
