@@ -43,9 +43,11 @@ def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
     ps = redis_client.pubsub()
     ps.subscribe('image_analysis_complete_ch')
+    logging.info("Subscribed to image_analysis_complete_ch")
 
     while True:
         message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
+        logging.info(f"Message received from channel: {message}")
 
         if message is None:
             continue
