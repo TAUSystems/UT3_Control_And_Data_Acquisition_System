@@ -77,7 +77,7 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
 
     response_data = response.json()
 
-    if ('message' not in response_data) or (response_data['message'] != "received image data"):
+    if ('message' not in response_data) or (response_data['message'] != "received image_data"):
         logging.error(f"Failed to post image data for {shot_id} / {device_name}: {response_data}")
 
     else:
