@@ -34,6 +34,7 @@ WORK_QUEUE_NUM_WORKERS = 12
 
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
+from epics import caput
 
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
@@ -58,8 +59,13 @@ def listen_for_and_process_analysis_complete_messages():
             continue
 
         if last_analyzed_pv_name is not None:
-            p4p_context.put(last_analyzed_pv_name, image_finished_message['shot_id'])
-            logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message['shot_id']}'")
+            try:
+                logging.info(f"running caput({last_analyzed_pv_name}, {image_finished_message.get('shot_id')})")  
+                # p4p_context.put(last_analyzed_pv_name, image_finished_message.get('shot_id'))
+                caput(last_analyzed_pv_name + '.$', str(image_finished_message.get('shot_id')) )
+                logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message.get('shot_id')}'")
+            except TimeoutError:
+                logging.error(f"Could not find PV {last_analyzed_pv_name}")
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
