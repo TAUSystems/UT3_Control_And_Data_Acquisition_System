@@ -48,12 +48,15 @@ if TYPE_CHECKING:
 # work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
 
+burst_timestamp_ms = int(datetime.now().timestamp() * 1000)
+
 def send_to_image_backend(device_name: str, image_data: NTNDArray):
     # get shot number
-    burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp", 
-                                                                    "Timing:TriggerGeneration:Frequency", 
-                                                                    IMAGE_DEVICES[device_name].array_counter_pv_name,
-                                                                  ])
+    #burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp_SET", 
+    #                                                                "Timing:TriggerGeneration:Frequency_GET", 
+    #                                                               IMAGE_DEVICES[device_name].array_counter_pv_name,
+    #                                                              ])
+    frequency_Hz, shot_index = 1.0, p4p_context.get(IMAGE_DEVICES[device_name].array_counter_pv_name)
     burst_datetime = datetime.fromtimestamp(burst_timestamp_ms / 1e3, timezone.utc)
     shot_datetime = burst_datetime + timedelta(seconds=shot_index / frequency_Hz)
 
