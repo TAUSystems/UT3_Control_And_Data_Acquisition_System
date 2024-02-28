@@ -45,13 +45,17 @@ from epics import caget, caput
 
 if TYPE_CHECKING:
     from p4p.nt import NTNDArray
+    from p4p.client.thread import Subscription as P4PSubscription
+    from utils.types import DeviceName
 
 # work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
 
 burst_timestamp_ms = int(datetime.now().timestamp() * 1000)
 
-def send_to_image_backend(device_name: str, image_data: NTNDArray):
+def send_to_image_backend(device_name: DeviceName, image_data: NTNDArray):
+    """ Upload tiff-formatted image data to image backend.
+    """
     # get shot number
     #burst_timestamp_ms, frequency_Hz, shot_index = p4p_context.get(["Timing:TriggerGeneration:BurstTimestamp_SET", 
     #                                                                "Timing:TriggerGeneration:Frequency_GET", 
@@ -83,12 +87,24 @@ def send_to_image_backend(device_name: str, image_data: NTNDArray):
         logging.info(f"Posted image data for {shot_id} / {device_name}")
 
 
-def subscribe_to_PVs_for_upload():
+def subscribe_to_PVs_for_upload() -> dict[DeviceName, P4PSubscription]:
+    """ Start monitoring image PVs and register the upload callback to each subscription
+    """
+    subscriptions: dict[DeviceName, P4PSubscription] = {}
     for device_name, device_directory_entry in IMAGE_DEVICES.items():
-        p4p_context.monitor(device_directory_entry.image_pv_name, partial(send_to_image_backend, device_name))
+        subscriptions[device_name] = \
+            p4p_context.monitor(device_directory_entry.image_pv_name, partial(send_to_image_backend, device_name))
         logging.info(f"Monitoring {device_directory_entry.image_pv_name}.")
 
+    return subscriptions
+
 if __name__ == '__main__':
-    subscribe_to_PVs_for_upload()
-    while True:
-        sleep(1e9)
+    subscriptions: dict[DeviceName, P4PSubscription] = subscribe_to_PVs_for_upload()
+    try:
+        while True:
+            sleep(1e9)
+    finally:
+        for device_name, subscription in subscriptions.items():
+            subscription.close()
+            logging.info(f"Closed subscription for {device_name}")
+

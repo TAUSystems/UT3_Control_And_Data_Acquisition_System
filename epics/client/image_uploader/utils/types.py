@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict, NamedTuple
+from typing import TypedDict, NamedTuple, NewType
 
 class ImageAnalysisFinishedMessage(TypedDict):
     device_name: str
@@ -14,3 +14,5 @@ class ImageDeviceDirectoryEntry(NamedTuple):
     image_pv_name: str
     array_counter_pv_name: str
     last_analyzed_pv_name: str
+
+DeviceName = NewType("DeviceName", str)
