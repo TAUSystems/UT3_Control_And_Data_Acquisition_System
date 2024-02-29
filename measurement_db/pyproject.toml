@@ -10,7 +10,7 @@ packages = [{include = "measurement_db"}]
 python = "^3.9"
 sqlalchemy = "^2.0.25"
 python-dotenv = "^1.0.1"
-psycopg2-binary = "^2.9.9"
+mariadb = "^1.1.10"
 
 [build-system]
 requires = ["poetry-core"]
