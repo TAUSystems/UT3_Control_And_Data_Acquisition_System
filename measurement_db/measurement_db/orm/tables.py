@@ -5,6 +5,7 @@ from datetime import datetime
 
 from sqlalchemy import Double, ForeignKey, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.sql import func
 
 class Base(DeclarativeBase):
     pass
@@ -12,17 +13,24 @@ class Base(DeclarativeBase):
 with (Path(__file__).parent/"measurement_names.txt").open() as f:
     MeasurementName = enum.Enum('MeasurementName', [line.strip('\n') for line in f])
 
+class Session(Base):
+    __tablename__ = "session"
+
+    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
+    title: Mapped[Optional[str]]
+    description: Mapped[Optional[str]]
+
+    operator: Mapped[Optional[str]]
+
 class Scan(Base):
     __tablename__ = "scan"
 
-    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
+    number: Mapped[int] = mapped_column(index=True)
     description: Mapped[Optional[str]]
 
-    # properties relating to being able to identify a particular Scan
-    year: Mapped[int] = mapped_column(index=True)
-    month: Mapped[int] = mapped_column(index=True)
-    day: Mapped[int] = mapped_column(index=True)
-    number: Mapped[int] = mapped_column(index=True)
+    notes: Mapped[Optional[str]]
+
 
 class Burst(Base):
     __tablename__ = "burst"
