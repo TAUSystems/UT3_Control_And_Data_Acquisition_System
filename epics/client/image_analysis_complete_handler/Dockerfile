@@ -37,14 +37,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install -r requirements.txt
 
 # Add environment variables
-ARG IMAGE_BACKEND_ENDPOINT_URL
-ENV IMAGE_BACKEND_ENDPOINT_URL=${IMAGE_BACKEND_ENDPOINT_URL}
-
-# Copy the source code into the container.
-COPY . .
+ARG IMAGE_BACKEND_REDIS_HOST
+ARG IMAGE_BACKEND_REDIS_PORT=6379
+ARG IMAGE_BACKEND_REDIS_USERNAME
+ARG IMAGE_BACKEND_REDIS_PASSWORD=""
+ENV IMAGE_BACKEND_REDIS_HOST=${IMAGE_BACKEND_REDIS_HOST}
+ENV IMAGE_BACKEND_REDIS_PORT=${IMAGE_BACKEND_REDIS_PORT}
+ENV IMAGE_BACKEND_REDIS_USERNAME=${IMAGE_BACKEND_REDIS_USERNAME}
+ENV IMAGE_BACKEND_REDIS_PASSWORD=${IMAGE_BACKEND_REDIS_PASSWORD}
 
 # Switch to the non-privileged user to run the application.
 USER appuser
+
+# Copy the source code into the container.
+COPY . .
 
 # Run the application.
 CMD python run.py

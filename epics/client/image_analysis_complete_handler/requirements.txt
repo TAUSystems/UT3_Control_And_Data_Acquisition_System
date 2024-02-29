@@ -1,0 +1,11 @@
+# PVAccess for Python
+p4p==4.1.12
+nose2==0.14.0
+
+# Channel Access for Python
+# needed to put CALab PV 
+pyepics==3.5.2
+
+# Access to the channel
+redis==5.0.1
+python-dotenv==1.0.1

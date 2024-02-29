@@ -57,3 +57,6 @@ CMakeLists.txt.user
 
 # epics synApps
 epics/git/support
+
+venv/
+
