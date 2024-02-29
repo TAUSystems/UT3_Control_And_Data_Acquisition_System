@@ -3,9 +3,10 @@ from typing import List, Optional
 from pathlib import Path
 from datetime import datetime
 
-from sqlalchemy import Double, ForeignKey, DateTime
+from sqlalchemy import Double, ForeignKey, DateTime, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
+
 
 class Base(DeclarativeBase):
     pass
@@ -17,27 +18,29 @@ class Session(Base):
     __tablename__ = "session"
 
     timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
-    title: Mapped[Optional[str]]
-    description: Mapped[Optional[str]]
+    title: Mapped[str] = mapped_column(String(252), default="")
+    description: Mapped[str] = mapped_column(Text(), default="")
 
-    operator: Mapped[Optional[str]]
+    operator: Mapped[str] = mapped_column(String(252), default="", doc="Name of the person or organization operating this session.")
 
 class Scan(Base):
     __tablename__ = "scan"
 
     timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
-    number: Mapped[int] = mapped_column(index=True)
-    description: Mapped[Optional[str]]
+    session: Mapped[datetime] = mapped_column(ForeignKey('session.timestamp'))
+    number: Mapped[int] = mapped_column(index=True, doc="Sequence number of this scan within session")
 
-    notes: Mapped[Optional[str]]
+    description: Mapped[str] = mapped_column(Text(), default="")
+
+    notes: Mapped[str] = mapped_column(Text(), default="")
 
 
 class Burst(Base):
     __tablename__ = "burst"
 
     timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True)
-    scan: Mapped[Optional[datetime]] = mapped_column(ForeignKey('scan.timestamp'))
-    seq: Mapped[Optional[int]] = mapped_column(doc="Sequence number of this burst within scan")
+    scan: Mapped[datetime] = mapped_column(ForeignKey('scan.timestamp'))
+    seq: Mapped[int] = mapped_column(doc="Sequence number of this burst within scan")
 
 class Shot(Base):
     __tablename__ = "shot"
