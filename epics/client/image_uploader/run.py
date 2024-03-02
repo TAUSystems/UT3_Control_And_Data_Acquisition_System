@@ -72,6 +72,13 @@ def send_to_image_backend(device_name: DeviceName, image_data: NTNDArray):
     write_tiff(tiff_bytes, image_data)
     tiff_bytes.seek(0)
 
+    # get unique_id_pv_name by taking the image pv name, splitting off Image and adding UniqueId_RBV
+    unique_id_pv_name = ':'.join(IMAGE_DEVICES[device_name].image_pv_name.split(':')[-1] + ['UniqueId_RBV'])
+    logging.info(f"Sending image to backend:\n"
+                 f"  {shot_id} / {device_name}\n"
+                 f"  UniqueId = {p4p_context.get(unique_id_pv_name)}, Image data hash = {hash(image_data.tobytes())}"
+                )
+
     # fire POST request
     response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
                                      data={'device_name': device_name, 'shot_id': shot_id},
