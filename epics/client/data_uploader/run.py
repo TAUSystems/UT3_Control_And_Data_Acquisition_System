@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+from data_acquisition import DataAcquisition
+
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
+
+def main():
+    da = DataAcquisition()
+    da.run()
+
+if __name__ == "__main__":
+    main()
