@@ -63,6 +63,8 @@ class DataAcquisition:
         # they are called while setting up monitors.
         self.enable_callbacks = False
 
+        logging.info(f"DataAcquisition ready to run.")
+
     def run(self) -> None:
         """ Start monitors and listen forever.
         """
@@ -72,7 +74,9 @@ class DataAcquisition:
 
         # subscribe to burst variables provided by user interface (through CALab)
         camonitor(PV_NAMES['burst_status'], callback=self.burst_status_monitor_callback)
+        logging.info(f"Monitoring {PV_NAMES['burst_status']} over Channel Access")
         camonitor(PV_NAMES['burst_timestamp'], callback=self.burst_timestamp_monitor_callback)
+        logging.info(f"Monitoring {PV_NAMES['burst_timestamp']} over Channel Access")
 
         # subscribe to PVs in IOCs
         self.subscribe_to_image_pvs()
@@ -122,7 +126,7 @@ class DataAcquisition:
         for image_device in self.image_devices:
             self.subscriptions[image_device.image_pv_name] = \
                 pva.monitor(image_device.image_pv_name, partial(self.image_pv_callback, image_device))
-            logging.info(f"Monitoring {image_device.image_pv_name}.")
+            logging.info(f"Monitoring {image_device.image_pv_name} over pvAccess")
 
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
@@ -142,11 +146,12 @@ class DataAcquisition:
         if not self.enable_callbacks:
             return
 
-        previous_status = self.status
-        self.status = value
+        previous_status = self.burst_status
+        self.burst_status = value
+        logging.info(f"Status changed to {value}.")        
 
         # detect change from not running to running
-        if previous_status.lower() != "running" and self.status.lower() == "running":
+        if previous_status.lower() != "running" and self.burst_status.lower() == "running":
             # reset scalar and image device counters
             self.reset_counters()
 
@@ -173,12 +178,16 @@ class DataAcquisition:
         self.burst_frequency = caget(PV_NAMES['burst_frequency'])
         self.burst_num_shots = caget(PV_NAMES['burst_num_shots'])
 
+        logging.info(f"BurstTimestamp changed to {self.burst_timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst_frequency} Hz, NumShots = {self.burst_num_shots}")
+
     def reset_counters(self):
         for scalar in self.scalars:
             scalar.counter = 0
 
         for image_device in self.image_devices:
             image_device.counter = 0
+
+        logging.info("Counters reset.")
 
 
     def image_pv_callback(self, image_device: ImageDevice, image_data: NTNDArray) -> None:
