@@ -21,7 +21,7 @@ epicsEnvSet("NELEMENTS", "3145728")
 ####################################################################################################################
 # The port name for the detector
 epicsEnvSet("PORT",   "Spectrometer:Pointing")
-ADSpinnakerConfig("$(PORT)", "20057635")
+ADSpinnakerConfig("$(PORT)", "23243498")
 asynSetTraceIOMask($(PORT), 0, 2)
 
 # Main database.  This just loads and modifies ADBase.template
