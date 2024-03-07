@@ -16,3 +16,4 @@ class ImageDeviceDirectoryEntry(NamedTuple):
     last_analyzed_pv_name: str
 
 DeviceName = NewType("DeviceName", str)
+PVName = NewType("PVName", str)

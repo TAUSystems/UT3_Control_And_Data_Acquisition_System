@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "data-acquisition"
+version = "0.1.0"
+description = "Monitors EPICS process variables representing images and scalars and handles them"
+authors = ["Reinier van Mourik <reinier.vanmourik@tausystems.com>"]
+readme = "README.md"
+packages = [{include = "data_uploader"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+# For EPICS pvAccess and Channel Access
+p4p = "^4.1.12"
+nose2 = "^0.14.1"
+pyepics = "^3.5.2"
+
+# For loading image devices and scalar variables
+measurement_db = { path = "../../../measurement_db", develop = true }
+
+# For uploading to image backend
+requests = "^2.31.0"
+tifffile = "^2024.2.12"
+python-dotenv = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
