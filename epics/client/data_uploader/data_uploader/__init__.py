@@ -32,10 +32,10 @@ if TYPE_CHECKING:
 from measurement_db.orm.tables import ImageDevice, Variable
 
 PV_NAMES: dict[str, PVName] = {
-    'burst_status': "Timing:TriggerGeneration:Status",
+    'burst_status': "Timing:TriggerGeneration:Status_GET",
     'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
-    'burst_frequency': "Timing:TriggerGeneration:Frequency",
-    'burst_num_shots': "Timing:TriggerGeneration:NumShots",
+    'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
+    'burst_num_shots': "Timing:TriggerGeneration:NumShots_GET",
 }
 
 
