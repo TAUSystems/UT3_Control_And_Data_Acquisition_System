@@ -73,10 +73,15 @@ class DataAcquisition:
         self.enable_callbacks = False
 
         # subscribe to burst variables provided by user interface (through CALab)
-        camonitor(PV_NAMES['burst_status'], callback=self.burst_status_monitor_callback)
-        logging.info(f"Monitoring {PV_NAMES['burst_status']} over Channel Access")
-        camonitor(PV_NAMES['burst_timestamp'], callback=self.burst_timestamp_monitor_callback)
-        logging.info(f"Monitoring {PV_NAMES['burst_timestamp']} over Channel Access")
+        for pv_alias, callback_fun in [
+                ('burst_status', self.burst_status_monitor_callback),
+                ('burst_timestamp', self.burst_timestamp_monitor_callback),
+                ('burst_frequency', self.burst_frequency_monitor_callback),
+                ('burst_num_shots', self.burst_num_shots_monitor_callback),
+            ]:
+
+            camonitor(PV_NAMES[pv_alias], callback=callback_fun)
+            logging.info(f"Monitoring {PV_NAMES[pv_alias]} over Channel Access")
 
         # subscribe to PVs in IOCs
         self.subscribe_to_image_pvs()
@@ -143,17 +148,38 @@ class DataAcquisition:
         value, char_value. 
         """
 
-        if not self.enable_callbacks:
-            return
-
         previous_status = self.burst_status
         self.burst_status = value
         logging.info(f"Status changed to {value}.")        
+
+        if not self.enable_callbacks:
+            return
 
         # detect change from not running to running
         if previous_status.lower() != "running" and self.burst_status.lower() == "running":
             # reset scalar and image device counters
             self.reset_counters()
+
+    def burst_frequency_monitor_callback(self, value: float, **kwargs) -> None:
+        """ Callback when burst frequency PV changes 
+        
+        No need to check self.enable_callbacks: this needs to run on monitor creation
+        callback.
+        """
+
+        self.burst_frequency = value
+        logging.info(f"Burst frequency changed to {value}.")
+
+    def burst_num_shots_monitor_callback(self, value: int, **kwargs) -> None:
+        """ Callback when burst number of shots PV changes
+
+        No need to check self.enable_callbacks: this needs to run on monitor creation
+        callback.
+        """
+
+        self.burst_num_shots = value
+        logging.info(f"Burst number of shots changed to {value}.")
+
 
     def burst_timestamp_monitor_callback(self, value: str = "", **kwargs) -> None:
         """ Callback when the burst timestamp PV changes
