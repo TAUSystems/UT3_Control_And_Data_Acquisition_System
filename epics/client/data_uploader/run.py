@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from data_acquisition import DataAcquisition
+from data_uploader import DataAcquisition
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
