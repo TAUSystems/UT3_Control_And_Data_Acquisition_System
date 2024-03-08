@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 from typing import List, Optional
 from pathlib import Path
@@ -60,6 +62,7 @@ class Burst(Base):
     repetition_rate: Mapped[float] = mapped_column(Double, doc="Repetition rate in Hertz")
 
     scan: Mapped[Scan] = relationship()
+    shots: Mapped[list[Shot]] = relationship()
 
 class Shot(Base):
     __tablename__ = "shot"

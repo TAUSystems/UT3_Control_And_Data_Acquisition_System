@@ -29,13 +29,21 @@ if TYPE_CHECKING:
     from p4p.client.thread import Subscription as P4PSubscription
 
 # objects representing images and scalars
-from measurement_db.orm.tables import ImageDevice, Variable
+from measurement_db.orm.tables import ImageDevice, Variable, Session, Scan, Burst, Shot, Measurement
+from measurement_db.utils import get_sqlalchemy_engine
+from sqlalchemy.orm import Session as SQLAlchemySession
+
+sqlalchemy_engine = get_sqlalchemy_engine()
 
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status_GET",
     'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots_GET",
+    
+    'session_id': "Timing:TriggerGeneration:SessionID",
+    'scan_number': "Timing:TriggerGeneration:ScanNumber",
+    'scan_title': "Timing:TriggerGeneration:ScanTitle",
 }
 
 
@@ -50,6 +58,11 @@ class DataAcquisition:
         self.burst_timestamp: datetime = datetime.fromtimestamp(0, tz=UTC)
         self.burst_frequency: float = 0.0
         self.burst_num_shots: int = 0
+        self.burst_seq: int = 0
+        
+        #
+        self.session: Session = None
+        self.scan: Scan = None
 
         # scalars and image_devices to monitor
         self.scalars: list[Variable] = self.load_scalar_pv_list()
@@ -72,12 +85,14 @@ class DataAcquisition:
         # don't run callback code when they are called during monitor setup
         self.enable_callbacks = False
 
-        # subscribe to burst variables provided by user interface (through CALab)
+        # subscribe to session, scan, burst variables provided by user interface (through CALab)
         for pv_alias, callback_fun in [
                 ('burst_status', self.burst_status_monitor_callback),
                 ('burst_timestamp', self.burst_timestamp_monitor_callback),
                 ('burst_frequency', self.burst_frequency_monitor_callback),
                 ('burst_num_shots', self.burst_num_shots_monitor_callback),
+                ('session_id', self.session_id_monitor_callback),
+                ('scan_number', self.scan_number_monitor_callback),
             ]:
 
             camonitor(PV_NAMES[pv_alias], callback=callback_fun)
@@ -122,6 +137,9 @@ class DataAcquisition:
         """ TODO: replace by database query
         """
         return [
+            Variable(name="Plasma:Position:HorizontalX:Absolute"),
+            Variable(name="Plasma:Position:VerticalY:Absolute"),
+            Variable(name="Plasma:Position:LongitudinalZ:Absolute"),
             Variable(name="Plasma:PressureControl:Pressure"),
         ]
 
@@ -139,7 +157,13 @@ class DataAcquisition:
     def subscribe_to_scalar_pvs(self) -> None:
         """ TODO
         """
-        pass
+        for variable in self.scalars:
+            camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
+            logging.info(f"Monitoring {variable.name} over pvAccess")
+
+            # Add a counter attribute to the ImageDevice instance
+            variable.counter = 0
+
 
     def burst_status_monitor_callback(self, value: str = "", **kwargs) -> None:
         """ Callback when status PV changes
@@ -198,13 +222,57 @@ class DataAcquisition:
         if not self.enable_callbacks:
             return
 
-        timestamp_ms = int(value)
-        self.burst_timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
-        # also update frequency and num_shots
-        self.burst_frequency = caget(PV_NAMES['burst_frequency'])
-        self.burst_num_shots = caget(PV_NAMES['burst_num_shots'])
+        try:
 
-        logging.info(f"BurstTimestamp changed to {self.burst_timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst_frequency} Hz, NumShots = {self.burst_num_shots}")
+            timestamp_ms = int(value)
+            self.burst_timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
+            logging.info(f"BurstTimestamp changed to {self.burst_timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst_frequency} Hz, NumShots = {self.burst_num_shots}")
+
+            self.burst = Burst(timestamp=self.burst_timestamp, 
+                            scan=self.scan, 
+                            seq=self.burst_seq, 
+                            number_of_shots=self.burst_num_shots,
+                            repetition_rate=self.burst_frequency,
+                            )
+
+            self.burst.shots = [
+                Shot(timestamp = self.burst_timestamp + timedelta(seconds = timedelta(seconds=seq / self.burst_frequency)),
+                     seq = seq,
+                    ) for seq in range(self.burst_num_shots)
+                ]
+
+            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+                sa_session.add(self.burst)
+                sa_session.commit()
+
+        except Exception as err:
+            pass
+
+        finally:
+            self.burst_seq += 1
+
+    def session_id_monitor_callback(self, value: str, **kwargs):
+        self.session = Session(title=self.session_id)
+
+        if not self.enable_callbacks:
+            return
+        
+        with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
+            sa_session.add(self.session)
+            sa_session.commit()
+
+
+    def scan_number_monitor_callback(self, value: int, **kwargs):
+        self.scan = Scan(seq=value, session=self.session)
+        self.burst_seq = 0
+
+        if not self.enable_callbacks:
+            return
+
+        with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
+            sa_session.add(self.scan)
+            sa_session.commit()
+
 
     def reset_counters(self):
         for scalar in self.scalars:
@@ -223,38 +291,54 @@ class DataAcquisition:
         if not self.enable_callbacks:
             return
 
-        # increase shot counter
-        image_device.counter += 1
+        try:
+            # determine shot datetime and shot id
+            shot_datetime = self.burst_timestamp + timedelta(seconds=image_device.counter / self.burst_frequency)
 
-        # determine shot datetime and shot id
-        shot_datetime = self.burst_timestamp + timedelta(seconds=image_device.counter / self.burst_frequency)
+            shot_id = f"burst-{self.burst_timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
 
-        shot_id = f"burst-{self.burst_timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
+            # convert NDArray to tiff file byte array
+            tiff_bytes = BytesIO()    
+            write_tiff(tiff_bytes, image_data)
+            tiff_bytes.seek(0)
 
-        # convert NDArray to tiff file byte array
-        tiff_bytes = BytesIO()    
-        write_tiff(tiff_bytes, image_data)
-        tiff_bytes.seek(0)
+            # fire POST request
+            response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
+                                            data={'device_name': image_device.name, 'shot_id': shot_id},
+                                            files={'image_data': tiff_bytes},
+                                            )
 
-        # fire POST request
-        response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                                         data={'device_name': image_device.name, 'shot_id': shot_id},
-                                         files={'image_data': tiff_bytes},
-                                        )
+            response_data = response.json()
 
-        response_data = response.json()
+            if ('message' not in response_data) or (not response_data['message'].startswith("received")):
+                logging.error(f"Failed to post image data for {shot_id} / {image_device.name}: {response_data}")
 
-        if ('message' not in response_data) or (not response_data['message'].startswith("received")):
-            logging.error(f"Failed to post image data for {shot_id} / {image_device.name}: {response_data}")
+            else:
+                logging.info(f"Posted image data for {shot_id} / {image_device.name}")
 
-        else:
-            logging.info(f"Posted image data for {shot_id} / {image_device.name}")
+        except Exception as err:
+            pass
+
+        finally:
+            # increase shot counter
+            image_device.counter += 1
 
 
-    def scalar_pv_callback(self, scalar: Variable, value: float) -> None:
+    def scalar_pv_callback(self, scalar: Variable, value: float, **kwargs) -> None:
         """ TODO
         """
         if not self.enable_callbacks:
             return
-        
 
+        try:
+            shot = self.burst.shots[scalar.counter]
+            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+                sa_session.add(Measurement(variable=scalar, shot=shot, value=value))
+                sa_session.commit()
+
+        except Exception as err:
+            logging.error(f"Error in scalar_pv_callback: {err}")
+
+        finally:
+            # increase shot counter
+            scalar.counter += 1
