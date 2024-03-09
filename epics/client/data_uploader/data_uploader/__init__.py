@@ -29,7 +29,9 @@ if TYPE_CHECKING:
     from p4p.client.thread import Subscription as P4PSubscription
 
 # objects representing images and scalars
-from measurement_db.orm.tables import ImageDevice, Variable, Session, Scan, Burst, Shot, Measurement
+from measurement_db.orm.tables import ImageDevice, Variable
+from measurement_db.orm import Session, Scan, Burst, Shot, Measurement
+from measurement_db.orm import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 
@@ -53,16 +55,13 @@ class DataAcquisition:
     """
     def __init__(self):
 
-        # burst attributes relating to PVs set in the user interface
-        self.burst_status: str = ""
-        self.burst_timestamp: datetime = datetime.fromtimestamp(0, tz=UTC)
-        self.burst_frequency: float = 0.0
-        self.burst_num_shots: int = 0
-        self.burst_seq: int = 0
-        
-        #
+        # Current burst, session, and scan information
         self.session: Session = None
         self.scan: Scan = None
+        self.burst: Burst = None
+
+        # idle, preparing, armed, running
+        self.burst_status: str = ""
 
         # scalars and image_devices to monitor
         self.scalars: list[Variable] = self.load_scalar_pv_list()
@@ -137,10 +136,12 @@ class DataAcquisition:
         """ TODO: replace by database query
         """
         return [
-            Variable(name="Plasma:Position:HorizontalX:Absolute"),
-            Variable(name="Plasma:Position:VerticalY:Absolute"),
-            Variable(name="Plasma:Position:LongitudinalZ:Absolute"),
-            Variable(name="Plasma:PressureControl:Pressure"),
+            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
+            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
+            Variable(name="Plasma:Position:VerticalY:Absolute_GET", source=VariableSource.fetch),
+            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
+            Variable(name="Plasma:Position:LongitudinalZ:Absolute", source=VariableSource.fetch),
+            Variable(name="Plasma:PressureControl:Pressure", source=VariableSource.fetch),
         ]
 
     def subscribe_to_image_pvs(self) -> None:
@@ -191,7 +192,7 @@ class DataAcquisition:
         callback.
         """
 
-        self.burst_frequency = value
+        self.burst.repetition_rate = value
         logging.info(f"Burst frequency changed to {value}.")
 
     def burst_num_shots_monitor_callback(self, value: int, **kwargs) -> None:
@@ -201,7 +202,7 @@ class DataAcquisition:
         callback.
         """
 
-        self.burst_num_shots = value
+        self.burst.number_of_shots = value
         logging.info(f"Burst number of shots changed to {value}.")
 
 
@@ -225,20 +226,20 @@ class DataAcquisition:
         try:
 
             timestamp_ms = int(value)
-            self.burst_timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
-            logging.info(f"BurstTimestamp changed to {self.burst_timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst_frequency} Hz, NumShots = {self.burst_num_shots}")
+            self.burst.timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
+            logging.info(f"BurstTimestamp changed to {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst.repetition_rate} Hz, NumShots = {self.burst.number_of_shots}")
 
-            self.burst = Burst(timestamp=self.burst_timestamp, 
+            self.burst = Burst(timestamp=self.burst.timestamp, 
                             scan=self.scan, 
-                            seq=self.burst_seq, 
-                            number_of_shots=self.burst_num_shots,
-                            repetition_rate=self.burst_frequency,
+                            seq=self.burst.seq, 
+                            number_of_shots=self.burst.number_of_shots,
+                            repetition_rate=self.burst.repetition_rate,
                             )
 
             self.burst.shots = [
-                Shot(timestamp = self.burst_timestamp + timedelta(seconds = timedelta(seconds=seq / self.burst_frequency)),
+                Shot(timestamp = self.burst.timestamp + timedelta(seconds = timedelta(seconds=seq / self.burst.repetition_rate)),
                      seq = seq,
-                    ) for seq in range(self.burst_num_shots)
+                    ) for seq in range(self.burst.number_of_shots)
                 ]
 
             with SQLAlchemySession(sqlalchemy_engine) as sa_session:
@@ -249,7 +250,7 @@ class DataAcquisition:
             pass
 
         finally:
-            self.burst_seq += 1
+            self.burst.seq += 1
 
     def session_id_monitor_callback(self, value: str, **kwargs):
         self.session = Session(title=self.session_id)
@@ -264,7 +265,7 @@ class DataAcquisition:
 
     def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan = Scan(seq=value, session=self.session)
-        self.burst_seq = 0
+        self.burst.seq = 0
 
         if not self.enable_callbacks:
             return
@@ -293,9 +294,9 @@ class DataAcquisition:
 
         try:
             # determine shot datetime and shot id
-            shot_datetime = self.burst_timestamp + timedelta(seconds=image_device.counter / self.burst_frequency)
+            shot_datetime = self.burst.timestamp + timedelta(seconds=image_device.counter / self.burst.repetition_rate)
 
-            shot_id = f"burst-{self.burst_timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
+            shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
 
             # convert NDArray to tiff file byte array
             tiff_bytes = BytesIO()    
