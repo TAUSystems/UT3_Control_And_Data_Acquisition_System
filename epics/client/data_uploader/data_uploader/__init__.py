@@ -124,25 +124,34 @@ class DataAcquisition:
 
 
     def load_image_pv_list(self) -> list[ImageDevice]:
-        """ TODO: replace by database query
+        """ 
         """
-        return [
-            ImageDevice(name='E:Spectrometer:LowEnergy', image_pv_name="E:Pva:Spectrometer:LowEnergy:Image"),
-            ImageDevice(name='E:Spectrometer:HighEnergy', image_pv_name="E:Pva:Spectrometer:HighEnergy:Image"),
-            ImageDevice(name='E:Spectrometer:Pointing', image_pv_name="E:Pva:Spectrometer:Pointing:Image"),
-        ]
+        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+             return sa_session.scalars(select(ImageDevice)).all()
+
 
     def load_scalar_pv_list(self) -> list[Variable]:
-        """ TODO: replace by database query
+        """ 
         """
-        return [
-            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
-            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
-            Variable(name="Plasma:Position:VerticalY:Absolute_GET", source=VariableSource.fetch),
-            Variable(name="Plasma:Position:HorizontalX:Absolute_GET", source=VariableSource.fetch),
-            Variable(name="Plasma:Position:LongitudinalZ:Absolute", source=VariableSource.fetch),
-            Variable(name="Plasma:PressureControl:Pressure", source=VariableSource.fetch),
-        ]
+        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+             variables = sa_session.scalars(select(Variable)).all()
+
+        cainfo_regex = re.compile(r"(\w+)\s+=\s([^\n]+)\n")
+        def parse_cainfo(cainfo_str: str):
+            return dict(cainfo_regex.findall(cainfo_str))
+
+        # collect variable information, such as whether it can be found on the 
+        # network, whether it's numeric, etc.
+        # TODO: split by Channel Access, pvAccess
+        print("Collecting variable information...")
+        variable_values = caget_many([variable.name for variable in variables])
+        for variable, variable_value in zip(variables, variable_values):
+            # TODO: periodically check whether variable has come online
+            variable.is_online = (variable_value is not None)
+            variable.is_numeric = isinstance(variable_value, Number)
+            variable.info = {}
+            if variable.online:
+                variable.info = parse_cainfo(cainfo(variable.name, print_out=False))
 
     def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
