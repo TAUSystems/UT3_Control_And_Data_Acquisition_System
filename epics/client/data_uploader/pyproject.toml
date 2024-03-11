@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "data-acquisition"
+name = "data_uploader"
 version = "0.1.0"
 description = "Monitors EPICS process variables representing images and scalars and handles them"
 authors = ["Reinier van Mourik <reinier.vanmourik@tausystems.com>"]

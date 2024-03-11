@@ -54,7 +54,7 @@ PV_NAMES: dict[str, PVName] = {
 }
 
 
-class DataAcquisition:
+class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
     
     """
@@ -80,7 +80,7 @@ class DataAcquisition:
         # they are called while setting up monitors.
         self.enable_callbacks = False
 
-        logging.info(f"DataAcquisition ready to run.")
+        logging.info(f"DataUploader ready to run.")
 
     def run(self) -> None:
         """ Start monitors and listen forever.
