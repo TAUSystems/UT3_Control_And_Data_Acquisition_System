@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from numbers import Number
 UTC = timezone.utc
 from functools import partial
 from time import sleep
+import re
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -18,14 +20,14 @@ requests_session = requests.Session()
 from os import environ as env
 
 # EPICS channel access and pvAccess
-from epics import caget, camonitor, camonitor_clear
+from epics import caget, caget_many, cainfo, camonitor, camonitor_clear
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..utils.types import DeviceName, PVName
-    from p4p.nt import NTNDArray
+    from p4p.nt import NTNDArray, NTBase
     from p4p.client.thread import Subscription as P4PSubscription
 
 # objects representing images and scalars
@@ -34,6 +36,7 @@ from measurement_db.orm import Session, Scan, Burst, Shot, Measurement
 from measurement_db.orm import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
+from sqlalchemy import select
 
 sqlalchemy_engine = get_sqlalchemy_engine()
 
@@ -46,6 +49,8 @@ PV_NAMES: dict[str, PVName] = {
     'session_id': "Timing:TriggerGeneration:SessionID",
     'scan_number': "Timing:TriggerGeneration:ScanNumber",
     'scan_title': "Timing:TriggerGeneration:ScanTitle",
+
+    'fetch_trigger_pv': "XXXXXXXX",
 }
 
 
@@ -101,6 +106,19 @@ class DataAcquisition:
         self.subscribe_to_image_pvs()
         self.subscribe_to_scalar_pvs()
 
+        # subscribe to a trigger PV, whose callback fetches values from PVs that 
+        # are not monitored but should be saved
+        self.fetch_trigger_variable: Variable = None
+        for variable in self.scalars:
+            if variable.name == PV_NAMES['fetch_trigger_pv']:
+                self.fetch_trigger_variable = variable
+                camonitor(PV_NAMES['fetch_trigger_pv'], callback=self.fetch_trigger_pv_monitor_callback)
+                logging.info(f"Monitoring {PV_NAMES['fetch_trigger_pv']} over Channel Access")
+                break
+        else:
+            logging.error(f"Fetch trigger PV {PV_NAMES['fetch_trigger_pv']} not found in list of variables")
+
+
         # re-enable callback code after the callbacks for monitor creation have 
         # been called.
         sleep(0.1)
@@ -115,8 +133,20 @@ class DataAcquisition:
     def close(self) -> None:
         """ Close subscriptions
         """
-        camonitor_clear(PV_NAMES['burst_status'])
-        camonitor_clear(PV_NAMES['burst_timestamp'])
+
+        # subscribe to session, scan, burst variables provided by user interface (through CALab)
+        for pv_alias in [
+                'burst_status',
+                'burst_timestamp',
+                'burst_frequency',
+                'burst_num_shots',
+                'session_id',
+                'scan_number',
+            ]:
+
+            camonitor_clear(PV_NAMES[pv_alias])
+            logging.info(f"Closed Channel Access subscription for {PV_NAMES[pv_alias]}")
+
         
         for pv_name, subscription in self.subscriptions.items():
             subscription.close()
@@ -165,14 +195,35 @@ class DataAcquisition:
             image_device.counter = 0
 
     def subscribe_to_scalar_pvs(self) -> None:
-        """ TODO
+        """ TODO: split by Channel Access and 
         """
         for variable in self.scalars:
-            camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
-            logging.info(f"Monitoring {variable.name} over pvAccess")
+            if variable.source == VariableSource.monitor:
+                camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
+                logging.info(f"Monitoring {variable.name} over Channel Access")
 
-            # Add a counter attribute to the ImageDevice instance
+            # Add a counter attribute to the Variable instance
             variable.counter = 0
+
+
+    def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
+        """
+        """
+        try:
+            variables_to_fetch = filter(lambda variable: variable.is_online and variable.is_numeric, self.scalars)
+            shot = self.burst.shots[self.fetch_trigger_variable.counter]
+
+            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+                for variable, value in zip(variables_to_fetch, caget_many([variable.name for variable in variables_to_fetch])):
+                    sa_session.add(Measurement(variable=variable, shot=shot, value=value))
+
+                sa_session.commit()
+
+        except Exception as err:
+            logging.error("Error fetching variables: {err}")
+        
+        finally:
+            self.fetch_trigger_variable.counter += 1
 
 
     def burst_status_monitor_callback(self, value: str = "", **kwargs) -> None:
