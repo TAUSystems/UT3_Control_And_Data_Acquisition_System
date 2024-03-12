@@ -1,8 +1,15 @@
 # syntax=docker/dockerfile:1
 
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/engine/reference/builder/
+# NOTE: This Dockerfile is meant to be run from the root of this repository, i.e.
+# from this data_uplader directory, navigate up three parents: cd ../../..
+
+# See epics/client/data_uploader/README.md for instructions. The build command is
+#   docker build \
+#     -f epics/client/data_uploader/Dockerfile \
+#     -t data-uploader \
+#     --build-arg IMAGE_BACKEND_ENDPOINT_URL=http://12.34.56.78:1234/daq-image \
+#     .
+#
 
 ARG PYTHON_VERSION=3.11.7
 FROM python:${PYTHON_VERSION}-slim as base
@@ -28,20 +35,28 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
-
 # Add environment variables
 ARG IMAGE_BACKEND_ENDPOINT_URL
 ENV IMAGE_BACKEND_ENDPOINT_URL=${IMAGE_BACKEND_ENDPOINT_URL}
 
 # Copy the source code into the container.
-COPY . .
+COPY ./epics/client/data_uploader ./epics/client/data_uploader
+COPY ./measurement_db ./measurement_db
+
+# install MariaDB Connector
+RUN apt update && \
+    apt install -y wget curl gcc
+RUN cd /tmp && \
+    wget https://r.mariadb.com/downloads/mariadb_repo_setup && \
+    echo "30d2a05509d1c129dd7dd8430507e6a7729a4854ea10c9dcf6be88964f3fdc25  mariadb_repo_setup" \
+        | sha256sum -c -  && \
+    chmod +x mariadb_repo_setup  && \
+    ./mariadb_repo_setup --mariadb-server-version="mariadb-10.11" && \
+    apt install -y libmariadb3 libmariadb-dev 
+
+# install project and dependencies
+RUN python -m pip install ./epics/client/data_uploader
+RUN ln -s ./epics/client/data_uploader/run.py run.py
 
 # Switch to the non-privileged user to run the application.
 USER appuser
