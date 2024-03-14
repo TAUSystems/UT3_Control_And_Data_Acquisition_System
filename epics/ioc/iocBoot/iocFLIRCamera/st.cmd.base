@@ -34,6 +34,10 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)Pva:$(PORT):Image, 0, 0, 0)
 dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
+# Pointing image statistics
+NDStatsConfigure("$(PORT):STATS", $(QSIZE), 0, "$(PORT)", 0, 0, 0, 0, 0, $(MAX_THREADS=5))
+dbLoadRecords("NDStats.template",  "P=$(PREFIX),R=Stats:,  PORT=$(PORT):STATS, ADDR=0,TIMEOUT=1,HIST_SIZE=256,XSIZE=$(XSIZE),YSIZE=$(YSIZE),NCHANS=$(NCHANS),NDARRAY_PORT=$(PORT)")
+
 ####################################################################################################################
 # The port name for the detector
 epicsEnvSet("PORT",   "Spectrometer:LowEnergy")
@@ -86,3 +90,18 @@ epicsThreadSleep(1.0)
 dbpf $(PREFIX)Pva:Spectrometer:Pointing:EnableCallbacks 1
 dbpf $(PREFIX)Pva:Spectrometer:LowEnergy:EnableCallbacks 1
 dbpf $(PREFIX)Pva:Spectrometer:HighEnergy:EnableCallbacks 1
+
+# ## select stats to compute on Pointing image
+# basic statistics
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeStatistics 0
+
+# Centroid position, sigma, skew, etc.
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeCentroid 1
+# Background threshold for centroid calculation
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:CentroidThreshold 0.0
+
+# Profiles
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeProfiles 0
+
+# Histograms
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeHistogram 0
