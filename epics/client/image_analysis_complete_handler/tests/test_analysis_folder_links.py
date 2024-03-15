@@ -34,7 +34,8 @@ class TestAnalysisFolderLinks(unittest.TestCase):
             f"shot-{self.shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
         )
 
-        (self.data_base_path / "data" / self.shot_id).mkdir(parents=True) 
+        (self.data_base_path / "data" / self.shot_id).mkdir(parents=True)
+        (self.data_base_path / "data" / self.shot_id / "scalars.dat").write_text("")
 
         return super().setUp()
     
@@ -46,6 +47,14 @@ class TestAnalysisFolderLinks(unittest.TestCase):
 
         handler = CreateAnalysisFolderLinks(self.data_base_path)
         handler.handle(message)
+
+        # dive 5 levels deep into "analysis" folder, assuming there's only one
+        # folder at each level.
+        p = self.data_base_path / "analysis"
+        for _ in range(5):
+            p = next(p.iterdir())
+
+        self.assertTrue((p / "scalars.dat").exists())
 
     def tearDown(self) -> None:
         self.data_base_temp_dir.cleanup()
