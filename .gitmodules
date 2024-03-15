@@ -1,15 +1,3 @@
 [submodule "epics/epics-base"]
 	path = epics/epics-base
 	url = https://github.com/epics-base/epics-base.git
-[submodule "epics/gui-tools/qwt"]
-	path = epics/gui-tools/qwt
-	url = https://github.com/opencor/qwt.git
-[submodule "epics/gui-tools/acai"]
-	path = epics/gui-tools/acai
-	url = https://github.com/andrewstarritt/acai.git
-[submodule "epics/gui-tools/qeframework"]
-	path = epics/gui-tools/qeframework
-	url = https://github.com/qtepics/qeframework.git
-[submodule "epics/gui-tools/qegui"]
-	path = epics/gui-tools/qegui
-	url = https://github.com/qtepics/qegui.git
