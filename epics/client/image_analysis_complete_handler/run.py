@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-import json
-
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
-from dotenv import dotenv_values
-env = dotenv_values()
-
 from utils.redis import get_redis_client
-from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
+from utils.types import ImageAnalysisCompleteMessage, ImageDeviceDirectoryEntry
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -34,7 +29,6 @@ WORK_QUEUE_NUM_WORKERS = 12
 
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
-from epics import caput
 
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
@@ -46,28 +40,14 @@ def listen_for_and_process_analysis_complete_messages():
     logging.info("Subscribed to image_analysis_complete_ch")
 
     while True:
-        message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
+        message: ImageAnalysisCompleteMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
         logging.info(f"Message received from channel: {message}")
 
         if message is None:
             continue
 
-        image_finished_message = json.loads(message['data'])
-	
-        try:
-            last_analyzed_pv_name = IMAGE_DEVICES[image_finished_message['device_name']].last_analyzed_pv_name
-        except (KeyError, AttributeError):
-            logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
-            continue
-
-        if last_analyzed_pv_name is not None:
-            try:
-                logging.info(f"running caput({last_analyzed_pv_name}, {image_finished_message.get('shot_id')})")  
-                # p4p_context.put(last_analyzed_pv_name, image_finished_message.get('shot_id'))
-                caput(last_analyzed_pv_name + '.$', str(image_finished_message.get('shot_id')) )
-                logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message.get('shot_id')}'")
-            except TimeoutError:
-                logging.error(f"Could not find PV {last_analyzed_pv_name}")
+        for handler in handlers:
+            handler.handle_message(message)
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
