@@ -1,10 +1,18 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
+# TODO: logging config file
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
-from utils.redis import get_redis_client
-from utils.types import ImageAnalysisCompleteMessage, ImageDeviceDirectoryEntry
+from image_analysis_complete_handler.utils.env import get_env
+from image_analysis_complete_handler.utils.redis import get_redis_client
+from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteMessage, ImageDeviceDirectoryEntry
+from image_analysis_complete_handler.handlers.last_analyzed_shotid_pv import PopulateLastAnalyzedShotIDPV
+from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
+if TYPE_CHECKING:
+    from image_analysis_complete_handler.handlers.base import ImageAnalysisCompleteHandler
+
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -33,6 +41,17 @@ from p4p.rpc import WorkQueue
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
 
+# Set up message handlers
+last_analyzed_shot_pvs = {device_name: device_pv_names.last_analyzed_pv_name 
+                          for device_name, device_pv_names in IMAGE_DEVICES.items()
+                          if device_pv_names.last_analyzed_pv_name
+                         }
+env = get_env()
+handlers: list[ImageAnalysisCompleteHandler] = [
+    PopulateLastAnalyzedShotIDPV(last_analyzed_shot_pvs),
+    CreateAnalysisFolderLinks(env.get('DATA_DISK_STORAGE_BASE_DIRECTORY')),
+]
+
 def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
     ps = redis_client.pubsub()
@@ -47,7 +66,7 @@ def listen_for_and_process_analysis_complete_messages():
             continue
 
         for handler in handlers:
-            handler.handle_message(message)
+            handler.handle(message)
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()

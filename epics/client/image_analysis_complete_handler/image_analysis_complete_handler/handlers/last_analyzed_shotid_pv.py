@@ -1,7 +1,11 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import json
-from typing import TYPE_CHECKING
+
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
+
 if TYPE_CHECKING:
     from ..utils.types import ImageAnalysisCompleteMessage, DeviceName, PVName
 from .base import ImageAnalysisCompleteHandler
@@ -10,11 +14,16 @@ from epics import caput
 
 class PopulateLastAnalyzedShotIDPV(ImageAnalysisCompleteHandler):
 
-    LAST_ANALYZED_PV_NAMES: dict[DeviceName, PVName] = {
+    DEFAULT_LAST_ANALYZED_PV_NAMES: dict[DeviceName, PVName] = {
         "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
     }
 
-    def __init__(self):
+    def __init__(self, last_analyzed_pv_names: dict[DeviceName, PVName] = None):
+        if last_analyzed_pv_names:
+            self.last_analyzed_pv_names = last_analyzed_pv_names
+        else:
+            self.last_analyzed_pv_names = self.DEFAULT_LAST_ANALYZED_PV_NAMES
+
         super().__init__()
     
     def handle(self, message: ImageAnalysisCompleteMessage) -> None:
