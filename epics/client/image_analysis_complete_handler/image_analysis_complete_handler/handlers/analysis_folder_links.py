@@ -20,9 +20,6 @@ from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy import select
 
-print(f"{__file__=}")
-print(f"{Path(__file__).parents[2]=}")
-
 class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
     """ Creates a human-friendly link to the shot folder
     """
@@ -87,6 +84,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         shot_folder = self.data_storage_base_path / "data" / message['shot_id']
         analysis_folder = self.generate_analysis_folder(shot_datetime)
 
+        analysis_folder.parent.mkdir(parents=True, exist_ok=True)
         symlink(shot_folder, analysis_folder, target_is_directory=True)
 
         # prevent this link from being created again by adding it to a seen set.
