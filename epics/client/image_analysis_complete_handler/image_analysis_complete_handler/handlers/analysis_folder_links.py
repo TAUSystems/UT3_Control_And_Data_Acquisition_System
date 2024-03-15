@@ -15,10 +15,13 @@ from .base import ImageAnalysisCompleteHandler
 from ..utils.env import get_env
 env = get_env()
 
-from measurement_db.orm import Shot
+from measurement_db.orm.tables import Shot
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy import select
+
+print(f"{__file__=}")
+print(f"{Path(__file__).parents[2]=}")
 
 class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
     """ Creates a human-friendly link to the shot folder
@@ -27,19 +30,21 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
     SHOTS_HANDLED_SET_MAX_SIZE = 12000
     SHOTS_HANDLES_SET_PURGE_TO = 10000
 
-    def __init__(self):
+    def __init__(self, base_path: str | Path):
+        self.data_storage_base_path = base_path
+
         self.shots_handled = set()
-        self.data_storage_base_path = Path(env['DATA_DISK_STORAGE_BASE_DIRECTORY'])
         self.sqlalchemy_engine = get_sqlalchemy_engine()
+
         super().__init__()
 
     def generate_analysis_folder(self, shot_timestamp: datetime) -> Path:
         with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
             shot = sa_session.scalar(select(Shot).where(Shot.timestamp == shot_timestamp))
 
-        burst: Burst = shot.burst
-        scan: Scan = burst.scan
-        session: Session = scan.session
+            burst: Burst = shot.burst
+            scan: Scan = burst.scan
+            session: Session = scan.session
 
         # make sure that this timestamp either has no timezone info or it's utc.
         assert session.timestamp.tzinfo is None or session.timestamp.tzname().lower() == 'utc'
@@ -82,7 +87,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         shot_folder = self.data_storage_base_path / "data" / message['shot_id']
         analysis_folder = self.generate_analysis_folder(shot_datetime)
 
-        symlink(analysis_folder, shot_folder, target_is_directory=True)
+        symlink(shot_folder, analysis_folder, target_is_directory=True)
 
         # prevent this link from being created again by adding it to a seen set.
         self.shots_handled.add(message['shot_id'])
