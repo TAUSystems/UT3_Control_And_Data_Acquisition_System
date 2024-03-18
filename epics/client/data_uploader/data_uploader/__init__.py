@@ -17,7 +17,8 @@ import requests
 requests_session = requests.Session()
 
 # get environment variables, specifically image endpoint url
-from os import environ as env
+from ..utils.env import get_env
+env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
 from epics import caget, caget_many, cainfo, camonitor, camonitor_clear
