@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
-from measurement_db.orm import Session, Scan, Burst, Shot, Measurement
-from measurement_db.orm import VariableSource, EPICSAccessProtocol
+from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
+from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy import select
