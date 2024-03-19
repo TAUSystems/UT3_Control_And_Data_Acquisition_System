@@ -10,17 +10,6 @@ from sqlalchemy.orm import Session as SASession
 
 sa_engine = get_sqlalchemy_engine()
 
-# populate variable and image_device tables
-variables = []
-with SASession(sa_engine) as sa_session:
-    for variable_name in (Path(__file__).parents[1] / 'measurement_db' / 'orm' / 'measurement_names.txt').open('r'):
-        variable = Variable(name=variable_name.strip())
-        variables.append(variable)
-        sa_session.add(variable)
-    for espec_screen in ['LowEnergy', 'HighEnergy', 'Pointing']:
-        sa_session.add(ImageDevice(name=f"E:Spectrometer:{espec_screen}", image_pv_name=f"E:Pva:Spectrometer:{espec_screen}:Image"))
-    sa_session.commit()
-
 # add some measurements
 session = Session(title='test_session', description="Test session.", timestamp=datetime.now(tz=timezone.utc))
 scan = Scan(session=session, seq=1, description="Scan-001", timestamp=datetime.now(tz=timezone.utc))
