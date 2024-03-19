@@ -29,27 +29,11 @@ record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
   field(SCAN, "Passive")
 }
 
-record(calc, TakeNShots:CheckNumShots) {
-  field(CALC, "A == B")
-  field(INPA, "Timing:TriggerGeneration:NumShots_RBV CP")
-  field(INPB, "Timing:TriggerGeneration:NumShots CP")
-  field(PINI, "YES")
-}
-
-record(calc, TakeNShots:CheckFrequency) {
-  field(CALC, "ABS(A - B) < 0.001")
-  field(INPA, "Timing:TriggerGeneration:Frequency CP")
-  field(INPB, "Timing:TriggerGeneration:Frequency_RBV CP")
-  field(PINI, "YES")
-}
-
 record(calcout, TakeNShots:CheckReadyToArm) {
   field(DESC, "When ready, set Status to Armed")
-  field(CALC, "A && B && C && (D == 1)")
-  field(INPA, "TakeNShots:CheckCamerasAcquiring CP")
-  field(INPB, "TakeNShots:CheckNumShots CP")
-  field(INPC, "TakeNShots:CheckFrequency CP")
-  field(INPD, "Timing:TriggerGeneration:Status CP")
+  field(CALC, "(A == 1) && B")
+  field(INPA, "Timing:TriggerGeneration:Status CP")
+  field(INPB, "TakeNShots:CheckCamerasAcquiring CP")
   field(OUT, "Timing:TriggerGeneration:Status")
   field(OOPT, "Transition To Non-zero")
   field(DOPT, "Use OCAL")
@@ -74,7 +58,7 @@ record(calcout, TakeNShots:TriggerGenerationPreparing) {
 }
 
 #! Further lines contain data used by VisualDCT
-#! View(922,1093,1.2)
+#! View(1136,1359,1.2)
 #! Record(TakeNShots:CheckCamerasAcquiring,1360,1084,0,1,"TakeNShots:CheckCamerasAcquiring")
 #! Field("TakeNShots:CheckCamerasAcquiring.INPA",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPA")
 #! Field("TakeNShots:CheckCamerasAcquiring.INPB",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPB")
@@ -90,24 +74,11 @@ record(calcout, TakeNShots:TriggerGenerationPreparing) {
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTB")
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTC")
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStartFanOut.PROC")
-#! Record(TakeNShots:CheckNumShots,1360,1404,0,1,"TakeNShots:CheckNumShots")
-#! Field("TakeNShots:CheckNumShots.INPA",16777215,1,"TakeNShots:CheckNumShots.INPA")
-#! Field("TakeNShots:CheckNumShots.INPB",16777215,1,"TakeNShots:CheckNumShots.INPB")
-#! Field("TakeNShots:CheckNumShots.VAL",16777215,1,"TakeNShots:CheckNumShots.VAL")
-#! Record(TakeNShots:CheckFrequency,1360,1604,0,1,"TakeNShots:CheckFrequency")
-#! Field("TakeNShots:CheckFrequency.INPA",16777215,1,"TakeNShots:CheckFrequency.INPA")
-#! Field("TakeNShots:CheckFrequency.INPB",16777215,1,"TakeNShots:CheckFrequency.INPB")
-#! Field("TakeNShots:CheckFrequency.VAL",16777215,1,"TakeNShots:CheckFrequency.VAL")
-#! Record(TakeNShots:CheckReadyToArm,1680,1178,0,1,"TakeNShots:CheckReadyToArm")
-#! Field("TakeNShots:CheckReadyToArm.INPA",16777215,0,"TakeNShots:CheckReadyToArm.INPA")
-#! Link("TakeNShots:CheckReadyToArm.INPA","TakeNShots:CheckCamerasAcquiring.VAL")
+#! Record(TakeNShots:CheckReadyToArm,1680,1206,0,1,"TakeNShots:CheckReadyToArm")
+#! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
 #! Field("TakeNShots:CheckReadyToArm.INPB",16777215,0,"TakeNShots:CheckReadyToArm.INPB")
-#! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckNumShots.VAL")
-#! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
-#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckReadyToArm/INPC")
-#! Field("TakeNShots:CheckReadyToArm.INPD",16777215,1,"TakeNShots:CheckReadyToArm.INPD")
+#! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckCamerasAcquiring.VAL")
 #! Field("TakeNShots:CheckReadyToArm.OUT",16777215,1,"TakeNShots:CheckReadyToArm.OUT")
-#! Connector("TakeNShots:CheckReadyToArm/INPC","TakeNShots:CheckFrequency.VAL",1600,1600,16777215,"",0)
 #! Record(TakeNShots:TriggerGenerationIdle,2060,1050,0,1,"TakeNShots:TriggerGenerationIdle")
 #! Field("TakeNShots:TriggerGenerationIdle.INPA",16777215,1,"TakeNShots:TriggerGenerationIdle.INPA")
 #! Field("TakeNShots:TriggerGenerationIdle.OUT",16777215,1,"TakeNShots:TriggerGenerationIdle.OUT")
@@ -121,7 +92,6 @@ record(calcout, TakeNShots:TriggerGenerationPreparing) {
 #! TextBox(TB4,2060,1000,2280,1060,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to be Idle\n",null)
 #! TextBox(TB3,800,940,1120,980,0,"Dialog",12,1,16777215,"Start acquisition",null)
 #! TextBox(TB2,820,1020,1020,1080,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to transition to Preparing\n",null)
-#! TextBox(TB1,1360,1360,1560,1420,0,"Dialog",12,1,16777215,"Check that NumShots and Frequency are set as desired.",null)
 #! TextBox(TB0,1100,1020,1260,1060,0,"Dialog",12,1,16777215,"Start acquisition mode on all cameras",null)
 #! TextBox(TB11,1680,1100,1920,1160,0,"Dialog",12,1,16777215,"In Preparing state, when all cameras are acquiring and NumShots and Frequency are set correctly, set TriggerGeneration status to Armed.",null)
 #! TextBox(TB9,2340,980,2500,1020,0,"Dialog",12,1,16777215,"Stop acquisition mode on all cameras",null)
