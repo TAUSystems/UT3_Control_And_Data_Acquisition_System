@@ -26,8 +26,8 @@ def insert_data():
                  source=VariableSource.fetch, 
                  epics_access_protocol=EPICSAccessProtocol.channel_access
                 )
-        for metric in ['Status_GET', 'Absolute_GET', 'Absolute_RBV', 'Offset', 'Inverted', 
-                    'Relative_GET', 'Relative_RBV',
+        for metric in ['Status_GET', 'Offset_GET', 'Inverted_GET', 
+                    'Relative_GET', 'Relative_RBV', 'Absolute_GET',
                     'Acceleration_GET', 'MaxVelocity_GET', 'MinVelocity_GET',
                     ]
         for axis in ['HorizontalX', 'VerticalY', 'LongitudinalZ']
