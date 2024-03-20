@@ -51,7 +51,7 @@ last_analyzed_shot_pvs = {device_name: device_pv_names.last_analyzed_pv_name
 env = get_env()
 handlers: list[ImageAnalysisCompleteHandler] = [
     PopulateLastAnalyzedShotIDPV(last_analyzed_shot_pvs),
-    CreateAnalysisFolderLinks(env.get('DATA_DISK_STORAGE_BASE_DIRECTORY')),
+    CreateAnalysisFolderLinks(env.get('RESULTS_STORAGE_BASE_DIRECTORY')),
 ]
 
 def listen_for_and_process_analysis_complete_messages():

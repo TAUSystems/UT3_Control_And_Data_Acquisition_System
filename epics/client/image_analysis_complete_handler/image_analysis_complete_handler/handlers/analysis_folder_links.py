@@ -28,7 +28,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
     SHOTS_HANDLES_SET_PURGE_TO = 10000
 
     def __init__(self, base_path: str | Path):
-        self.data_storage_base_path = base_path
+        self.data_storage_base_path = Path(base_path)
 
         self.shots_handled = set()
         self.sqlalchemy_engine = get_sqlalchemy_engine()
