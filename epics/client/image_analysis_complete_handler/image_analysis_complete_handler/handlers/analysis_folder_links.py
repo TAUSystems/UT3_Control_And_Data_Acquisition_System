@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from os import symlink
+from os.path import relpath
 import re
 from pathlib import Path
 from datetime import datetime
@@ -55,7 +55,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         scan_folder_name = scan_folder_name[:80]
         # make sure the name starts with the format Scan-012
         assert re.match("^Scan-\d{3}", scan_folder_name) is not None
-        
+
         burst_folder_name = f"Burst-{burst.seq:04d}"
         shot_folder_name = f"Shot-{shot.seq:05d}"
 
@@ -63,7 +63,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
                                year_folder_name, session_folder_name, scan_folder_name, 
                                burst_folder_name, shot_folder_name
                           ) 
-        
+
         return analysis_folder
 
 
@@ -85,7 +85,7 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         analysis_folder = self.generate_analysis_folder(shot_datetime)
 
         analysis_folder.parent.mkdir(parents=True, exist_ok=True)
-        symlink(shot_folder, analysis_folder, target_is_directory=True)
+        analysis_folder.symlink_to(relpath(shot_folder, analysis_folder.parent))
 
         # prevent this link from being created again by adding it to a seen set.
         self.shots_handled.add(message_data['shot_id'])
