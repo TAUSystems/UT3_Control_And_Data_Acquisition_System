@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TypedDict, NamedTuple, NewType
 
-class ImageAnalysisCompleteMessage(TypedDict):
+class ImageAnalysisCompleteData(TypedDict):
     device_name: str
     shot_id: str
     num_images: int

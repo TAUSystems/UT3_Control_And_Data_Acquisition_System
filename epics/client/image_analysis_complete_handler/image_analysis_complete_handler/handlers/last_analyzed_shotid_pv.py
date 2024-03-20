@@ -7,7 +7,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 if TYPE_CHECKING:
-    from ..utils.types import ImageAnalysisCompleteMessage, DeviceName, PVName
+    from ..utils.types import ImageAnalysisCompleteData, DeviceName, PVName
 from .base import ImageAnalysisCompleteHandler
 
 from epics import caput
@@ -26,21 +26,19 @@ class PopulateLastAnalyzedShotIDPV(ImageAnalysisCompleteHandler):
 
         super().__init__()
     
-    def handle(self, message: ImageAnalysisCompleteMessage) -> None:
+    def handle(self, message_data: ImageAnalysisCompleteData) -> None:
 
-        image_finished_message = json.loads(message['data'])
-	
         try:
-            last_analyzed_pv_name = self.LAST_ANALYZED_PV_NAMES[image_finished_message['device_name']]
+            last_analyzed_pv_name = self.last_analyzed_pv_names[message_data['device_name']]
         except (KeyError, AttributeError):
-            logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
+            logging.warning(f"No LastAnalyzed PV for device {message_data['device_name']}")
             return
 
         if last_analyzed_pv_name is not None:
             try:
-                logging.info(f"running caput({last_analyzed_pv_name}, {image_finished_message.get('shot_id')})")  
+                logging.info(f"running caput({last_analyzed_pv_name}, {message_data.get('shot_id')})")  
                 # p4p_context.put(last_analyzed_pv_name, image_finished_message.get('shot_id'))
-                caput(last_analyzed_pv_name + '.$', str(image_finished_message.get('shot_id')) )
-                logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message.get('shot_id')}'")
+                caput(last_analyzed_pv_name + '.$', str(message_data.get('shot_id')) )
+                logging.info(f"Set PV {last_analyzed_pv_name} to '{message_data.get('shot_id')}'")
             except TimeoutError:
                 logging.error(f"Could not find PV {last_analyzed_pv_name}")

@@ -1,13 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import json
+
 # TODO: logging config file
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 from image_analysis_complete_handler.utils.env import get_env
 from image_analysis_complete_handler.utils.redis import get_redis_client
-from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteMessage, ImageDeviceDirectoryEntry
+from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteData, ImageDeviceDirectoryEntry
 from image_analysis_complete_handler.handlers.last_analyzed_shotid_pv import PopulateLastAnalyzedShotIDPV
 from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
 if TYPE_CHECKING:
@@ -59,14 +61,16 @@ def listen_for_and_process_analysis_complete_messages():
     logging.info("Subscribed to image_analysis_complete_ch")
 
     while True:
-        message: ImageAnalysisCompleteMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
+        message = ps.get_message(ignore_subscribe_messages=True, timeout=None)
         logging.info(f"Message received from channel: {message}")
 
         if message is None:
             continue
 
+        message_data: ImageAnalysisCompleteData = json.loads(message['data'])
+
         for handler in handlers:
-            handler.handle(message)
+            handler.handle(message_data)
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()

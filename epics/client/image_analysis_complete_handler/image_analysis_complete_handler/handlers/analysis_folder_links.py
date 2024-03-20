@@ -9,7 +9,7 @@ LOCAL_TIMEZONE = ZoneInfo("US/Central")
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..utils.types import ImageAnalysisCompleteMessage
+    from ..utils.types import ImageAnalysisCompleteData
     from measurement_db.orm.tables import Session, Scan, Burst
 from .base import ImageAnalysisCompleteHandler
 from ..utils.env import get_env
@@ -67,8 +67,8 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         return analysis_folder
 
 
-    def handle(self, message: ImageAnalysisCompleteMessage) -> None:
-        if message['shot_id'] in self.shots_handled:
+    def handle(self, message_data: ImageAnalysisCompleteData) -> None:
+        if message_data['shot_id'] in self.shots_handled:
             return
 
         # expecting a shot_id in the format burst-2024-01-02T03-04-05-678901Z/shot-2024-01-02T03-04-05-678901Z
@@ -79,16 +79,16 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
             shot_datetime = datetime.strptime(shot_str, "shot-%Y-%m-%dT%H-%M-%S-%f%z")
             return burst_datetime, shot_datetime
 
-        _, shot_datetime = parse_shot_id(message['shot_id'])
+        _, shot_datetime = parse_shot_id(message_data['shot_id'])
 
-        shot_folder = self.data_storage_base_path / "data" / message['shot_id']
+        shot_folder = self.data_storage_base_path / "data" / message_data['shot_id']
         analysis_folder = self.generate_analysis_folder(shot_datetime)
 
         analysis_folder.parent.mkdir(parents=True, exist_ok=True)
         symlink(shot_folder, analysis_folder, target_is_directory=True)
 
         # prevent this link from being created again by adding it to a seen set.
-        self.shots_handled.add(message['shot_id'])
+        self.shots_handled.add(message_data['shot_id'])
         # remove older items from seen set
         if len(self.shots_handled) > self.SHOTS_HANDLED_SET_MAX_SIZE:
             self.purge_shots_handled_set()

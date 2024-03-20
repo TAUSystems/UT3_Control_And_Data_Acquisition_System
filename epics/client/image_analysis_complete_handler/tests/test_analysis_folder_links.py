@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import os
 
-from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteMessage
+from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteData
 from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
 
 from measurement_db.utils import get_sqlalchemy_engine
@@ -40,7 +40,7 @@ class TestAnalysisFolderLinks(unittest.TestCase):
         return super().setUp()
     
     def test_create_link(self) -> None:
-        message = ImageAnalysisCompleteMessage(
+        message = ImageAnalysisCompleteData(
             device_name="test",
             shot_id = self.shot_id
         )
