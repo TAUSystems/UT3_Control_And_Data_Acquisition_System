@@ -112,9 +112,11 @@ class DataUploader:
         self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
 
         try:
-            camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
+            self.subscriptions[self.fetch_trigger_variable] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
+            self.fetch_trigger_variable.counter = 0
+            # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
             logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
-        
+
         except Exception as err:
             logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over Channel Access: {err}")
 
@@ -215,6 +217,9 @@ class DataUploader:
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
         """
+        if not self.enable_callbacks:
+            return
+
         try:
             variables_to_fetch = filter(lambda variable: variable.is_online and variable.is_numeric, self.variables)
             shot = self.burst.shots[self.fetch_trigger_variable.counter]
@@ -226,7 +231,7 @@ class DataUploader:
                 sa_session.commit()
 
         except Exception as err:
-            logging.error("Error fetching variables: {err}")
+            logging.error(f"Error fetching variables: {err}")
 
         finally:
             self.fetch_trigger_variable.counter += 1
@@ -330,7 +335,7 @@ class DataUploader:
 
 
     def scan_description_monitor_callback(self, value: str, **kwargs):
-        
+
         # Scan description should start with Scan 123 (hyphen/underscore allowed)
         if (m := re.match(r"Scan[ _\-](?P<seq>\d{3})", value)) is None:
             seq = -1
@@ -338,7 +343,7 @@ class DataUploader:
         else:
             seq = int(m['seq'])
         self.scan = Scan(description=value, seq=seq, session=self.session)
-        logging.info(f"New scan, number {self.scan.seq} with description \"self.scan.description\"")
+        logging.info(f"New scan, number {self.scan.seq} with description \"{self.scan.description}\"")
         self.burst.seq = 1
 
         if not self.enable_callbacks:
@@ -355,6 +360,8 @@ class DataUploader:
 
         for image_device in self.image_devices:
             image_device.counter = 0
+
+        self.fetch_trigger_variable.counter = 0
 
         logging.info("Counters reset.")
 
