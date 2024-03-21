@@ -47,9 +47,9 @@ PV_NAMES: dict[str, PVName] = {
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
 
-    'session_id': "Timing:TriggerGeneration:SessionID",
+    'session_title': "Timing:TriggerGeneration:SessionID",
     'scan_number': "Timing:TriggerGeneration:ScanNumber",
-    'scan_title': "Timing:TriggerGeneration:ScanTitle",
+    'scan_description': "Timing:TriggerGeneration:ScanTitle",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
@@ -62,9 +62,9 @@ class DataUploader:
     def __init__(self):
 
         # Current burst, session, and scan information
-        self.session: Session = None
-        self.scan: Scan = None
-        self.burst: Burst = None
+        self.session = Session()
+        self.scan = Scan()
+        self.burst = Burst()
 
         # idle, preparing, armed, running
         self.burst_status: str = ""
@@ -96,8 +96,8 @@ class DataUploader:
                 ('burst_timestamp', self.burst_timestamp_monitor_callback),
                 ('burst_frequency', self.burst_frequency_monitor_callback),
                 ('burst_num_shots', self.burst_num_shots_monitor_callback),
-                ('session_id', self.session_id_monitor_callback),
-                ('scan_number', self.scan_number_monitor_callback),
+                ('session_title', self.session_title_monitor_callback),
+                ('scan_description', self.scan_description_monitor_callback),
             ]:
 
             camonitor(PV_NAMES[pv_alias], callback=callback_fun)
@@ -139,7 +139,7 @@ class DataUploader:
                 'burst_timestamp',
                 'burst_frequency',
                 'burst_num_shots',
-                'session_id',
+                'session_title',
                 'scan_number',
             ]:
 
@@ -272,7 +272,7 @@ class DataUploader:
         logging.info(f"Burst number of shots changed to {value}.")
 
 
-    def burst_timestamp_monitor_callback(self, value: str = "", **kwargs) -> None:
+    def burst_timestamp_monitor_callback(self, value: str, **kwargs) -> None:
         """ Callback when the burst timestamp PV changes
 
         camonitor's callback arguments are keyword arguments including pvname, 
@@ -305,7 +305,7 @@ class DataUploader:
             self.burst.shots = [
                 Shot(timestamp = self.burst.timestamp + timedelta(seconds = timedelta(seconds=seq / self.burst.repetition_rate)),
                      seq = seq,
-                    ) for seq in range(self.burst.number_of_shots)
+                    ) for seq in range(1, self.burst.number_of_shots + 1)
                 ]
 
             with SQLAlchemySession(sqlalchemy_engine) as sa_session:
@@ -318,25 +318,33 @@ class DataUploader:
         finally:
             self.burst.seq += 1
 
-    def session_id_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=self.session_id)
+    def session_title_monitor_callback(self, value: str, **kwargs):
+        self.session = Session(title=value)
 
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
             sa_session.add(self.session)
             sa_session.commit()
 
 
-    def scan_number_monitor_callback(self, value: int, **kwargs):
-        self.scan = Scan(seq=value, session=self.session)
-        self.burst.seq = 0
+    def scan_description_monitor_callback(self, value: str, **kwargs):
+        
+        # Scan description should start with Scan 123 (hyphen/underscore allowed)
+        if (m := re.match(r"Scan[ _\-](?P<seq>\d{3})", value)) is None:
+            seq = -1
+            logging.error(f"Scan description \"{value}\" does not start with Scan XXX")
+        else:
+            seq = int(m['seq'])
+        self.scan = Scan(description=value, seq=seq, session=self.session)
+        logging.info(f"New scan, number {self.scan.seq} with description \"self.scan.description\"")
+        self.burst.seq = 1
 
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
             sa_session.add(self.scan)
             sa_session.commit()
 
