@@ -46,18 +46,18 @@ PV_NAMES: dict[str, PVName] = {
     'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
-    
+
     'session_id': "Timing:TriggerGeneration:SessionID",
     'scan_number': "Timing:TriggerGeneration:ScanNumber",
     'scan_title': "Timing:TriggerGeneration:ScanTitle",
 
-    'fetch_trigger_pv': "XXXXXXXX",
+    'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
 
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
-    
+
     """
     def __init__(self):
 
@@ -70,9 +70,9 @@ class DataUploader:
         self.burst_status: str = ""
 
         # scalars and image_devices to monitor
-        self.scalars: list[Variable] = self.load_scalar_pv_list()
+        self.variables: list[Variable] = self.load_scalar_pv_list()
         self.image_devices: list[ImageDevice] = self.load_image_pv_list()
-        
+
         # will hold pvAccess subscriptions (Channel Access subscriptions are held 
         # in epics._PVmonitors_ )
         self.subscriptions: dict[PVName, P4PSubscription] = {}
@@ -110,7 +110,7 @@ class DataUploader:
         # subscribe to a trigger PV, whose callback fetches values from PVs that 
         # are not monitored but should be saved
         self.fetch_trigger_variable: Variable = None
-        for variable in self.scalars:
+        for variable in self.variables:
             if variable.name == PV_NAMES['fetch_trigger_pv']:
                 self.fetch_trigger_variable = variable
                 camonitor(PV_NAMES['fetch_trigger_pv'], callback=self.fetch_trigger_pv_monitor_callback)
@@ -148,7 +148,7 @@ class DataUploader:
             camonitor_clear(PV_NAMES[pv_alias])
             logging.info(f"Closed Channel Access subscription for {PV_NAMES[pv_alias]}")
 
-        
+
         for pv_name, subscription in self.subscriptions.items():
             subscription.close()
             logging.info(f"Closed subscription for {pv_name}")
@@ -168,7 +168,7 @@ class DataUploader:
              variables = sa_session.scalars(select(Variable)).all()
 
         cainfo_regex = re.compile(r"(\w+)\s+=\s([^\n]+)\n")
-        def parse_cainfo(cainfo_str: str):
+        def parse_cainfo(cainfo_str: str) -> dict:
             return dict(cainfo_regex.findall(cainfo_str))
 
         # collect variable information, such as whether it can be found on the 
@@ -181,8 +181,15 @@ class DataUploader:
             variable.is_online = (variable_value is not None)
             variable.is_numeric = isinstance(variable_value, Number)
             variable.info = {}
-            if variable.online:
-                variable.info = parse_cainfo(cainfo(variable.name, print_out=False))
+            if variable.is_online:
+                try:
+                    variable.info = parse_cainfo(cainfo(variable.name, print_out=False))
+                    logging.info(f"Got cainfo for {variable.name}")
+                except Exception as err:
+                    variable.info = {}
+                    logging.error(f"Unable to get cainfo for {variable.name}")
+
+        return variables
 
     def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
@@ -198,7 +205,7 @@ class DataUploader:
     def subscribe_to_scalar_pvs(self) -> None:
         """ TODO: split by Channel Access and 
         """
-        for variable in self.scalars:
+        for variable in self.variables:
             if variable.source == VariableSource.monitor:
                 camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
                 logging.info(f"Monitoring {variable.name} over Channel Access")
@@ -211,7 +218,7 @@ class DataUploader:
         """
         """
         try:
-            variables_to_fetch = filter(lambda variable: variable.is_online and variable.is_numeric, self.scalars)
+            variables_to_fetch = filter(lambda variable: variable.is_online and variable.is_numeric, self.variables)
             shot = self.burst.shots[self.fetch_trigger_variable.counter]
 
             with SQLAlchemySession(sqlalchemy_engine) as sa_session:
@@ -222,7 +229,7 @@ class DataUploader:
 
         except Exception as err:
             logging.error("Error fetching variables: {err}")
-        
+
         finally:
             self.fetch_trigger_variable.counter += 1
 
@@ -236,7 +243,7 @@ class DataUploader:
 
         previous_status = self.burst_status
         self.burst_status = value
-        logging.info(f"Status changed to {value}.")        
+        logging.info(f"Status changed to {value}.")
 
         if not self.enable_callbacks:
             return
@@ -248,7 +255,7 @@ class DataUploader:
 
     def burst_frequency_monitor_callback(self, value: float, **kwargs) -> None:
         """ Callback when burst frequency PV changes 
-        
+
         No need to check self.enable_callbacks: this needs to run on monitor creation
         callback.
         """
@@ -272,7 +279,7 @@ class DataUploader:
 
         camonitor's callback arguments are keyword arguments including pvname, 
         value, char_value. 
-        
+
         Parameters
         ----------
         value : str
@@ -318,7 +325,7 @@ class DataUploader:
 
         if not self.enable_callbacks:
             return
-        
+
         with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
             sa_session.add(self.session)
             sa_session.commit()
@@ -337,8 +344,8 @@ class DataUploader:
 
 
     def reset_counters(self):
-        for scalar in self.scalars:
-            scalar.counter = 0
+        for variable in self.variables:
+            variable.counter = 0
 
         for image_device in self.image_devices:
             image_device.counter = 0
@@ -360,7 +367,7 @@ class DataUploader:
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
 
             # convert NDArray to tiff file byte array
-            tiff_bytes = BytesIO()    
+            tiff_bytes = BytesIO()
             write_tiff(tiff_bytes, image_data)
             tiff_bytes.seek(0)
 
@@ -386,16 +393,16 @@ class DataUploader:
             image_device.counter += 1
 
 
-    def scalar_pv_callback(self, scalar: Variable, value: float, **kwargs) -> None:
+    def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
         """ TODO
         """
         if not self.enable_callbacks:
             return
 
         try:
-            shot = self.burst.shots[scalar.counter]
+            shot = self.burst.shots[variable.counter]
             with SQLAlchemySession(sqlalchemy_engine) as sa_session:
-                sa_session.add(Measurement(variable=scalar, shot=shot, value=value))
+                sa_session.add(Measurement(variable=variable, shot=shot, value=value))
                 sa_session.commit()
 
         except Exception as err:
@@ -403,4 +410,4 @@ class DataUploader:
 
         finally:
             # increase shot counter
-            scalar.counter += 1
+            variable.counter += 1
