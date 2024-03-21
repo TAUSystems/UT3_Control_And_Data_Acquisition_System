@@ -17,7 +17,7 @@ import requests
 requests_session = requests.Session()
 
 # get environment variables, specifically image endpoint url
-from ..utils.env import get_env
+from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
@@ -27,7 +27,7 @@ pva = P4PThreadContext('pva')
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ..utils.types import DeviceName, PVName
+    from .utils.types import DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.thread import Subscription as P4PSubscription
 
