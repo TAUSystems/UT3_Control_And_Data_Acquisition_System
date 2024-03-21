@@ -109,16 +109,14 @@ class DataUploader:
 
         # subscribe to a trigger PV, whose callback fetches values from PVs that 
         # are not monitored but should be saved
-        self.fetch_trigger_variable: Variable = None
-        for variable in self.variables:
-            if variable.name == PV_NAMES['fetch_trigger_pv']:
-                self.fetch_trigger_variable = variable
-                camonitor(PV_NAMES['fetch_trigger_pv'], callback=self.fetch_trigger_pv_monitor_callback)
-                logging.info(f"Monitoring {PV_NAMES['fetch_trigger_pv']} over Channel Access")
-                break
-        else:
-            logging.error(f"Fetch trigger PV {PV_NAMES['fetch_trigger_pv']} not found in list of variables")
+        self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
 
+        try:
+            camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
+            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
+        
+        except Exception as err:
+            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over Channel Access: {err}")
 
         # re-enable callback code after the callbacks for monitor creation have 
         # been called.
