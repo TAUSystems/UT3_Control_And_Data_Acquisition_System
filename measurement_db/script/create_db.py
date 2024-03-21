@@ -45,6 +45,17 @@ def insert_data():
     ])
 
     # electron spectrometer
+    variables.extend([
+        Variable(name=f"E:Stats:Spectrometer:Pointing:{metric}_RBV",
+                 source=VariableSource.monitor,
+                 epics_access_protocol=EPICSAccessProtocol.pvAccess
+                )
+        for metric in ['CentroidTotal', 'CentroidX', 'CentroidY', 
+                       'SigmaX', 'SigmaY', 'SigmaXY',
+                       'SkewX', 'SkewY', 'KurtosisX', 'KurtosisY', 'Eccentricity', 'Orientation'
+                      ]
+    ])
+
     image_devices.extend([
         ImageDevice(name=f"E:Spectrometer:{screen}", image_pv_name=f"E:Pva:Spectrometer:{screen}:Image")
         for screen in ['Pointing', 'LowEnergy', 'HighEnergy']
