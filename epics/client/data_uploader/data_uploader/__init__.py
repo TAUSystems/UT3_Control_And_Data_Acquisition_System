@@ -340,7 +340,7 @@ class DataUploader:
                             )
 
             self.burst.shots = [
-                Shot(timestamp = self.burst.timestamp + timedelta(seconds = timedelta(seconds=seq / self.burst.repetition_rate)),
+                Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
                      seq = seq,
                     ) for seq in range(1, self.burst.number_of_shots + 1)
                 ]
