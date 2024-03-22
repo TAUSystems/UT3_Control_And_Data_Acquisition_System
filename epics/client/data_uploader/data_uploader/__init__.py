@@ -21,7 +21,7 @@ from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
-from epics import caget, caget_many, cainfo, camonitor, camonitor_clear
+from epics import caput, caget_many, cainfo, camonitor, camonitor_clear
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
@@ -203,10 +203,12 @@ class DataUploader:
             image_device.counter = 0
 
     def subscribe_to_scalar_pvs(self) -> None:
-        """ TODO: split by Channel Access and 
+        """ TODO: split by Channel Access and PVAccess
         """
         for variable in self.variables:
             if variable.source == VariableSource.monitor:
+                # diable monitor deadband: make sure monitor is posted even if value doesn't change
+                caput(variable.name + ".MDEL", -1)
                 camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
                 logging.info(f"Monitoring {variable.name} over Channel Access")
 
@@ -325,6 +327,7 @@ class DataUploader:
 
     def session_title_monitor_callback(self, value: str, **kwargs):
         self.session = Session(title=value)
+        logging.info(f"New session \"{self.session.title}\"")
 
         if not self.enable_callbacks:
             return
