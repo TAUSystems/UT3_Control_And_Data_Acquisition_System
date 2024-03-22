@@ -25,6 +25,8 @@ from epics import caput, caget_many, cainfo, camonitor, camonitor_clear
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
+from .utils.types import BurstStatus
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .utils.types import DeviceName, PVName
@@ -66,8 +68,8 @@ class DataUploader:
         self.scan = Scan()
         self.burst = Burst()
 
-        # idle, preparing, armed, running
-        self.burst_status: str = ""
+        # disconnected, idle, preparing, armed, running
+        self.burst_status: BurstStatus = BurstStatus.Disconnected
 
         # scalars and image_devices to monitor
         self.variables: list[Variable] = self.load_scalar_pv_list()
@@ -106,6 +108,9 @@ class DataUploader:
         # subscribe to PVs in IOCs
         self.subscribe_to_image_pvs()
         self.subscribe_to_scalar_pvs()
+
+        # make sure our burst status type matches the mbbo PV values
+        self.check_burst_status_enum()
 
         # subscribe to a trigger PV, whose callback fetches values from PVs that 
         # are not monitored but should be saved
@@ -191,6 +196,22 @@ class DataUploader:
 
         return variables
 
+    def check_burst_status_enum(self) -> None:
+        """
+        """
+        mbbo_string_field_names = ['ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST', 'TVST', 'TTST', 'FTST', 'FFST']
+        status_pv_strings = caget_many([f"{PV_NAMES['burst_status']}.{mbbo_string_field_names[burst_status.value]}" 
+                                        for burst_status in BurstStatus
+                                      ])
+        try:
+            assert all([status_pv_string == burst_status.name for status_pv_string, burst_status in zip(status_pv_strings, BurstStatus)])
+            logging.info(f"Checked BurstStatus enum matches {PV_NAMES['burst_status']} strings.")
+        except AssertionError:
+            logging.error(f"BurstStatus enum and {PV_NAMES['burst_status']} strings don't match!\n"
+                          f"\tBurstStatus = {list(BurstStatus)}\n"
+                          f"\t{PV_NAMES['burst_status']} = {status_pv_strings}"
+                         )
+
     def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
         """
@@ -239,22 +260,22 @@ class DataUploader:
             self.fetch_trigger_variable.counter += 1
 
 
-    def burst_status_monitor_callback(self, value: str = "", **kwargs) -> None:
+    def burst_status_monitor_callback(self, value: int, **kwargs) -> None:
         """ Callback when status PV changes
 
         camonitor's callback arguments are keyword arguments including pvname, 
         value, char_value. 
         """
 
-        previous_status = self.burst_status
-        self.burst_status = value
-        logging.info(f"Status changed to {value}.")
+        previous_status: BurstStatus = BurstStatus(self.burst_status)
+        self.burst_status: BurstStatus = BurstStatus(value)
+        logging.info(f"Status changed to {value}: {self.burst_status}.")
 
         if not self.enable_callbacks:
             return
 
         # detect change from not running to running
-        if previous_status.lower() != "running" and self.burst_status.lower() == "running":
+        if previous_status != BurstStatus.Running and self.burst_status == BurstStatus.Running:
             # reset scalar and image device counters
             self.reset_counters()
 
