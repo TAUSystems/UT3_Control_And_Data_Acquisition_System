@@ -21,7 +21,7 @@ from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
-from epics import caput, caget_many, cainfo, camonitor, camonitor_clear
+from epics import caput, caget, caget_many, cainfo, camonitor, camonitor_clear
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
@@ -140,7 +140,7 @@ class DataUploader:
         """ Close subscriptions
         """
 
-        # subscribe to session, scan, burst variables provided by user interface (through CALab)
+        # unsubscribe to session, scan, burst variables provided by user interface (through CALab)
         for pv_alias in [
                 'burst_status',
                 'burst_timestamp',
@@ -321,6 +321,15 @@ class DataUploader:
 
             timestamp_ms = int(value)
             self.burst.timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
+
+            # some burst attributes can be not set if the UI started before the uploader
+            # TODO: This is unexpected, because starting the monitor should set these
+            # attributes.
+            if self.burst.repetition_rate is None:
+                self.burst.repetition_rate = caget(PV_NAMES['burst_frequency'])
+            if self.burst.number_of_shots is None:
+                self.burst.number_of_shots = caget(PV_NAMES['burst_num_shots'])
+
             logging.info(f"BurstTimestamp changed to {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst.repetition_rate} Hz, NumShots = {self.burst.number_of_shots}")
 
             self.burst = Burst(timestamp=self.burst.timestamp, 
@@ -341,7 +350,7 @@ class DataUploader:
                 sa_session.commit()
 
         except Exception as err:
-            pass
+            logging.error(f"Unable to create burst and shots: {err}")
 
         finally:
             self.burst.seq += 1
