@@ -105,3 +105,6 @@ dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeProfiles 0
 
 # Histograms
 dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeHistogram 0
+
+# Enable Stats
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:EnableCallbacks 1
