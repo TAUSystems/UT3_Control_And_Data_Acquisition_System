@@ -64,8 +64,8 @@ class DataUploader:
     def __init__(self):
 
         # Current burst, session, and scan information
-        self.session = Session()
-        self.scan = Scan()
+        self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
+        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, description="Scan-000 default", seq=0, notes="This scan is used if no Scan is known.")
         self.burst = Burst()
 
         # disconnected, idle, preparing, armed, running
