@@ -61,8 +61,8 @@ class ImageDevice(Base):
 class Session(Base):
     __tablename__ = "session"
 
-    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
-    title: Mapped[str] = mapped_column(String(252), unique=True, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.utc_timestamp())
+    title: Mapped[str] = mapped_column(String(252), unique=False, index=True)
     description: Mapped[str] = mapped_column(Text(), default="")
 
     operator: Mapped[str] = mapped_column(String(252), default="", doc="Name of the person or organization operating this session.")
@@ -70,7 +70,7 @@ class Session(Base):
 class Scan(Base):
     __tablename__ = "scan"
 
-    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.current_timestamp())
+    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True, default=func.utc_timestamp())
     session_timestamp: Mapped[datetime] = mapped_column(ForeignKey('session.timestamp'))
     seq: Mapped[int] = mapped_column(index=True, doc="Sequence number of this scan within session")
 
