@@ -93,6 +93,7 @@ class DataUploader:
         self.enable_callbacks = False
 
         # subscribe to session, scan, burst variables provided by user interface (through CALab)
+        self.camonitor_pvs = []
         for pv_alias, callback_fun in [
                 ('burst_status', self.burst_status_monitor_callback),
                 ('burst_timestamp', self.burst_timestamp_monitor_callback),
@@ -101,8 +102,8 @@ class DataUploader:
                 ('session_title', self.session_title_monitor_callback),
                 ('scan_description', self.scan_description_monitor_callback),
             ]:
-
             camonitor(PV_NAMES[pv_alias], callback=callback_fun)
+            self.camonitor_pvs.append(PV_NAMES[pv_alias])
             logging.info(f"Monitoring {PV_NAMES[pv_alias]} over Channel Access")
 
         # subscribe to PVs in IOCs
@@ -117,7 +118,7 @@ class DataUploader:
         self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
 
         try:
-            self.subscriptions[self.fetch_trigger_variable] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
+            self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
             self.fetch_trigger_variable.counter = 0
             # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
             logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
@@ -141,22 +142,13 @@ class DataUploader:
         """
 
         # unsubscribe to session, scan, burst variables provided by user interface (through CALab)
-        for pv_alias in [
-                'burst_status',
-                'burst_timestamp',
-                'burst_frequency',
-                'burst_num_shots',
-                'session_title',
-                'scan_number',
-            ]:
-
-            camonitor_clear(PV_NAMES[pv_alias])
-            logging.info(f"Closed Channel Access subscription for {PV_NAMES[pv_alias]}")
-
+        for pv_name in self.camonitor_pvs:
+            camonitor_clear(pv_name)
+            logging.info(f"Closed Channel Access subscription for {pv_name}")
 
         for pv_name, subscription in self.subscriptions.items():
             subscription.close()
-            logging.info(f"Closed subscription for {pv_name}")
+            logging.info(f"Closed PVAccess subscription for {pv_name}")
 
 
     def load_image_pv_list(self) -> list[ImageDevice]:
@@ -231,6 +223,7 @@ class DataUploader:
                 # diable monitor deadband: make sure monitor is posted even if value doesn't change
                 caput(variable.name + ".MDEL", -1)
                 camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
+                self.camonitor_pvs.append(variable.name)
                 logging.info(f"Monitoring {variable.name} over Channel Access")
 
             # Add a counter attribute to the Variable instance
