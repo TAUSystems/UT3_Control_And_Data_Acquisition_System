@@ -154,14 +154,14 @@ class DataUploader:
     def load_image_pv_list(self) -> list[ImageDevice]:
         """ 
         """
-        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
              return sa_session.scalars(select(ImageDevice)).all()
 
 
     def load_scalar_pv_list(self) -> list[Variable]:
         """ 
         """
-        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
              variables = sa_session.scalars(select(Variable)).all()
 
         cainfo_regex = re.compile(r"(\w+)\s+=\s([^\n]+)\n")
@@ -435,7 +435,7 @@ class DataUploader:
 
         try:
             shot = self.burst.shots[variable.counter]
-            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
                 sa_session.add(Measurement(variable=variable, shot=shot, value=value))
                 sa_session.commit()
 
