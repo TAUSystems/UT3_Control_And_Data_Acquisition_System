@@ -66,7 +66,7 @@ class DataUploader:
         # Current burst, session, and scan information
         self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
         self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, description="Scan-000 default", seq=0, notes="This scan is used if no Scan is known.")
-        self.burst = Burst()
+        self.burst = Burst(timestamp=datetime.now(tz=UTC), repetition_rate=None, number_of_shots=None, seq=0)
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
@@ -318,9 +318,13 @@ class DataUploader:
             return
 
         try:
-
             timestamp_ms = int(value)
-            self.burst.timestamp = datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC)
+            self.burst = Burst(timestamp=datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC), 
+                               scan=self.scan, 
+                               seq=self.burst.seq + 1, 
+                               number_of_shots=self.burst.number_of_shots,
+                               repetition_rate=self.burst.repetition_rate,
+                              )
 
             # some burst attributes can be not set if the UI started before the uploader
             # TODO: This is unexpected, because starting the monitor should set these
@@ -330,14 +334,7 @@ class DataUploader:
             if self.burst.number_of_shots is None:
                 self.burst.number_of_shots = caget(PV_NAMES['burst_num_shots'])
 
-            logging.info(f"BurstTimestamp changed to {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}. Frequency = {self.burst.repetition_rate} Hz, NumShots = {self.burst.number_of_shots}")
-
-            self.burst = Burst(timestamp=self.burst.timestamp, 
-                            scan=self.scan, 
-                            seq=self.burst.seq, 
-                            number_of_shots=self.burst.number_of_shots,
-                            repetition_rate=self.burst.repetition_rate,
-                            )
+            logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f} with frequency = {self.burst.repetition_rate} Hz and NumShots = {self.burst.number_of_shots}")
 
             self.burst.shots = [
                 Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
@@ -351,9 +348,6 @@ class DataUploader:
 
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
-
-        finally:
-            self.burst.seq += 1
 
     def session_title_monitor_callback(self, value: str, **kwargs):
         self.session = Session(title=value)
@@ -377,7 +371,7 @@ class DataUploader:
             seq = int(m['seq'])
         self.scan = Scan(description=value, seq=seq, session=self.session)
         logging.info(f"New scan, number {self.scan.seq} with description \"{self.scan.description}\"")
-        self.burst.seq = 1
+        self.burst.seq = 0
 
         if not self.enable_callbacks:
             return
