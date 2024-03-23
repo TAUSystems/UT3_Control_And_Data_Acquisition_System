@@ -237,14 +237,17 @@ class DataUploader:
             return
 
         try:
-            variables_to_fetch = filter(lambda variable: variable.is_online and variable.is_numeric, self.variables)
+            variables_to_fetch = list(filter(lambda variable: variable.is_online and variable.is_numeric, self.variables))
+
             shot = self.burst.shots[self.fetch_trigger_variable.counter]
-
-            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
-                for variable, value in zip(variables_to_fetch, caget_many([variable.name for variable in variables_to_fetch])):
-                    sa_session.add(Measurement(variable=variable, shot=shot, value=value))
-
+            values = caget_many([variable.name for variable in variables_to_fetch])
+            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+                sa_session.add_all([Measurement(variable=variable, shot=shot, value=value)
+                                    for variable, value in zip(variables_to_fetch, values)
+                                  ])
                 sa_session.commit()
+
+            logging.info(f"Inserted {len(values)} measurements fetched on trigger variable")
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
