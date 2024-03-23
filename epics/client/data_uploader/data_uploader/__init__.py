@@ -336,13 +336,14 @@ class DataUploader:
 
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f} with frequency = {self.burst.repetition_rate} Hz and NumShots = {self.burst.number_of_shots}")
 
-            self.burst.shots = [
-                Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
-                     seq = seq,
-                    ) for seq in range(1, self.burst.number_of_shots + 1)
-                ]
+            for seq in range(1, self.burst.number_of_shots + 1):
+                self.burst.shots.append(
+                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
+                         seq = seq,
+                        ) 
+                )
 
-            with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
 
@@ -356,7 +357,7 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
             sa_session.add(self.session)
             sa_session.commit()
 
@@ -376,7 +377,7 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(sqlalchemy_engine) as sa_session:
+        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
             sa_session.add(self.scan)
             sa_session.commit()
 
