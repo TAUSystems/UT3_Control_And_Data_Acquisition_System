@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import Double, ForeignKey, DateTime, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-
+from sqlalchemy.dialects.mysql import TIMESTAMP
 
 class Base(DeclarativeBase):
     pass
@@ -83,7 +83,7 @@ class Scan(Base):
 class Burst(Base):
     __tablename__ = "burst"
 
-    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(fsp=6), primary_key=True)
     scan_timestamp: Mapped[datetime] = mapped_column(ForeignKey('scan.timestamp'))
     seq: Mapped[int] = mapped_column(doc="Sequence number of this burst within scan")
 
@@ -96,7 +96,7 @@ class Burst(Base):
 class Shot(Base):
     __tablename__ = "shot"
 
-    timestamp: Mapped[datetime] = mapped_column(DateTime(), primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(fsp=6), primary_key=True)
     burst_timestamp: Mapped[datetime] = mapped_column(ForeignKey('burst.timestamp'))
     seq: Mapped[int] = mapped_column(doc="Sequence number of this shot within burst")
 
