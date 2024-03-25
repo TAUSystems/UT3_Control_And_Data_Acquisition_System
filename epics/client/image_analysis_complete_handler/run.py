@@ -70,7 +70,11 @@ def listen_for_and_process_analysis_complete_messages():
         message_data: ImageAnalysisCompleteData = json.loads(message['data'])
 
         for handler in handlers:
-            handler.handle(message_data)
+            try:
+                handler.handle(message_data)
+                logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
+            except Exception as err:
+                logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()

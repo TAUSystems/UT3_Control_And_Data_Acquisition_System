@@ -39,6 +39,9 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         with SQLAlchemySession(self.sqlalchemy_engine) as sa_session:
             shot = sa_session.scalar(select(Shot).where(Shot.timestamp == shot_timestamp))
 
+            if shot is None:
+                raise KeyError(f"Shot with timestamp {shot_timestamp:%Y-%m-%d %H:%M:%S.%f} not found.")
+
             burst: Burst = shot.burst
             scan: Scan = burst.scan
             session: Session = scan.session
