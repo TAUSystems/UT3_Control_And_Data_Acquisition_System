@@ -28,19 +28,20 @@ record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
 
 record(calcout, TakeNShots:CheckReadyToArm) {
   field(DESC, "When ready, set Status to Armed")
-  field(CALC, "(A == 1) && B && C")
+  field(CALC, "(A == 2) && B && C")
   field(INPA, "Timing:TriggerGeneration:Status CP")
   field(INPB, "TakeNShots:CheckCamerasAcquiring CP")
   field(OUT, "Timing:TriggerGeneration:Status")
   field(OOPT, "Transition To Non-zero")
   field(DOPT, "Use OCAL")
-  field(OCAL, "2")
-  field(INPC, "TakeNShots:BurstInDB CP")
+# Set Timing:TriggerGeneration:Status to Armed
+  field(OCAL, "3")
 }
 
 record(calcout, TakeNShots:TriggerGenerationIdle) {
-  field(DESC, "Acts when Status changes to Idle")
-  field(CALC, "A == 0")
+  field(DESC, "Acts when Status changes to non-running.")
+# Timing:TriggerGeneration:Status = Disconnected, Idle, Stop
+  field(CALC, "A == 0 || A == 1 || A == 5")
   field(INPA, "Timing:TriggerGeneration:Status CP")
   field(OUT, "TakeNShots:IdleSeq.PROC")
   field(OOPT, "Transition To Non-zero")
@@ -48,7 +49,8 @@ record(calcout, TakeNShots:TriggerGenerationIdle) {
 
 record(calcout, TakeNShots:TriggerGenerationPreparing) {
   field(DESC, "Acts when Status changes to Preparing")
-  field(CALC, "A == 1")
+# Timing:TriggerGeneration:Status == Preparing
+  field(CALC, "A == 2")
   field(INPA, "Timing:TriggerGeneration:Status CP")
   field(OUT, "TakeNShots:PreparingSeq.PROC")
   field(OOPT, "Transition To Non-zero")
