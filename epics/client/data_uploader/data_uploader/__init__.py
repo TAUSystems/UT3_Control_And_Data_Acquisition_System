@@ -314,6 +314,8 @@ class DataUploader:
             return
 
         try:
+            pva.put("TakeNShots:BurstInDB", 0)
+
             timestamp_ms = int(value)
             self.burst = Burst(timestamp=datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC), 
                                scan=self.scan, 
@@ -342,6 +344,8 @@ class DataUploader:
             with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
+
+            pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
