@@ -403,7 +403,7 @@ class DataUploader:
 
         try:
             # determine shot datetime and shot id
-            shot_datetime = self.burst.timestamp + timedelta(seconds=image_device.counter / self.burst.repetition_rate)
+            shot_datetime = self.burst.timestamp + timedelta(seconds=(image_device.counter + 1) / self.burst.repetition_rate)
 
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
 
