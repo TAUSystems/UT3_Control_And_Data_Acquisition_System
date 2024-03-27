@@ -249,12 +249,18 @@ class DataUploader:
             values = caget_many([variable.name for variable in variables_to_fetch])
             with SQLAlchemySession() as sa_session:
                 shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter], load=False)
+                num_measurements_inserted = 0
                 for variable, value in zip(variables_to_fetch, values):
+                    if value is None:
+                        logging.warning(f"No value for {variable.name}. Possibly it went offline. Removing from list of variables to fetch on trigger.")
+                        variable.is_online = False
+                        continue
                     variable_merged = sa_session.merge(variable, load=False)
-                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
+                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=float(value)))
+                    num_measurements_inserted += 1
                 sa_session.commit()
 
-            logging.info(f"Inserted {len(values)} measurements fetched on trigger variable")
+            logging.info(f"Inserted {num_measurements_inserted} measurements fetched on trigger variable")
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
