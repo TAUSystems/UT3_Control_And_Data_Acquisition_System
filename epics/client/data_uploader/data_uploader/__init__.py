@@ -245,10 +245,10 @@ class DataUploader:
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
             values = caget_many([variable.name for variable in variables_to_fetch])
             with SQLAlchemySession() as sa_session:
-                shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter])
+                shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter], load=False)
                 for variable, value in zip(variables_to_fetch, values):
-                    variable = sa_session.merge(variable)
-                    sa_session.add(Measurement(variable=variable, shot=shot, value=value))
+                    variable_merged = sa_session.merge(variable, load=False)
+                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
                 sa_session.commit()
 
             logging.info(f"Inserted {len(values)} measurements fetched on trigger variable")
@@ -447,8 +447,8 @@ class DataUploader:
         try:
             # shot = self.burst.shots[variable.counter]
             with SQLAlchemySession() as sa_session:
-                shot = sa_session.merge(self.burst.shots[variable.counter])
-                variable_merged = sa_session.merge(variable)
+                shot = sa_session.merge(self.burst.shots[variable.counter], load=False)
+                variable_merged = sa_session.merge(variable, load=False)
                 sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
                 sa_session.commit()
 
