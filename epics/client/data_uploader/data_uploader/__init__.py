@@ -244,7 +244,7 @@ class DataUploader:
 
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
             values = caget_many([variable.name for variable in variables_to_fetch])
-            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+            with SQLAlchemySession() as sa_session:
                 shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter])
                 for variable, value in zip(variables_to_fetch, values):
                     variable = sa_session.merge(variable)
@@ -446,7 +446,7 @@ class DataUploader:
 
         try:
             # shot = self.burst.shots[variable.counter]
-            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+            with SQLAlchemySession() as sa_session:
                 shot = sa_session.merge(self.burst.shots[variable.counter])
                 variable_merged = sa_session.merge(variable)
                 sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
