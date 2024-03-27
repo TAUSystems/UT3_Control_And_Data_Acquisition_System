@@ -240,7 +240,10 @@ class DataUploader:
             return
 
         try:
-            variables_to_fetch = list(filter(lambda variable: variable.is_online and variable.is_numeric, self.variables))
+            variables_to_fetch = [variable for variable in self.variables
+                                  if variable.source == VariableSource.fetch
+                                     and variable.is_online and variable.is_numeric
+                                 ]
 
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
             values = caget_many([variable.name for variable in variables_to_fetch])
