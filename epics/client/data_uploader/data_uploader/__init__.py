@@ -38,10 +38,13 @@ from measurement_db.orm.tables import ImageDevice, Variable
 from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
-from sqlalchemy.orm import Session as SQLAlchemySession
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import select
 
+
 sqlalchemy_engine = get_sqlalchemy_engine()
+sqlalchemy_session_factory = sessionmaker(sqlalchemy_engine)
+SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
@@ -154,14 +157,14 @@ class DataUploader:
     def load_image_pv_list(self) -> list[ImageDevice]:
         """ 
         """
-        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+        with SQLAlchemySession(expire_on_commit=False) as sa_session:
              return sa_session.scalars(select(ImageDevice)).all()
 
 
     def load_scalar_pv_list(self) -> list[Variable]:
         """ 
         """
-        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+        with SQLAlchemySession(expire_on_commit=False) as sa_session:
              variables = sa_session.scalars(select(Variable)).all()
 
         cainfo_regex = re.compile(r"(\w+)\s+=\s([^\n]+)\n")
@@ -342,7 +345,7 @@ class DataUploader:
                         ) 
                 )
 
-            with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+            with SQLAlchemySession(expire_on_commit=False) as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
 
@@ -358,7 +361,7 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+        with SQLAlchemySession(expire_on_commit=False) as sa_session:
             sa_session.add(self.session)
             sa_session.commit()
 
@@ -378,7 +381,7 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
+        with SQLAlchemySession(expire_on_commit=False) as sa_session:
             sa_session.add(self.scan)
             sa_session.commit()
 
