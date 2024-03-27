@@ -239,12 +239,13 @@ class DataUploader:
         try:
             variables_to_fetch = list(filter(lambda variable: variable.is_online and variable.is_numeric, self.variables))
 
-            shot = self.burst.shots[self.fetch_trigger_variable.counter]
+            # shot = self.burst.shots[self.fetch_trigger_variable.counter]
             values = caget_many([variable.name for variable in variables_to_fetch])
             with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
-                sa_session.add_all([Measurement(variable=variable, shot=shot, value=value)
-                                    for variable, value in zip(variables_to_fetch, values)
-                                  ])
+                shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter])
+                for variable, value in zip(variables_to_fetch, values):
+                    variable = sa_session.merge(variable)
+                    sa_session.add(Measurement(variable=variable, shot=shot, value=value))
                 sa_session.commit()
 
             logging.info(f"Inserted {len(values)} measurements fetched on trigger variable")
@@ -441,9 +442,11 @@ class DataUploader:
             return
 
         try:
-            shot = self.burst.shots[variable.counter]
+            # shot = self.burst.shots[variable.counter]
             with SQLAlchemySession(sqlalchemy_engine, expire_on_commit=False) as sa_session:
-                sa_session.add(Measurement(variable=variable, shot=shot, value=value))
+                shot = sa_session.merge(self.burst.shots[variable.counter])
+                variable_merged = sa_session.merge(variable)
+                sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
                 sa_session.commit()
 
         except Exception as err:
