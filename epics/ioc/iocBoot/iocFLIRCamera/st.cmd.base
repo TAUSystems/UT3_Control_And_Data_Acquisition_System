@@ -73,6 +73,14 @@ dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,A
 set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
 set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
 
+
+####################################################################################################################
+# TakeNShots database
+dbLoadRecords("$(TOP)/TakeNShotsApp/Db/TakeNShots.db")
+set_requestfile_path("$(TOP)/TakeNShotsApp/Db/TakeNShots.db");
+
+
+####################################################################################################################
 # Must start PVA server for NDPva
 startPVAServer
 
