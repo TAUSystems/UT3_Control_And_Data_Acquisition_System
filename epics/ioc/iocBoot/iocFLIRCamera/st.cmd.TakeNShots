@@ -1,0 +1,2 @@
+# TakeNShots database
+dbLoadRecords("$(TOP)/TakeNShotsApp/Db/TakeNShots.db")
