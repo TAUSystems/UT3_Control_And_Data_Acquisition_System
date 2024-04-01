@@ -10,6 +10,12 @@ import re
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
+from hanging_threads import start_monitoring
+hanging_threads_monitor = start_monitoring(
+    seconds_frozen=1.0,   # seconds 
+    test_interval=100.0,  # millisecond
+)
+
 # for image uploader
 from io import BytesIO
 from tifffile import imwrite as write_tiff
@@ -40,7 +46,6 @@ from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import select
-
 
 sqlalchemy_engine = get_sqlalchemy_engine()
 sqlalchemy_session_factory = sessionmaker(sqlalchemy_engine, expire_on_commit=False)
