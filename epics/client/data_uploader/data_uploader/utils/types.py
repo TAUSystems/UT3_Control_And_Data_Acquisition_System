@@ -24,5 +24,6 @@ class BurstStatus(Enum):
     Idle         = 1
     Preparing    = 2
     Armed        = 3
-    Running      = 4
-    Stop         = 5
+    Force        = 4
+    Running      = 5
+    Stop         = 6
