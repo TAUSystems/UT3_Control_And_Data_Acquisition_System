@@ -332,49 +332,13 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        # detect change from not running to running
-        if previous_status != BurstStatus.Running and self.burst_status == BurstStatus.Running:
-            # reset scalar and image device counters
-            self.reset_counters()
+        if self.burst_status == BurstStatus.Preparing:
+            assert previous_status != Burst.Preparing
+            self.prepare_burst()            
 
-    def burst_frequency_monitor_callback(self, value: float, **kwargs) -> None:
-        """ Callback when burst frequency PV changes 
-
-        No need to check self.enable_callbacks: this needs to run on monitor creation
-        callback.
+    def prepare_burst(self) -> None:
+        """ 
         """
-
-        self.burst.repetition_rate = value
-        logging.info(f"Burst frequency changed to {value}.")
-
-    def burst_num_shots_monitor_callback(self, value: int, **kwargs) -> None:
-        """ Callback when burst number of shots PV changes
-
-        No need to check self.enable_callbacks: this needs to run on monitor creation
-        callback.
-        """
-
-        self.burst.number_of_shots = value
-        logging.info(f"Burst number of shots changed to {value}.")
-
-
-    def burst_timestamp_monitor_callback(self, value: str, **kwargs) -> None:
-        """ Callback when the burst timestamp PV changes
-
-        camonitor's callback arguments are keyword arguments including pvname, 
-        value, char_value. 
-
-        Parameters
-        ----------
-        value : str
-            Unix millisecond timestamp. The PV is of stringout type because the 
-            int64 that's required can't be sent over Channel Access, which is 
-            what the UI uses.
-
-        """
-        if not self.enable_callbacks:
-            return
-
         try:
             pva.put("TakeNShots:BurstInDB", 0)
 
@@ -385,17 +349,23 @@ class DataUploader:
                                repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
 
+            self.burst_pvs['burst_timestamp'].put(str(int(self.burst.timestamp.timestamp() * 1e3)))
+            logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            for seq in range(1, self.burst.number_of_shots + 1):
+            # add shots
+            for shot_seq in range(1, self.burst.number_of_shots + 1):
                 self.burst.shots.append(
-                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
-                         seq = seq,
+                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=shot_seq / self.burst.repetition_rate),
+                         seq = shot_seq,
                         ) 
                 )
 
             with SQLAlchemySession() as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
+
+            self.reset_counters()
+            self.current_burst_seq += 1
 
             pva.put("TakeNShots:BurstInDB", 1)
 
