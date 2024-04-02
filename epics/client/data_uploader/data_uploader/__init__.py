@@ -84,8 +84,10 @@ class DataUploader:
         # images to be sent to image backend
         self.image_devices: list[ImageDevice] = []
 
-        self.variables: list[Variable] = self.load_scalar_pv_list()
-        self.image_devices: list[ImageDevice] = self.load_image_pv_list()
+        # Session for image upload HTTP Requests. 
+        # People on the internet seem to be uncertain how thread-safe this is, 
+        # so it should be good enough for my purposes.
+        self.requests_session = requests.Session()
 
         # will hold pvAccess subscriptions (Channel Access subscriptions are held 
         # in epics._PVmonitors_ )
@@ -452,10 +454,10 @@ class DataUploader:
             tiff_bytes.seek(0)
 
             # fire POST request
-            response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                                            data={'device_name': image_device.name, 'shot_id': shot_id},
-                                            files={'image_data': tiff_bytes},
-                                            )
+            response = self.requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
+                                                  data={'device_name': image_device.name, 'shot_id': shot_id},
+                                                  files={'image_data': tiff_bytes},
+                                                 )
 
             response_data = response.json()
 
