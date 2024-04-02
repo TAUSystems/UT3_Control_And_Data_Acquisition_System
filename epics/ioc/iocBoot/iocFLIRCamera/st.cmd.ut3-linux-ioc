@@ -1,10 +1,19 @@
 < envPaths
 errlogInit(20000)
 
-dbLoadDatabase("$(TOP)/dbd/spinnakerApp.dbd")
-spinnakerApp_registerRecordDeviceDriver(pdbbase) 
+################# ADSIM CAMERAS ####################################################################################
+< st.cmd.ADSimDetector
 
-epicsEnvSet("GENICAM_DB_FILE", "$(ADGENICAM)/db/FLIR_BFS_31S4M.template")
+################# ESPEC CAMERAS ####################################################################################
+< st.cmd.ut3-electron-spectrometer
 
-< st.cmd.base
+################# SHOT PREP ########################################################################################
 < st.cmd.TakeNShots
+
+################# STARTING PVAServer and IOC #######################################################################
+# Must start PVA server for NDPva
+startPVAServer
+iocInit()
+
+################# POST IOC-INIT ####################################################################################
+< st.cmd.postIocInit
