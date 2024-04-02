@@ -367,7 +367,7 @@ class DataUploader:
             self.reset_counters()
             self.current_burst_seq += 1
 
-            pva.put("TakeNShots:BurstInDB", 1)
+            # pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
