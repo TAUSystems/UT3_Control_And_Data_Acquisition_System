@@ -401,36 +401,25 @@ class DataUploader:
             logging.error(f"Unable to create burst and shots: {err}")
 
     def session_title_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=value)
+        self.session = Session(title=value, timestamp=datetime.now(tz=UTC))
         logging.info(f"New session \"{self.session.title}\"")
 
-        if not self.enable_callbacks:
-            return
+        # if not self.enable_callbacks:
+        #     return
 
-        with SQLAlchemySession() as sa_session:
-            sa_session.add(self.session)
-            sa_session.commit()
+        # with SQLAlchemySession() as sa_session:
+        #     sa_session.add(self.session)
+        #     sa_session.commit()
 
 
-    def scan_description_monitor_callback(self, value: str, **kwargs):
+    def scan_number_monitor_callback(self, value: int, **kwargs):
+        self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
+        logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
+        self.current_burst_seq = 1
 
-        # Scan description should start with Scan 123 (hyphen/underscore allowed)
-        if (m := re.match(r"Scan[ _\-](?P<seq>\d{3})", value)) is None:
-            seq = -1
-            logging.error(f"Scan description \"{value}\" does not start with Scan XXX")
-        else:
-            seq = int(m['seq'])
-        self.scan = Scan(description=value, seq=seq, session=self.session)
-        logging.info(f"New scan, number {self.scan.seq} with description \"{self.scan.description}\"")
-        self.burst.seq = 0
-
-        if not self.enable_callbacks:
-            return
-
-        with SQLAlchemySession() as sa_session:
-            sa_session.add(self.scan)
-            sa_session.commit()
-
+    def scan_title_monitor_callback(self, value: str, **kwargs):
+        self.scan.title = value
+        logging.info(f"Scan title set to \"{self.scan.title}\"")
 
     def reset_counters(self):
         for variable in self.variables:
