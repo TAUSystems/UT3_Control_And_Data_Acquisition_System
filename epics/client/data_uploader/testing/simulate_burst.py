@@ -7,7 +7,7 @@ from time import sleep
 from epics import caput
 from epics.pv import PV
 
-from ..data_uploader.utils.types import BurstStatus
+from data_uploader.utils.types import BurstStatus
 
 pvs = {'session_title': PV("Tr")}
 
@@ -42,7 +42,7 @@ def trigger_cameras():
 
 def main(num_shots: int, frequency: float):
 
-    burst_status = pvs['burst_status'].get()
+    burst_status = BurstStatus(pvs['burst_status'].get())
     if burst_status != BurstStatus.Idle:
         raise ValueError(f"Not ready to create burst! Status is {BurstStatus(burst_status)}")
 

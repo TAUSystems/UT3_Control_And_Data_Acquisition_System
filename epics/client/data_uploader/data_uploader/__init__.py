@@ -69,7 +69,7 @@ class DataUploader:
 
         # Current burst, session, and scan information
         self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, description="Scan-000 default", seq=0, notes="This scan is used if no Scan is known.")
+        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
         self.burst = Burst(timestamp=datetime.now(tz=UTC), repetition_rate=None, number_of_shots=None, seq=0)
 
         # disconnected, idle, preparing, armed, running
@@ -278,7 +278,7 @@ class DataUploader:
                 ('burst_frequency', []),
                 ('burst_num_shots', []),
                 ('session_title', [self.session_title_monitor_callback]),
-                ('scan_title', []),
+                ('scan_title', [self.scan_title_monitor_callback]),
                 ('scan_number', [self.scan_number_monitor_callback]),
             ]:
 
@@ -298,7 +298,8 @@ class DataUploader:
         try:
             variables_to_fetch = [variable for variable in self.variables
                                   if variable.source == VariableSource.fetch
-                                     and variable.pv.connected and issubclass(variable.dtype, Number)
+                                     and variable.pv.connected 
+                                     and (variable.dtype is not None) and issubclass(variable.dtype, Number)
                                  ]
 
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
@@ -339,8 +340,8 @@ class DataUploader:
             return
 
         if self.burst_status == BurstStatus.Preparing:
-            assert previous_status != Burst.Preparing
-            self.prepare_burst()            
+            assert previous_status != BurstStatus.Preparing
+            self.prepare_burst()
 
     def prepare_burst(self) -> None:
         """ 
@@ -373,7 +374,7 @@ class DataUploader:
             self.reset_counters()
             self.current_burst_seq += 1
 
-            # pva.put("TakeNShots:BurstInDB", 1)
+            pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
