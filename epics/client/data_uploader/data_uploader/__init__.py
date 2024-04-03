@@ -6,6 +6,7 @@ UTC = timezone.utc
 from functools import partial
 from time import sleep
 import re
+from enum import Enum
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -14,20 +15,20 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(mess
 from io import BytesIO
 from tifffile import imwrite as write_tiff
 import requests
-requests_session = requests.Session()
 
 # get environment variables, specifically image endpoint url
 from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
-from epics import caput, caget, caget_many, cainfo, camonitor, camonitor_clear
+from epics import caget_many
+from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
 from .utils.types import BurstStatus
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 if TYPE_CHECKING:
     from .utils.types import DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
@@ -41,20 +42,20 @@ from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import select
 
-
 sqlalchemy_engine = get_sqlalchemy_engine()
 sqlalchemy_session_factory = sessionmaker(sqlalchemy_engine, expire_on_commit=False)
 SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 
+# these are the PVs necessary for operating this DataUploader
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
     'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
 
-    'session_title': "Timing:TriggerGeneration:SessionID",
-    'scan_number': "Timing:TriggerGeneration:ScanNumber",
-    'scan_description': "Timing:TriggerGeneration:ScanTitle",
+    'session_title': "Data:Scan:Session",
+    'scan_number': "Data:Scan:Number",
+    'scan_title': "Data:Scan:Title",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
@@ -68,15 +69,25 @@ class DataUploader:
 
         # Current burst, session, and scan information
         self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, description="Scan-000 default", seq=0, notes="This scan is used if no Scan is known.")
+        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
         self.burst = Burst(timestamp=datetime.now(tz=UTC), repetition_rate=None, number_of_shots=None, seq=0)
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
+        self.current_burst_seq: int = 1
 
         # scalars and image_devices to monitor
-        self.variables: list[Variable] = self.load_scalar_pv_list()
-        self.image_devices: list[ImageDevice] = self.load_image_pv_list()
+        # PVs to monitor for the operation of this Data Uploader
+        self.burst_pvs: dict[str, PV] = {}
+        # scalars whose measurements will be saved
+        self.variables: list[Variable] = []
+        # images to be sent to image backend
+        self.image_devices: list[ImageDevice] = []
+
+        # Session for image upload HTTP Requests. 
+        # People on the internet seem to be uncertain how thread-safe this is, 
+        # so it should be good enough for my purposes.
+        self.requests_session = requests.Session()
 
         # will hold pvAccess subscriptions (Channel Access subscriptions are held 
         # in epics._PVmonitors_ )
@@ -84,7 +95,7 @@ class DataUploader:
 
         # whether to run callbacks. mainly to prevent callbacks from running when 
         # they are called while setting up monitors.
-        self.enable_callbacks = False
+        self.enable_callbacks: bool = False
 
         logging.info(f"DataUploader ready to run.")
 
@@ -95,19 +106,12 @@ class DataUploader:
         # don't run callback code when they are called during monitor setup
         self.enable_callbacks = False
 
-        # subscribe to session, scan, burst variables provided by user interface (through CALab)
-        self.camonitor_pvs = []
-        for pv_alias, callback_fun in [
-                ('burst_status', self.burst_status_monitor_callback),
-                ('burst_timestamp', self.burst_timestamp_monitor_callback),
-                ('burst_frequency', self.burst_frequency_monitor_callback),
-                ('burst_num_shots', self.burst_num_shots_monitor_callback),
-                ('session_title', self.session_title_monitor_callback),
-                ('scan_description', self.scan_description_monitor_callback),
-            ]:
-            camonitor(PV_NAMES[pv_alias], callback=callback_fun)
-            self.camonitor_pvs.append(PV_NAMES[pv_alias])
-            logging.info(f"Monitoring {PV_NAMES[pv_alias]} over Channel Access")
+        # Load scalars and image devices from measurement database
+        self.load_scalar_pv_list()
+        self.load_image_pv_list()
+
+        # subscribe to burst PVs
+        self.subscribe_to_burst_pvs()
 
         # subscribe to PVs in IOCs
         self.subscribe_to_image_pvs()
@@ -144,52 +148,97 @@ class DataUploader:
         """ Close subscriptions
         """
 
-        # unsubscribe to session, scan, burst variables provided by user interface (through CALab)
-        for pv_name in self.camonitor_pvs:
-            camonitor_clear(pv_name)
-            logging.info(f"Closed Channel Access subscription for {pv_name}")
+        # unsubscribe to scalar variables
+        for variable in self.variables:
+            if hasattr(variable, 'pv') and variable.pv is not None:
+                variable.pv.clear_callbacks()
+                logging.info(f"Closed Channel Access subscriptions for {variable.name}")
 
-        for pv_name, subscription in self.subscriptions.items():
-            subscription.close()
-            logging.info(f"Closed PVAccess subscription for {pv_name}")
+        # unsubscribe to images
+        for image_device in self.image_devices:
+            if hasattr(image_device, 'pva_monitor') and image_device.pva_monitor is not None:
+                image_device.pva_monitor.close()
+                logging.info(f"Closed PVAccess subscription for {image_device.name}")
 
+        # unsubscribe to burst variables
+        for pv_alias, pv in self.burst_pvs.items():
+            pv.clear_callbacks()
+            logging.info(f"Closed Channel Access subscriptions for {pv.pvname}")
 
-    def load_image_pv_list(self) -> list[ImageDevice]:
+    def load_image_pv_list(self) -> None:
         """ 
         """
         with SQLAlchemySession() as sa_session:
-             return sa_session.scalars(select(ImageDevice)).all()
+             self.image_devices = sa_session.scalars(select(ImageDevice)).all()
 
 
-    def load_scalar_pv_list(self) -> list[Variable]:
+    def load_scalar_pv_list(self) -> None:
         """ 
         """
         with SQLAlchemySession() as sa_session:
-             variables = sa_session.scalars(select(Variable)).all()
+             self.variables = sa_session.scalars(select(Variable)).all()
+
+
+    def subscribe_to_scalar_pvs(self) -> None:
+
+        # cainfo is a string that looks like 
 
         cainfo_regex = re.compile(r"(\w+)\s+=\s([^\n]+)\n")
         def parse_cainfo(cainfo_str: str) -> dict:
             return dict(cainfo_regex.findall(cainfo_str))
 
+        def parse_dtype(fulltype: str) -> Type:
+            """
+            From https://github.com/pyepics/pyepics/blob/0b33db782dde77d89ee847bee4e6fc314bc3c30b/epics/pv.py#L873
+            """
+            if '_' in fulltype:
+                mod, xtype = fulltype.split('_')
+            else:
+                xtype = fulltype
+
+            return {'string': str,
+                    'char': str,
+                    'float': float,
+                    'double': float,
+                    'long': int,
+                    'enum': Enum,
+                    'bool': bool,
+                   }[xtype]
+
         # collect variable information, such as whether it can be found on the 
         # network, whether it's numeric, etc.
         # TODO: split by Channel Access, pvAccess
         print("Collecting variable information...")
-        variable_values = caget_many([variable.name for variable in variables])
-        for variable, variable_value in zip(variables, variable_values):
-            # TODO: periodically check whether variable has come online
-            variable.is_online = (variable_value is not None)
-            variable.is_numeric = isinstance(variable_value, Number)
-            variable.info = {}
-            if variable.is_online:
-                try:
-                    variable.info = parse_cainfo(cainfo(variable.name, print_out=False))
-                    logging.info(f"Got cainfo for {variable.name}")
-                except Exception as err:
-                    variable.info = {}
-                    logging.error(f"Unable to get cainfo for {variable.name}")
+        for variable in self.variables:
 
-        return variables
+            if variable.source == VariableSource.monitor:
+                variable.pv = PV(variable.name, callback=partial(self.scalar_pv_callback, variable))
+                # disable monitor deadband: make sure monitor is posted even if value doesn't change
+                PV(variable.name + ".MDEL").put(-1)
+                logging.info(f"Monitoring {variable.name} over Channel Access")
+
+            elif variable.source == VariableSource.fetch:
+                variable.pv = PV(variable.name, auto_monitor=False)
+                # pull the value of the pv, otherwise it will be None, and PV.info chokes.
+                variable.pv.get()
+
+            variable.info = {}
+            try:
+                info = variable.pv.info
+                if info is not None:
+                    variable.info = parse_cainfo(info)
+                    variable.dtype = parse_dtype(variable.info['type'])
+                    logging.info(f"Got cainfo for {variable.name}")
+                else:
+                    variable.dtype = None
+                    logging.warning(f"Unable to get cainfo for {variable.name}")
+            except Exception as err:
+                variable.dtype = None
+                logging.error(f"Error getting cainfo for {variable.name}: {err}")
+
+            # Add a counter attribute to the Variable instance
+            variable.counter = 0
+
 
     def check_burst_status_enum(self) -> None:
         """
@@ -211,27 +260,34 @@ class DataUploader:
         """ Add pvAccess monitors for image devices
         """
         for image_device in self.image_devices:
-            self.subscriptions[image_device.image_pv_name] = \
+            image_device.pva_monitor = \
                 pva.monitor(image_device.image_pv_name, partial(self.image_pv_callback, image_device))
             logging.info(f"Monitoring {image_device.image_pv_name} over pvAccess")
 
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
 
-    def subscribe_to_scalar_pvs(self) -> None:
-        """ TODO: split by Channel Access and PVAccess
+    
+    def subscribe_to_burst_pvs(self) -> None:
         """
-        for variable in self.variables:
-            if variable.source == VariableSource.monitor:
-                # diable monitor deadband: make sure monitor is posted even if value doesn't change
-                caput(variable.name + ".MDEL", -1)
-                camonitor(variable.name, callback=partial(self.scalar_pv_callback, variable))
-                self.camonitor_pvs.append(variable.name)
-                logging.info(f"Monitoring {variable.name} over Channel Access")
+        """
 
-            # Add a counter attribute to the Variable instance
-            variable.counter = 0
+        # Monitor these PVs
+        for pv_alias, callbacks in [
+                ('burst_status', [self.burst_status_monitor_callback]),
+                ('burst_frequency', []),
+                ('burst_num_shots', []),
+                ('session_title', [self.session_title_monitor_callback]),
+                ('scan_title', [self.scan_title_monitor_callback]),
+                ('scan_number', [self.scan_number_monitor_callback]),
+            ]:
 
+            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=callbacks, )
+            logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
+
+        # PV connections without monitoring
+        for pv_alias in ['burst_timestamp']:
+            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
@@ -242,18 +298,18 @@ class DataUploader:
         try:
             variables_to_fetch = [variable for variable in self.variables
                                   if variable.source == VariableSource.fetch
-                                     and variable.is_online and variable.is_numeric
+                                     and variable.pv.connected 
+                                     and (variable.dtype is not None) and issubclass(variable.dtype, Number)
                                  ]
 
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
-            values = caget_many([variable.name for variable in variables_to_fetch])
+            values = [variable.pv.get() for variable in variables_to_fetch]
             with SQLAlchemySession() as sa_session:
                 shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter], load=False)
                 num_measurements_inserted = 0
                 for variable, value in zip(variables_to_fetch, values):
                     if value is None:
                         logging.warning(f"No value for {variable.name}. Possibly it went offline. Removing from list of variables to fetch on trigger.")
-                        variable.is_online = False
                         continue
                     variable_merged = sa_session.merge(variable, load=False)
                     sa_session.add(Measurement(variable=variable_merged, shot=shot, value=float(value)))
@@ -283,74 +339,31 @@ class DataUploader:
         if not self.enable_callbacks:
             return
 
-        # detect change from not running to running
-        if previous_status != BurstStatus.Running and self.burst_status == BurstStatus.Running:
-            # reset scalar and image device counters
-            self.reset_counters()
+        if self.burst_status == BurstStatus.Preparing:
+            assert previous_status != BurstStatus.Preparing
+            self.prepare_burst()
 
-    def burst_frequency_monitor_callback(self, value: float, **kwargs) -> None:
-        """ Callback when burst frequency PV changes 
-
-        No need to check self.enable_callbacks: this needs to run on monitor creation
-        callback.
+    def prepare_burst(self) -> None:
+        """ 
         """
-
-        self.burst.repetition_rate = value
-        logging.info(f"Burst frequency changed to {value}.")
-
-    def burst_num_shots_monitor_callback(self, value: int, **kwargs) -> None:
-        """ Callback when burst number of shots PV changes
-
-        No need to check self.enable_callbacks: this needs to run on monitor creation
-        callback.
-        """
-
-        self.burst.number_of_shots = value
-        logging.info(f"Burst number of shots changed to {value}.")
-
-
-    def burst_timestamp_monitor_callback(self, value: str, **kwargs) -> None:
-        """ Callback when the burst timestamp PV changes
-
-        camonitor's callback arguments are keyword arguments including pvname, 
-        value, char_value. 
-
-        Parameters
-        ----------
-        value : str
-            Unix millisecond timestamp. The PV is of stringout type because the 
-            int64 that's required can't be sent over Channel Access, which is 
-            what the UI uses.
-
-        """
-        if not self.enable_callbacks:
-            return
-
         try:
             pva.put("TakeNShots:BurstInDB", 0)
 
-            timestamp_ms = int(value)
-            self.burst = Burst(timestamp=datetime.fromtimestamp(timestamp_ms / 1e3, tz=UTC), 
+            self.burst = Burst(timestamp=datetime.now(tz=UTC), 
                                scan=self.scan, 
-                               seq=self.burst.seq + 1, 
-                               number_of_shots=self.burst.number_of_shots,
-                               repetition_rate=self.burst.repetition_rate,
+                               seq=self.current_burst_seq,
+                               number_of_shots=self.burst_pvs['burst_num_shots'].value,
+                               repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
 
-            # some burst attributes can be not set if the UI started before the uploader
-            # TODO: This is unexpected, because starting the monitor should set these
-            # attributes.
-            if self.burst.repetition_rate is None:
-                self.burst.repetition_rate = caget(PV_NAMES['burst_frequency'])
-            if self.burst.number_of_shots is None:
-                self.burst.number_of_shots = caget(PV_NAMES['burst_num_shots'])
+            self.burst_pvs['burst_timestamp'].put(str(int(self.burst.timestamp.timestamp() * 1e3)))
+            logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f} with frequency = {self.burst.repetition_rate} Hz and NumShots = {self.burst.number_of_shots}")
-
-            for seq in range(1, self.burst.number_of_shots + 1):
+            # add shots
+            for shot_seq in range(1, self.burst.number_of_shots + 1):
                 self.burst.shots.append(
-                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=seq / self.burst.repetition_rate),
-                         seq = seq,
+                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=shot_seq / self.burst.repetition_rate),
+                         seq = shot_seq,
                         ) 
                 )
 
@@ -358,42 +371,34 @@ class DataUploader:
                 sa_session.add(self.burst)
                 sa_session.commit()
 
+            self.reset_counters()
+            self.current_burst_seq += 1
+
             pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
 
     def session_title_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=value)
+        self.session = Session(title=value, timestamp=datetime.now(tz=UTC))
         logging.info(f"New session \"{self.session.title}\"")
 
-        if not self.enable_callbacks:
-            return
+        # if not self.enable_callbacks:
+        #     return
 
-        with SQLAlchemySession() as sa_session:
-            sa_session.add(self.session)
-            sa_session.commit()
+        # with SQLAlchemySession() as sa_session:
+        #     sa_session.add(self.session)
+        #     sa_session.commit()
 
 
-    def scan_description_monitor_callback(self, value: str, **kwargs):
+    def scan_number_monitor_callback(self, value: int, **kwargs):
+        self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
+        logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
+        self.current_burst_seq = 1
 
-        # Scan description should start with Scan 123 (hyphen/underscore allowed)
-        if (m := re.match(r"Scan[ _\-](?P<seq>\d{3})", value)) is None:
-            seq = -1
-            logging.error(f"Scan description \"{value}\" does not start with Scan XXX")
-        else:
-            seq = int(m['seq'])
-        self.scan = Scan(description=value, seq=seq, session=self.session)
-        logging.info(f"New scan, number {self.scan.seq} with description \"{self.scan.description}\"")
-        self.burst.seq = 0
-
-        if not self.enable_callbacks:
-            return
-
-        with SQLAlchemySession() as sa_session:
-            sa_session.add(self.scan)
-            sa_session.commit()
-
+    def scan_title_monitor_callback(self, value: str, **kwargs):
+        self.scan.title = value
+        logging.info(f"Scan title set to \"{self.scan.title}\"")
 
     def reset_counters(self):
         for variable in self.variables:
@@ -426,10 +431,10 @@ class DataUploader:
             tiff_bytes.seek(0)
 
             # fire POST request
-            response = requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                                            data={'device_name': image_device.name, 'shot_id': shot_id},
-                                            files={'image_data': tiff_bytes},
-                                            )
+            response = self.requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
+                                                  data={'device_name': image_device.name, 'shot_id': shot_id},
+                                                  files={'image_data': tiff_bytes},
+                                                 )
 
             response_data = response.json()
 

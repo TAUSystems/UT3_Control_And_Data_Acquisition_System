@@ -7,7 +7,7 @@ from time import sleep
 from epics import caput
 from epics.pv import PV
 
-from ..data_uploader.utils.types import BurstStatus
+from data_uploader.utils.types import BurstStatus
 
 pvs = {'session_title': PV("Tr")}
 
@@ -17,10 +17,10 @@ pvs: dict[str, PV] = {
     'burst_frequency': PV("Timing:TriggerGeneration:Frequency_GET"),
     'burst_num_shots': PV("Timing:TriggerGeneration:NumShots"),
 
-    'session_title': PV("Timing:TriggerGeneration:SessionID"),
-    'scan_description': PV("Timing:TriggerGeneration:ScanTitle"),
+    'session_title': PV("Data:Scan:Session"),
+    'scan_number': PV("Data:Scan:Number"),
+    'scan_title': PV("Data:Scan:Title"),
 }
-
 
 def configure_cameras():
     stop_acquisition()
@@ -42,7 +42,7 @@ def trigger_cameras():
 
 def main(num_shots: int, frequency: float):
 
-    burst_status = pvs['burst_status'].get()
+    burst_status = BurstStatus(pvs['burst_status'].get())
     if burst_status != BurstStatus.Idle:
         raise ValueError(f"Not ready to create burst! Status is {BurstStatus(burst_status)}")
 
@@ -50,18 +50,21 @@ def main(num_shots: int, frequency: float):
         raise ValueError("Frequency should be between 0.01 and 50.0 Hz")
 
     configure_cameras()
-    start_acquisition()
 
     pvs['session_title'].put(f"Simulate burst {datetime.now(tz=timezone.utc):%Y-%m-%dT%H:%M:%SZ}", wait=True)
-    pvs['scan_description'].put(f"Scan-001 Simulate burst: {num_shots} shots at {frequency:.1f} Hz", wait=True)
+    pvs['scan_number'].put(1)
+    pvs['scan_title'].put(f"Simulate burst: {num_shots} shots at {frequency:.1f} Hz", wait=True)
     pvs['burst_num_shots'].put(num_shots, wait=True)
     pvs['burst_frequency'].put(frequency, wait=True)
-    pvs['burst_timestamp'].put(str(int(datetime.now().timestamp() * 1000)), wait=True)
+
+    pvs['burst_status'].put(BurstStatus.Preparing.name)
+    sleep(0.1)
 
     for shot_number in range(num_shots):
         trigger_cameras()
         sleep(1 / frequency)
 
+    pvs['burst_status'].put(BurstStatus.Idle.name)
 
 if __name__ == "__main__":
     ap = ArgumentParser()
