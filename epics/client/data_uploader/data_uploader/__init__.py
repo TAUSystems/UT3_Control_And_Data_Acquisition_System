@@ -219,16 +219,22 @@ class DataUploader:
 
             elif variable.source == VariableSource.fetch:
                 variable.pv = PV(variable.name, auto_monitor=False)
+                # pull the value of the pv, otherwise it will be None, and PV.info chokes.
+                variable.pv.get()
 
             variable.info = {}
-            info = variable.pv.info
-            if info is not None:
-                variable.info = parse_cainfo(info)
-                variable.dtype = parse_dtype(info['type'])
-                logging.info(f"Got cainfo for {variable.name}")
-            else:
+            try:
+                info = variable.pv.info
+                if info is not None:
+                    variable.info = parse_cainfo(info)
+                    variable.dtype = parse_dtype(variable.info['type'])
+                    logging.info(f"Got cainfo for {variable.name}")
+                else:
+                    variable.dtype = None
+                    logging.warning(f"Unable to get cainfo for {variable.name}")
+            except Exception as err:
                 variable.dtype = None
-                logging.warning(f"Unable to get cainfo for {variable.name}")
+                logging.error(f"Error getting cainfo for {variable.name}: {err}")
 
             # Add a counter attribute to the Variable instance
             variable.counter = 0
