@@ -42,7 +42,8 @@ class Variable(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(252), index=True)
     description: Mapped[str] = mapped_column(String(252), default="")
-    
+    display_name: Mapped[Optional[str]] = mapped_column(String(252))
+
     # units
     units: Mapped[Optional[str]] = mapped_column(String(16))
     display_units: Mapped[Optional[str]] = mapped_column(String(16))
@@ -74,7 +75,7 @@ class Scan(Base):
     session_timestamp: Mapped[datetime] = mapped_column(ForeignKey('session.timestamp'))
     seq: Mapped[int] = mapped_column(index=True, doc="Sequence number of this scan within session")
 
-    description: Mapped[str] = mapped_column(Text(), default="")
+    title: Mapped[str] = mapped_column(Text(), default="")
 
     notes: Mapped[str] = mapped_column(Text(), default="")
 
