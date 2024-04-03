@@ -7,6 +7,8 @@ from functools import partial
 from time import sleep
 import re
 from enum import Enum
+from operator import attrgetter
+from warnings import warn
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -26,9 +28,9 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus
+from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Iterable, Optional, Type
 if TYPE_CHECKING:
     from .utils.types import DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
@@ -472,3 +474,143 @@ class DataUploader:
         finally:
             # increase shot counter
             variable.counter += 1
+
+
+class ScalarsSavedTracker:
+    def __init__(self, variables: list[Variable], number_of_shots: int, cache_ready_shots: bool = True):
+        """ 
+        Parameters
+        ----------
+        variables : list[Variable]
+        number_of_shots : int
+        cache_ready_shots : bool
+            Whether to cache shots that are ready, separated by source (and 
+            by set of allowed statuses). If it can be assumed that a True result 
+            for a given shot 
+        """
+        self.variables: list[Variable] = variables
+        self.number_of_shots: int = number_of_shots
+        self.cache_ready_shots: bool = cache_ready_shots
+        
+        # separate list of Variables by source
+        self.variables_by_source: dict[VariableSource, list[Variable]] = {
+            VariableSource.fetch: [],
+            VariableSource.monitor: [],
+            VariableSource.image_backend: [],
+        }
+        for variable in variables:
+            if variable.source in self.variables_by_source:
+                self.variables_by_source[variable.source].append(variable)
+
+        # generate dict[str, ScalarSaveStatus] based on variable status. This 
+        # will be copied for every shot
+        single_shot_scalar_save_status = {}
+        for variable in variables:
+            if (    ((variable.pv is not None) and variable.pv.connected)
+                and (variable.dtype is not None)
+               ):
+                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
+            else:
+                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
+
+        # make <number_of_shots> copies of this dictionary. (Use copy() to make 
+        # sure it isn't just <number_of_shots> references to the same dict object!)
+        self.scalar_save_status: list[dict[str, ScalarSaveStatus]] = [single_shot_scalar_save_status.copy() for _ in range(number_of_shots)]
+
+        # cache shots that are ready for a given variable source and set of allowed
+        # statuses
+        # it's a dict of set so that we can check against (shot_seq, variable_source) as well as (shot_seq, variable_source, ready_status_tuple)
+        self.shot_ready_cache: dict[tuple[ShotSeq, VariableSource], set[tuple[ScalarSaveStatus]]] = {}
+
+    def update(self, variable: Variable, shot: Shot, status: ScalarSaveStatus = ScalarSaveStatus.Saved):
+        """ Set new save status of a variable for a given shot_seq
+
+        Parameters
+        ----------
+        variable : Variable
+        shot : Shot | ShotSeq
+        status : ScalarSaveStatus
+            default is Saved
+        """
+        self.scalar_save_status[shot.seq - 1][variable.name] = status
+
+        # if this updated a shot/variable_source combination which we have 
+        # previously cached as ready (for some set of ready_statuses), remove it
+        # from cache and issue a warning.
+        if self.cache_ready_shots and ((shot.seq, variable.source) in self.shot_ready_cache):
+            del self.shot_ready_cache[(shot.seq, variable.source)]
+            logging.warning("Updating status of a shot and variable whose shot/variable "
+                            "combination had already been marked as ready for at "
+                            "least some result_status set."
+                           )
+    
+    def all_scalars_ready(self, 
+                          shot_seq: Optional[ShotSeq | Iterable[ShotSeq]] = None,
+                          variable_sources: VariableSource | set[VariableSource] = {VariableSource.fetch, VariableSource.monitor, VariableSource.image_backend},
+                          ready_statuses: ScalarSaveStatus | set[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
+                         ) -> bool:
+        """ Returns whether all scalars are ready for one or more shots
+
+        Parameters
+        ----------
+        shot_seq : Optional[ShotSeq | Iterable[ShotSeq]], optional
+            one-indexed shot number, or list of shot numbers, or None. If None, 
+            check all shots
+        variable_sources : VariableSource | list[VariableSource], optional
+            Check only variables that are fetched, monitored, or image_backedn, or 
+            combination thereof.
+            By default all of fetched, monitored, and image_backend
+        ready_statuses : ScalarSaveStatus | list[ScalarSaveStatus], optional
+            Which save statuses to consider ready. 
+            By default all except Waiting: [Saved, NotExpecting, Error, TimedOut]
+        
+        """
+        # default shot_seq is all shots
+        if shot_seq is None:
+            shot_seq = range(1, self.number_of_shots + 1)
+
+        # for list or range of shot seq numbers, just recursively check each shot
+        if isinstance(shot_seq, Iterable):
+            return all(self.all_scalars_ready(ShotSeq(ss), variable_sources=variable_sources, ready_statuses=ready_statuses) 
+                       for ss in shot_seq
+                      )
+
+        if isinstance(variable_sources, Iterable):
+            return all(self.all_scalars_ready(shot_seq, variable_sources=vs, ready_statuses=ready_statuses)
+                       for vs in variable_sources
+                      )
+
+        # make ready_statuses a list if it's a scalar
+        if not isinstance(ready_statuses, Iterable):
+            ready_statuses = [ready_statuses]
+
+        # at this point, shot_seq is a scalar ShotSeq, and variable_sources is a
+        # scalar VariableSource
+        assert isinstance(shot_seq, int)
+        assert isinstance(variable_sources, VariableSource)
+
+        # look in cache to see whether this shot/variable_source combination is 
+        # ready
+        if self.cache_ready_shots:
+            shot_variable_source_cache_key = (shot_seq, variable_sources)
+            ready_statuses_cache_key = tuple(sorted(ready_statuses, key=attrgetter('value')))
+
+            if (    shot_variable_source_cache_key in self.shot_ready_cache 
+                and ready_statuses_cache_key in self.shot_ready_cache[shot_variable_source_cache_key]
+               ):
+                return True
+
+        # finally check the directory
+        ready = all(self.scalar_save_status[shot_seq - 1][variable.name] in ready_statuses
+                    for variable in self.variables_by_source[variable_sources]
+                   )
+        
+        # update cache if we found a ready shot/variable_source combination (for 
+        # given ready_statuses)
+        if ready and self.cache_ready_shots:
+            if shot_variable_source_cache_key in self.shot_ready_cache:
+                self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
+            else:
+                self.shot_ready_cache[shot_variable_source_cache_key] = {ready_statuses_cache_key}
+
+        return ready

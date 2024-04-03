@@ -27,3 +27,20 @@ class BurstStatus(Enum):
     Force        = 4
     Running      = 5
     Stop         = 6
+
+class ScalarSaveStatus(Enum):
+    """ Status of a scalar being saved to the measurement database
+    """
+    # Scalar has not yet been saved to measurement db
+    Waiting = 0
+    # Scalar has been saved to measurement db
+    Saved = 1
+    # Not expecting scalar to come in, perhaps because it disconnected
+    NotExpecting = 2
+    # Failed to save scalar to db
+    Error = 3
+    # Did not get request to save scalar, long after it was expected
+    TimedOut = 4
+
+# a one-indexed sequence number of a shot within a burst
+ShotSeq = NewType("ShotSeq", int)
