@@ -355,7 +355,7 @@ class DataUploader:
         if previous_status == BurstStatus.Running and self.burst_status == BurstStatus.Idle:
             logging.info(f"Handled {self.fetch_trigger_variable.counter:d} updates of fetch tigger pv {self.fetch_trigger_variable.name} during burst.")
             for variable in self.variables:
-                if variable.source in VariableSource.monitor:
+                if variable.source == VariableSource.monitor:
                     logging.info(f"Handled {variable.counter:d} updates of monitored {variable.name} during burst.")
             for image_device in self.image_devices:
                 logging.info(f"Handled {image_device.counter:d} updates of image device {image_device.name} during burst.")
