@@ -51,10 +51,11 @@ class CreateAnalysisFolderLinks(ImageAnalysisCompleteHandler):
         session_timestamp_local = session.timestamp.replace(tzinfo=ZoneInfo("UTC")).astimezone(LOCAL_TIMEZONE)
         year_folder_name = f"{session_timestamp_local:%Y}"
         session_folder_name = f"Session-{session_timestamp_local:%Y-%m-%d-%H-%M-%S%Z}"
-        # for scan folder name, take the scan description and replace invalid characters
+        # for scan folder name, take the scan title and replace invalid characters
         # with dash, and spaces with underscore, then truncate to 80 characters
-        scan_folder_name = re.sub(r"[\\/:\"*?<>|]", '-', scan.description)
-        scan_folder_name = re.sub(r"\s", '_', scan_folder_name)
+        scan_title_sanitized = re.sub(r"[\\/:\"*?<>|]", '-', scan.title)
+        scan_title_sanitized = re.sub(r"\s", '_', scan_title_sanitized)
+        scan_folder_name = f"Scan-{scan.seq:03d}-{scan_title_sanitized}"
         scan_folder_name = scan_folder_name[:80]
         # make sure the name starts with the format Scan-012
         assert re.match("^Scan-\d{3}", scan_folder_name) is not None
