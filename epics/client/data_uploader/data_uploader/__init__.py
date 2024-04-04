@@ -104,10 +104,10 @@ class ImageUploadThread(Thread):
 
 
 class ScalarSaveThread(Thread):
-    def __init__(self, queue: Queue, max_transaction_rows = 20, no_new_scalars_timeout = 1.0, **kwargs):
+    def __init__(self, queue: Queue, num_measurements_per_transaction = 20, no_new_measurements_timeout = 1.0, **kwargs):
         self.queue = queue
-        self.max_transaction_rows = max_transaction_rows
-        self.no_new_scalars_timeout = no_new_scalars_timeout
+        self.num_measurements_per_transaction = num_measurements_per_transaction
+        self.no_new_measurements_timeout = no_new_measurements_timeout
 
         super().__init__(**kwargs)
     
@@ -116,25 +116,34 @@ class ScalarSaveThread(Thread):
         num_measurements_in_session = 0
 
         try:
-
             while True:
                 try:
-                    scalar_save_data: ScalarSaveData = self.queue.get(self.no_new_scalars_timeout)
+                    # raises Empty exception if no scalar data arrives within the 
+                    # timeout period
+                    scalar_save_data: ScalarSaveData = self.queue.get(self.no_new_measurements_timeout)
+
+                    shot = sa_session.merge(scalar_save_data.shot, load=False)
+                    variable_merged = sa_session.merge(scalar_save_data.variable, load=False)
+                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=scalar_save_data.value))
+                    num_measurements_in_session += 1
+
+                    # If the number of measurements in the session has reached the
+                    # desired transaction size, commit them. 
+                    if num_measurements_in_session >= self.num_measurements_per_transaction:
+                        sa_session.commit()
+                        logging.info(f"Inserted {num_measurements_in_session} monitored measurements.")
+                        num_measurements_in_session = 0
+
                 except Empty:
+                    # If queue.get() times out, i.e. no new measurements came in 
+                    # during the timeout period, commit what's currently in the 
+                    # session
                     sa_session.commit()
-                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements after no new scalars for {self.no_new_scalars_timeout:.1f} sec.")
+                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements after no new scalars for {self.no_new_measurements_timeout:.1f} sec.")
                     num_measurements_in_session = 0
-                    continue
 
-                shot = sa_session.merge(scalar_save_data.shot, load=False)
-                variable_merged = sa_session.merge(scalar_save_data.variable, load=False)
-                sa_session.add(Measurement(variable=variable_merged, shot=shot, value=scalar_save_data.value))
-                num_measurements_in_session += 1
-
-                if num_measurements_in_session >= 20:
-                    sa_session.commit()
-                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements.")
-                    num_measurements_in_session = 0
+        except Exception as err:
+            logging.error(f"Error in ScalarSaveThread: {err}")
 
         finally:
             sa_session.close()
