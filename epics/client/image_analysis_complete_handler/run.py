@@ -1,15 +1,20 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import json
 
+# TODO: logging config file
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
-from dotenv import dotenv_values
-env = dotenv_values()
+from image_analysis_complete_handler.utils.env import get_env
+from image_analysis_complete_handler.utils.redis import get_redis_client
+from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteData, ImageDeviceDirectoryEntry
+from image_analysis_complete_handler.handlers.last_analyzed_shotid_pv import PopulateLastAnalyzedShotIDPV
+from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
+if TYPE_CHECKING:
+    from image_analysis_complete_handler.handlers.base import ImageAnalysisCompleteHandler
 
-from utils.redis import get_redis_client
-from utils.types import ImageAnalysisFinishedMessage, ImageDeviceDirectoryEntry
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -34,10 +39,20 @@ WORK_QUEUE_NUM_WORKERS = 12
 
 from p4p.client.thread import Context as P4PContext
 from p4p.rpc import WorkQueue
-from epics import caput
 
 work_queue = WorkQueue(WORK_QUEUE_NUM_WORKERS)
 p4p_context = P4PContext('pva') #, queue=work_queue)
+
+# Set up message handlers
+last_analyzed_shot_pvs = {device_name: device_pv_names.last_analyzed_pv_name 
+                          for device_name, device_pv_names in IMAGE_DEVICES.items()
+                          if device_pv_names.last_analyzed_pv_name
+                         }
+env = get_env()
+handlers: list[ImageAnalysisCompleteHandler] = [
+    PopulateLastAnalyzedShotIDPV(last_analyzed_shot_pvs),
+    CreateAnalysisFolderLinks(env.get('RESULTS_STORAGE_BASE_DIRECTORY')),
+]
 
 def listen_for_and_process_analysis_complete_messages():
     redis_client = get_redis_client()
@@ -46,28 +61,20 @@ def listen_for_and_process_analysis_complete_messages():
     logging.info("Subscribed to image_analysis_complete_ch")
 
     while True:
-        message: ImageAnalysisFinishedMessage = ps.get_message(ignore_subscribe_messages=True, timeout=None)
+        message = ps.get_message(ignore_subscribe_messages=True, timeout=None)
         logging.info(f"Message received from channel: {message}")
 
         if message is None:
             continue
 
-        image_finished_message = json.loads(message['data'])
-	
-        try:
-            last_analyzed_pv_name = IMAGE_DEVICES[image_finished_message['device_name']].last_analyzed_pv_name
-        except (KeyError, AttributeError):
-            logging.warning(f"No LastAnalyzed PV for device {image_finished_message['device_name']}")
-            continue
+        message_data: ImageAnalysisCompleteData = json.loads(message['data'])
 
-        if last_analyzed_pv_name is not None:
+        for handler in handlers:
             try:
-                logging.info(f"running caput({last_analyzed_pv_name}, {image_finished_message.get('shot_id')})")  
-                # p4p_context.put(last_analyzed_pv_name, image_finished_message.get('shot_id'))
-                caput(last_analyzed_pv_name + '.$', str(image_finished_message.get('shot_id')) )
-                logging.info(f"Set PV {last_analyzed_pv_name} to '{image_finished_message.get('shot_id')}'")
-            except TimeoutError:
-                logging.error(f"Could not find PV {last_analyzed_pv_name}")
+                handler.handle(message_data)
+                logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
+            except Exception as err:
+                logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
