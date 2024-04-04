@@ -351,6 +351,11 @@ class DataUploader:
             assert previous_status != BurstStatus.Preparing
             self.prepare_burst()
 
+        # when burst ends, spit out variable counts
+        if previous_status == BurstStatus.Running and self.burst_status == BurstStatus.Idle:
+            for variable in (self.variables + self.image_devices):
+                logging.info(f"Handled {variable.counter:d} updates of {variable.name} during burst.")
+
     def prepare_burst(self) -> None:
         """ 
         """
