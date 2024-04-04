@@ -1,0 +1,32 @@
+# save things every thirty seconds
+create_monitor_set("auto_settings.req", 30,"P=$(PREFIX)")
+
+# Wait for enum callbacks to complete
+epicsThreadSleep(1.0)
+
+# Wait for callbacks on the property limits (DRVL, DRVH) to complete
+epicsThreadSleep(1.0)
+
+dbpf $(PREFIX)Pva:Spectrometer:Pointing:EnableCallbacks 1
+dbpf $(PREFIX)Pva:Spectrometer:LowEnergy:EnableCallbacks 1
+dbpf $(PREFIX)Pva:Spectrometer:HighEnergy:EnableCallbacks 1
+
+# ## select stats to compute on Pointing image
+# basic statistics
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeStatistics 0
+
+# Centroid position, sigma, skew, etc.
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeCentroid 1
+# Background threshold for centroid calculation
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:CentroidThreshold 0.0
+
+# Profiles
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeProfiles 0
+
+# Histograms
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeHistogram 0
+
+# Enable Stats
+dbpf $(PREFIX)Stats:Spectrometer:Pointing:EnableCallbacks 1
+
+

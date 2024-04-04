@@ -15,12 +15,10 @@ pvs: dict[str, PV] = {
     'burst_frequency': PV("Timing:TriggerGeneration:Frequency_GET"),
     'burst_num_shots': PV("Timing:TriggerGeneration:NumShots"),
 
-    'session_title': PV("Timing:TriggerGeneration:SessionID"),
-    'scan_description': PV("Timing:TriggerGeneration:ScanTitle"),
-
-    'pointing_acquire_rbv': PV("E:Spectrometer:Pointing:Acquire_RBV"),
+    'session_title': PV("Data:Scan:Session"),
+    'scan_number': PV("Data:Scan:Number"),
+    'scan_title': PV("Data:Scan:Title"),
 }
-
 
 def configure_cameras():
     stop_acquisition()
@@ -67,6 +65,7 @@ def main(num_shots: int, frequency: float):
     finally:
         stop_acquisition()
 
+    pvs['burst_status'].put(BurstStatus.Idle.name)
 
 if __name__ == "__main__":
     ap = ArgumentParser()
