@@ -40,7 +40,9 @@ dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,A
 
 # Pointing image statistics
 NDStatsConfigure("$(PORT):STATS", $(QSIZE), 0, "$(PORT)", 0, 0, 0, 0, 0, $(MAX_THREADS=5))
-dbLoadRecords("NDStats.template",  "P=$(PREFIX),R=Stats:,  PORT=$(PORT):STATS, ADDR=0,TIMEOUT=1,HIST_SIZE=256,XSIZE=$(XSIZE),YSIZE=$(YSIZE),NCHANS=$(NCHANS),NDARRAY_PORT=$(PORT)")
+dbLoadRecords("NDStats.template",  "P=$(PREFIX),R=Stats:$(PORT):,  PORT=$(PORT):STATS, ADDR=0,TIMEOUT=1,HIST_SIZE=256,XSIZE=$(XSIZE),YSIZE=$(YSIZE),NCHANS=$(NCHANS),NDARRAY_PORT=$(PORT)")
+NDTimeSeriesConfigure("$(PORT):STATS_TS", $(QSIZE), 0, "$(PORT):STATS", 1, 1, 0, 0, 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDTimeSeries.template", "P=$(PREFIX),R=Stats:TS:$(PORT):, PORT=$(PORT):STATS_TS,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT):STATS,NDARRAY_ADDR=1,NCHANS=$(NCHANS),ENABLED=0")
 
 ####################################################################################################################
 # The port name for the detector
