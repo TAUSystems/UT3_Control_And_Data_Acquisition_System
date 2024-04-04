@@ -163,6 +163,8 @@ class DataUploader:
         self.subscribe_to_image_pvs()
         self.subscribe_to_scalar_pvs()
 
+        self.image_upload_thread.start()
+
         # make sure our burst status type matches the mbbo PV values
         self.check_burst_status_enum()
 
