@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from typing import TypedDict, NamedTuple, NewType
+from typing import TypedDict, NamedTuple, NewType, TYPE_CHECKING
 from enum import Enum
+
+if TYPE_CHECKING:
+    from measurement_db.orm.tables import Variable, Shot
 
 class ImageAnalysisFinishedMessage(TypedDict):
     device_name: str
@@ -50,3 +53,8 @@ class ImageUploadData(NamedTuple):
     device_name: DeviceName
     shot_id: str
     image_data: bytes
+
+class ScalarSaveData(NamedTuple):
+    variable: Variable
+    shot: Shot
+    value: float

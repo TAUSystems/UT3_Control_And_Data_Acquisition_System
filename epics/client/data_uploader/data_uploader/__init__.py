@@ -34,7 +34,7 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
+from .utils.types import BurstStatus, ImageUploadData, ScalarSaveData, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Optional, Type
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ PV_NAMES: dict[str, PVName] = {
 }
 
 from threading import Thread
-from queue import Queue
+from queue import Queue, Empty
 
 class ImageUploadThread(Thread):
     def __init__(self, queue: Queue, image_endpoint_url: str, **kwargs):
@@ -101,6 +101,44 @@ class ImageUploadThread(Thread):
 
         else:
             logging.info(f"Posted image data for {image_upload_data.shot_id} / {image_upload_data.device_name}")
+
+
+class ScalarSaveThread(Thread):
+    def __init__(self, queue: Queue, max_transaction_rows = 20, no_new_scalars_timeout = 1.0, **kwargs):
+        self.queue = queue
+        self.max_transaction_rows = max_transaction_rows
+        self.no_new_scalars_timeout = no_new_scalars_timeout
+
+        super().__init__(**kwargs)
+    
+    def run(self):
+        sa_session = SQLAlchemySession()
+        num_measurements_in_session = 0
+
+        try:
+
+            while True:
+                try:
+                    scalar_save_data: ScalarSaveData = self.queue.get(self.no_new_scalars_timeout)
+                except Empty:
+                    sa_session.commit()
+                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements after no new scalars for {self.no_new_scalars_timeout:.1f} sec.")
+                    num_measurements_in_session = 0
+                    continue
+
+                shot = sa_session.merge(scalar_save_data.shot, load=False)
+                variable_merged = sa_session.merge(scalar_save_data.variable, load=False)
+                sa_session.add(Measurement(variable=variable_merged, shot=shot, value=scalar_save_data.value))
+                num_measurements_in_session += 1
+
+                if num_measurements_in_session >= 20:
+                    sa_session.commit()
+                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements.")
+                    num_measurements_in_session = 0
+
+        finally:
+            sa_session.close()
+
 
 
 class DataUploader:
@@ -140,8 +178,12 @@ class DataUploader:
         self.enable_callbacks: bool = False
 
         # image upload queue
-        self.image_upload_queue = Queue()
+        self.image_upload_queue: Queue[ImageUploadData] = Queue()
         self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
+
+        # monitored scalar upload queue
+        self.scalar_save_queue: Queue[ScalarSaveData] = Queue()
+        self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue)
 
         logging.info(f"DataUploader ready to run.")
 
@@ -163,7 +205,9 @@ class DataUploader:
         self.subscribe_to_image_pvs()
         self.subscribe_to_scalar_pvs()
 
+        # start image and scalar uploaders
         self.image_upload_thread.start()
+        self.scalar_save_thread.start()
 
         # make sure our burst status type matches the mbbo PV values
         self.check_burst_status_enum()
@@ -510,11 +554,11 @@ class DataUploader:
 
         try:
             # shot = self.burst.shots[variable.counter]
-            with SQLAlchemySession() as sa_session:
-                shot = sa_session.merge(self.burst.shots[variable.counter], load=False)
-                variable_merged = sa_session.merge(variable, load=False)
-                sa_session.add(Measurement(variable=variable_merged, shot=shot, value=value))
-                sa_session.commit()
+            self.scalar_save_queue.put(ScalarSaveData(
+                variable = variable,
+                shot = self.burst.shots[variable.counter],
+                value = value,
+            ))
 
         except Exception as err:
             logging.error(f"Error in scalar_pv_callback: {err}")
