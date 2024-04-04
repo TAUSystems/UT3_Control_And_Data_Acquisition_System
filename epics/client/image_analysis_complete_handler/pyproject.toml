@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "image-analysis-complete-handler"
+version = "1.0.6"
+description = "Listens to image analysis complete channel in the image backend and runs one or more message handlers on each incoming message."
+authors = ["Reinier van Mourik <reinier.vanmourik@tausystems.com>"]
+readme = "README.md"
+packages = [{include = "image_analysis_complete_handler"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+# For getting scan and session data
+measurement_db = { path = "../../../measurement_db", develop = true }
+
+# PVAccess for Python
+p4p = "^4.1.12"
+nose2 = "^0.14.1"
+
+# Channel Access for Python
+# needed to put CALab PV 
+pyepics = "^3.5.2"
+
+# Access to the channel
+redis = "^5.0.3"
+python-dotenv = "^1.0.1"
+
+# in case zoneinfo can't find system list of time zones
+tzdata = "^2024.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
