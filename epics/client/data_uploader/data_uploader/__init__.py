@@ -15,8 +15,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(mess
 
 from hanging_threads import start_monitoring
 hanging_threads_monitor = start_monitoring(
-    seconds_frozen=1.0,   # seconds 
-    test_interval=100.0,  # millisecond
+    seconds_frozen=3.0,   # seconds 
+    test_interval=200.0,  # millisecond
 )
 
 # for image uploader
@@ -34,7 +34,7 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
+from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Optional, Type
 if TYPE_CHECKING:
@@ -68,6 +68,40 @@ PV_NAMES: dict[str, PVName] = {
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
 
+from threading import Thread
+from queue import Queue
+
+class ImageUploadThread(Thread):
+    def __init__(self, queue: Queue, image_endpoint_url: str, **kwargs):
+        self.queue = queue
+        self.image_endpoint_url = image_endpoint_url
+        super().__init__(**kwargs)
+
+    def run(self):
+        self.requests_session = requests.Session()
+
+        try:        
+            while True:
+                image_upload_data = self.queue.get()
+                self.upload_image(image_upload_data)
+
+        finally:
+            self.requests_session.close()
+
+    def upload_image(self, image_upload_data: ImageUploadData):
+        response = self.requests_session.post(self.image_endpoint_url, 
+                                              data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
+                                              files={'image_data': image_upload_data.image_data},
+                                             )
+
+        response_data = response.json()
+
+        if ('message' not in response_data) or (not response_data['message'].startswith("received")):
+            logging.error(f"Failed to post image data for {image_upload_data.shot_id} / {image_upload_data.device_name}: {response_data}")
+
+        else:
+            logging.info(f"Posted image data for {image_upload_data.shot_id} / {image_upload_data.device_name}")
+
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
@@ -95,7 +129,7 @@ class DataUploader:
         # Session for image upload HTTP Requests. 
         # People on the internet seem to be uncertain how thread-safe this is, 
         # so it should be good enough for my purposes.
-        self.requests_session = requests.Session()
+        # self.requests_session = requests.Session()
 
         # will hold pvAccess subscriptions (Channel Access subscriptions are held 
         # in epics._PVmonitors_ )
@@ -104,6 +138,10 @@ class DataUploader:
         # whether to run callbacks. mainly to prevent callbacks from running when 
         # they are called while setting up monitors.
         self.enable_callbacks: bool = False
+
+        # image upload queue
+        self.image_upload_queue = Queue()
+        self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
 
         logging.info(f"DataUploader ready to run.")
 
@@ -447,19 +485,12 @@ class DataUploader:
             write_tiff(tiff_bytes, image_data)
             tiff_bytes.seek(0)
 
-            # fire POST request
-            response = self.requests_session.post(env['IMAGE_BACKEND_ENDPOINT_URL'], 
-                                                  data={'device_name': image_device.name, 'shot_id': shot_id},
-                                                  files={'image_data': tiff_bytes},
-                                                 )
-
-            response_data = response.json()
-
-            if ('message' not in response_data) or (not response_data['message'].startswith("received")):
-                logging.error(f"Failed to post image data for {shot_id} / {image_device.name}: {response_data}")
-
-            else:
-                logging.info(f"Posted image data for {shot_id} / {image_device.name}")
+            # put image data in queue to be uploaded to image endpoint
+            self.image_upload_queue.put(ImageUploadData(
+                device_name = image_device.name,
+                shot_id = shot_id,
+                image_data = tiff_bytes,
+            ))
 
         except Exception as err:
             pass

@@ -44,3 +44,9 @@ class ScalarSaveStatus(Enum):
 
 # a one-indexed sequence number of a shot within a burst
 ShotSeq = NewType("ShotSeq", int)
+
+
+class ImageUploadData(NamedTuple):
+    device_name: DeviceName
+    shot_id: str
+    image_data: bytes
