@@ -28,7 +28,7 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus, ImageUploadData, ScalarSaveData, ScalarSaveStatus, ShotSeq
+from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Optional, Type
 if TYPE_CHECKING:
@@ -114,11 +114,9 @@ class ScalarSaveThread(Thread):
                 try:
                     # raises Empty exception if no scalar data arrives within the 
                     # timeout period
-                    scalar_save_data: ScalarSaveData = self.queue.get(self.no_new_measurements_timeout)
+                    measurement: Measurement = self.queue.get(timeout=self.no_new_measurements_timeout)
 
-                    shot = sa_session.merge(scalar_save_data.shot, load=False)
-                    variable_merged = sa_session.merge(scalar_save_data.variable, load=False)
-                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=scalar_save_data.value))
+                    sa_session.add(measurement)
                     num_measurements_in_session += 1
 
                     # If the number of measurements in the session has reached the
@@ -157,7 +155,7 @@ class DataUploader:
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
-        self.current_burst_seq: int = 1
+        self.scan.current_burst_seq: int = 1
 
         # scalars and image_devices to monitor
         # PVs to monitor for the operation of this Data Uploader
@@ -185,7 +183,7 @@ class DataUploader:
         self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
 
         # monitored scalar upload queue
-        self.scalar_save_queue: Queue[ScalarSaveData] = Queue()
+        self.scalar_save_queue: Queue[Measurement] = Queue()
         self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue)
 
         logging.info(f"DataUploader ready to run.")
@@ -455,7 +453,7 @@ class DataUploader:
 
             self.burst = Burst(timestamp=datetime.now(tz=UTC), 
                                scan=self.scan, 
-                               seq=self.current_burst_seq,
+                               seq=self.scan.current_burst_seq,
                                number_of_shots=self.burst_pvs['burst_num_shots'].value,
                                repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
@@ -463,20 +461,15 @@ class DataUploader:
             self.burst_pvs['burst_timestamp'].put(str(int(self.burst.timestamp.timestamp() * 1e3)))
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            # add shots
-            for shot_seq in range(1, self.burst.number_of_shots + 1):
-                self.burst.shots.append(
-                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=shot_seq / self.burst.repetition_rate),
-                         seq = shot_seq,
-                        ) 
-                )
-
             with SQLAlchemySession() as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
 
             self.reset_counters()
-            self.current_burst_seq += 1
+            self.scan.current_burst_seq += 1
+
+            # create map of shot sequence to shot object
+            self.burst.shot_directory: dict[ShotSeq, Shot] = {}
 
             pva.put("TakeNShots:BurstInDB", 1)
 
@@ -498,7 +491,7 @@ class DataUploader:
     def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
         logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
-        self.current_burst_seq = 1
+        self.scan.current_burst_seq = 1
 
     def scan_title_monitor_callback(self, value: str, **kwargs):
         self.scan.title = value
@@ -556,10 +549,19 @@ class DataUploader:
             return
 
         try:
-            # shot = self.burst.shots[variable.counter]
-            self.scalar_save_queue.put(ScalarSaveData(
+            shot_seq = ShotSeq(variable.counter + 1)
+            
+            # create new Shot if this shot_seq is new
+            if shot_seq not in self.burst.shot_directory:
+                self.burst.shot_directory[shot_seq] = Shot(
+                    timestamp=self.burst.timestamp + timedelta(seconds=(shot_seq - 1) / self.burst.repetition_rate), 
+                    burst=self.burst, 
+                    seq=shot_seq,
+                )
+
+            self.scalar_save_queue.put(Measurement(
                 variable = variable,
-                shot = self.burst.shots[variable.counter],
+                shot = self.burst.shot_directory[shot_seq],
                 value = value,
             ))
 

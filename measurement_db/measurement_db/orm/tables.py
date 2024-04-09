@@ -92,7 +92,6 @@ class Burst(Base):
     repetition_rate: Mapped[float] = mapped_column(Double, doc="Repetition rate in Hertz")
 
     scan: Mapped[Scan] = relationship()
-    shots: Mapped[list[Shot]] = relationship(back_populates='burst')
 
 class Shot(Base):
     __tablename__ = "shot"
@@ -101,7 +100,7 @@ class Shot(Base):
     burst_timestamp: Mapped[datetime] = mapped_column(ForeignKey('burst.timestamp'))
     seq: Mapped[int] = mapped_column(doc="Sequence number of this shot within burst")
 
-    burst: Mapped[Burst] = relationship(back_populates='shots')
+    burst: Mapped[Burst] = relationship()
 
 class Measurement(Base):
     __tablename__ = "measurement"
