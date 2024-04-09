@@ -13,12 +13,6 @@ from warnings import warn
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
-from hanging_threads import start_monitoring
-hanging_threads_monitor = start_monitoring(
-    seconds_frozen=3.0,   # seconds 
-    test_interval=200.0,  # millisecond
-)
-
 # for image uploader
 from io import BytesIO
 from tifffile import imwrite as write_tiff
