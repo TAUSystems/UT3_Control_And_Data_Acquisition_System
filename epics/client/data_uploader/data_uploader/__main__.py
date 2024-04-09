@@ -1,3 +1,3 @@
-from . import DataAcquisition
-da = DataAcquisition()
-da.run()
+from . import DataUploader
+du = DataUploader()
+du.run()

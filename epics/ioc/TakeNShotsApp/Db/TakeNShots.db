@@ -98,7 +98,6 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 }
 
 
-
 #! Further lines contain data used by VisualDCT
 #! View(61,1469,1.1)
 #! Record(TakeNShots:CheckCamerasAcquiring,1480,993,0,1,"TakeNShots:CheckCamerasAcquiring")
@@ -120,6 +119,8 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
 #! Field("TakeNShots:CheckReadyToArm.INPB",16777215,0,"TakeNShots:CheckReadyToArm.INPB")
 #! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckCamerasAcquiring.VAL")
+#! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
+#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckReadyToArm/INPC")
 #! Field("TakeNShots:CheckReadyToArm.OUT",16777215,1,"TakeNShots:CheckReadyToArm.OUT")
 #! Link("TakeNShots:CheckReadyToArm.OUT","TakeNShots:ArmSeq.PROC")
 #! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
