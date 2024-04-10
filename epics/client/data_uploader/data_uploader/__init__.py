@@ -9,6 +9,7 @@ import re
 from enum import Enum
 from operator import attrgetter
 from warnings import warn
+from collections import defaultdict
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -574,19 +575,17 @@ class DataUploader:
 
 
 class ScalarsSavedTracker:
-    def __init__(self, variables: list[Variable], number_of_shots: int, cache_ready_shots: bool = True):
+    def __init__(self, variables: list[Variable], cache_ready_shots: bool = True):
         """ 
         Parameters
         ----------
         variables : list[Variable]
-        number_of_shots : int
         cache_ready_shots : bool
             Whether to cache shots that are ready, separated by source (and 
-            by set of allowed statuses). If it can be assumed that a True result 
-            for a given shot 
+            by set of allowed statuses). If it's possible for a shot complete 
+            result to revert, set to False. 
         """
         self.variables: list[Variable] = variables
-        self.number_of_shots: int = number_of_shots
         self.cache_ready_shots: bool = cache_ready_shots
         
         # separate list of Variables by source
@@ -601,23 +600,23 @@ class ScalarsSavedTracker:
 
         # generate dict[str, ScalarSaveStatus] based on variable status. This 
         # will be copied for every shot
-        single_shot_scalar_save_status = {}
+        self.single_shot_scalar_save_status = {}
         for variable in variables:
             if (    ((variable.pv is not None) and variable.pv.connected)
                 and (variable.dtype is not None)
                ):
-                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
+                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
             else:
-                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
+                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
 
         # make <number_of_shots> copies of this dictionary. (Use copy() to make 
         # sure it isn't just <number_of_shots> references to the same dict object!)
-        self.scalar_save_status: list[dict[str, ScalarSaveStatus]] = [single_shot_scalar_save_status.copy() for _ in range(number_of_shots)]
+        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(lambda _: self.single_shot_scalar_save_status.copy())
 
         # cache shots that are ready for a given variable source and set of allowed
         # statuses
         # it's a dict of set so that we can check against (shot_seq, variable_source) as well as (shot_seq, variable_source, ready_status_tuple)
-        self.shot_ready_cache: dict[tuple[ShotSeq, VariableSource], set[tuple[ScalarSaveStatus]]] = {}
+        self.shot_ready_cache: defaultdict[tuple[ShotSeq, VariableSource], set[tuple[ScalarSaveStatus]]] = defaultdict(set)
 
     def update(self, variable: Variable, shot: Shot, status: ScalarSaveStatus = ScalarSaveStatus.Saved):
         """ Set new save status of a variable for a given shot_seq
@@ -629,7 +628,7 @@ class ScalarsSavedTracker:
         status : ScalarSaveStatus
             default is Saved
         """
-        self.scalar_save_status[shot.seq - 1][variable.name] = status
+        self.scalar_save_status[shot.seq][variable.name] = status
 
         # if this updated a shot/variable_source combination which we have 
         # previously cached as ready (for some set of ready_statuses), remove it
@@ -640,7 +639,7 @@ class ScalarsSavedTracker:
                             "combination had already been marked as ready for at "
                             "least some result_status set."
                            )
-    
+
     def all_scalars_ready(self, 
                           shot_seq: Optional[ShotSeq | Iterable[ShotSeq]] = None,
                           variable_sources: VariableSource | set[VariableSource] = {VariableSource.fetch, VariableSource.monitor, VariableSource.image_backend},
@@ -698,16 +697,13 @@ class ScalarsSavedTracker:
                 return True
 
         # finally check the directory
-        ready = all(self.scalar_save_status[shot_seq - 1][variable.name] in ready_statuses
+        ready = all(self.scalar_save_status[shot_seq][variable.name] in ready_statuses
                     for variable in self.variables_by_source[variable_sources]
                    )
         
         # update cache if we found a ready shot/variable_source combination (for 
         # given ready_statuses)
         if ready and self.cache_ready_shots:
-            if shot_variable_source_cache_key in self.shot_ready_cache:
-                self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
-            else:
-                self.shot_ready_cache[shot_variable_source_cache_key] = {ready_statuses_cache_key}
+            self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
 
         return ready
