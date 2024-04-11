@@ -707,3 +707,46 @@ class ScalarsSavedTracker:
             self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
 
         return ready
+
+
+    def highest_seq_all_scalars_ready(self, 
+                                      variable_sources: Optional[VariableSource | Iterable[VariableSource]] = None,
+                                      ready_statuses: ScalarSaveStatus | Iterable[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
+                                     ) -> ShotSeq:
+        """ Return highest seq for which all of (1..seq) are ready
+
+        Returns 0 if scalars aren't ready for shot with seq = 1.
+
+        Parameters
+        ----------
+        variable_sources : VariableSource | Iterable[VariableSource], optional
+            Check only variables that are fetched, monitored, or image_backend, or 
+            combination thereof.
+            By default all sources
+        ready_statuses : ScalarSaveStatus | list[ScalarSaveStatus], optional
+            Which save statuses to consider ready. 
+            By default all except Waiting: [Saved, NotExpecting, Error, TimedOut]
+        
+        """
+
+        if variable_sources is None:
+            variable_sources = list(self.variables_by_source.keys())
+
+        highest_seq: ShotSeq = 0
+        while True:
+            # currently checking highest_seq + 1
+            shot_seq = highest_seq + 1
+            
+            # if this shot hasn't even been registered in the directory, deem it
+            # not ready and exit
+            if shot_seq not in self.scalar_save_status:
+                break
+
+            # if this shot isn't ready, exit
+            if not self.all_scalars_ready(shot_seq, variable_sources, ready_statuses):
+                break
+
+            # all shots up to shot_seq are ready.
+            highest_seq = shot_seq
+
+        return highest_seq
