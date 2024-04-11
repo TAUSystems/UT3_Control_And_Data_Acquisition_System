@@ -641,29 +641,28 @@ class ScalarsSavedTracker:
                            )
 
     def all_scalars_ready(self, 
-                          shot_seq: Optional[ShotSeq | Iterable[ShotSeq]] = None,
-                          variable_sources: VariableSource | set[VariableSource] = {VariableSource.fetch, VariableSource.monitor, VariableSource.image_backend},
-                          ready_statuses: ScalarSaveStatus | set[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
+                          shot_seq: ShotSeq | Iterable[ShotSeq],
+                          variable_sources: Optional[VariableSource | Iterable[VariableSource]] = None,
+                          ready_statuses: ScalarSaveStatus | Iterable[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
                          ) -> bool:
         """ Returns whether all scalars are ready for one or more shots
 
         Parameters
         ----------
-        shot_seq : Optional[ShotSeq | Iterable[ShotSeq]], optional
-            one-indexed shot number, or list of shot numbers, or None. If None, 
-            check all shots
-        variable_sources : VariableSource | list[VariableSource], optional
-            Check only variables that are fetched, monitored, or image_backedn, or 
+        shot_seq : ShotSeq | Iterable[ShotSeq]
+            one-indexed shot number, or list of shot numbers
+        variable_sources : VariableSource | Iterable[VariableSource], optional
+            Check only variables that are fetched, monitored, or image_backend, or 
             combination thereof.
-            By default all of fetched, monitored, and image_backend
+            By default all sources
         ready_statuses : ScalarSaveStatus | list[ScalarSaveStatus], optional
             Which save statuses to consider ready. 
             By default all except Waiting: [Saved, NotExpecting, Error, TimedOut]
         
         """
-        # default shot_seq is all shots
-        if shot_seq is None:
-            shot_seq = range(1, self.number_of_shots + 1)
+
+        if variable_sources is None:
+            variable_sources = list(self.variables_by_source.keys())
 
         # for list or range of shot seq numbers, just recursively check each shot
         if isinstance(shot_seq, Iterable):
