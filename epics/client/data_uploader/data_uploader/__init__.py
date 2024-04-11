@@ -167,8 +167,8 @@ class ScalarSaveThread(Thread):
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
-                    self.commit()
-                    logging.info(f"Inserted {len(self.measurements_inserted)} monitored measurements after no new scalars for {self.no_new_measurements_timeout:.1f} sec.")
+                    if len(self.measurements_inserted) > 0:
+                        self.commit()
 
         except Exception as err:
             logging.error(f"Error in ScalarSaveThread: {err}")
