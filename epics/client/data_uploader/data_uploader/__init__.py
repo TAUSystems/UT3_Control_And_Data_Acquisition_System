@@ -470,8 +470,19 @@ class DataUploader:
             self.scan.current_burst_seq += 1
 
             # create map of shot sequence to shot object
-            self.burst.shot_directory: dict[ShotSeq, Shot] = {}
+            # Scalars Saved Tracker
+            variables_to_track = [variable for variable in self.variables if (
+                # varible is connected to its PV through the pyepics pv.PV class
+                (variable.pv is not None) and variable.pv.connected
+                # Currently, I'm not fetching non-numeric variables. 
+                and (variable.dtype is not None) and issubclass(variable.dtype, Number)
+                # Currently, I'm only tracking fetched and monitored variables, 
+                # not image_backend. 
+                and (variable.source in {VariableSource.fetch, VariableSource.monitor})
+            )]
+            self.burst.scalars_saved_tracker = ScalarsSavedTracker(variables_to_track)
 
+            # Finally, notify system that scalar database is ready for this Burst
             pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
@@ -575,7 +586,26 @@ class DataUploader:
 
 
 class ScalarsSavedTracker:
-    def __init__(self, variables: list[Variable], cache_ready_shots: bool = True):
+    """ An object to keep track of saved-to-db status of variables for each shot
+
+    Provides all_scalars_ready() method which checks whether all variables for a 
+    given shot or set of shots are ready (what "ready" means can be customized)
+
+    Typical workflow is: 
+        scalars_saved_tracker = ScalarsSavedTracker(variables, number_of_shots)
+        for variable in variables:
+            try:
+                # do stuff to save a measurement to a database
+                scalars_saved_tracker(variable, shot)
+            except:
+                scalars_saved_tracker(variable, shot, ScalarSaveStatus.Error)
+        
+        # check if all shots up to now are ready. 
+        if scalars_saved_tracker.all_scalars_ready(range(1, shot.seq + 1)):
+            # do stuff
+    
+    """
+    def __init__(self, variables: Iterable[Variable], cache_ready_shots: bool = True):
         """ 
         Parameters
         ----------
@@ -585,33 +615,28 @@ class ScalarsSavedTracker:
             by set of allowed statuses). If it's possible for a shot complete 
             result to revert, set to False. 
         """
-        self.variables: list[Variable] = variables
-        self.cache_ready_shots: bool = cache_ready_shots
+        if len(variables) == 0:
+            raise ValueError("There should be at least one variable to track.")
         
+        self.variables: list[Variable] = list(variables)
+        self.cache_ready_shots: bool = cache_ready_shots
+
         # separate list of Variables by source
-        self.variables_by_source: dict[VariableSource, list[Variable]] = {
-            VariableSource.fetch: [],
-            VariableSource.monitor: [],
-            VariableSource.image_backend: [],
-        }
+        self.variables_by_source: defaultdict[VariableSource, list[Variable]] = defaultdict(list)
         for variable in variables:
-            if variable.source in self.variables_by_source:
-                self.variables_by_source[variable.source].append(variable)
+            self.variables_by_source[variable.source].append(variable)
 
-        # generate dict[str, ScalarSaveStatus] based on variable status. This 
-        # will be copied for every shot
-        self.single_shot_scalar_save_status = {}
-        for variable in variables:
-            if (    ((variable.pv is not None) and variable.pv.connected)
-                and (variable.dtype is not None)
-               ):
-                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
-            else:
-                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
-
-        # make <number_of_shots> copies of this dictionary. (Use copy() to make 
-        # sure it isn't just <number_of_shots> references to the same dict object!)
-        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(lambda _: self.single_shot_scalar_save_status.copy())
+        # This is the main directory of scalar save status by shot number and 
+        # variable. 
+        # Referencing a yet unknown shot seq initializes it with a dict of 
+        # ScalarSaveStatus.Waiting for all variables. Note that this dict is 
+        # newly created every time (otherwise every shot would have a reference 
+        # to the same variables dict)
+        def initial_scalar_save_status_for_shot():
+            return {variable.name: ScalarSaveStatus.Waiting
+                    for variable in variables
+                   }
+        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(initial_scalar_save_status_for_shot)
 
         # cache shots that are ready for a given variable source and set of allowed
         # statuses
