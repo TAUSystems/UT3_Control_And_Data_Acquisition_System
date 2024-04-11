@@ -9,6 +9,7 @@ import re
 from enum import Enum
 from operator import attrgetter
 from warnings import warn
+from collections import defaultdict
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -28,7 +29,7 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus, ImageUploadData, ScalarSaveData, ScalarSaveStatus, ShotSeq
+from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Optional, Type
 if TYPE_CHECKING:
@@ -114,11 +115,9 @@ class ScalarSaveThread(Thread):
                 try:
                     # raises Empty exception if no scalar data arrives within the 
                     # timeout period
-                    scalar_save_data: ScalarSaveData = self.queue.get(self.no_new_measurements_timeout)
+                    measurement: Measurement = self.queue.get(timeout=self.no_new_measurements_timeout)
 
-                    shot = sa_session.merge(scalar_save_data.shot, load=False)
-                    variable_merged = sa_session.merge(scalar_save_data.variable, load=False)
-                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=scalar_save_data.value))
+                    sa_session.add(measurement)
                     num_measurements_in_session += 1
 
                     # If the number of measurements in the session has reached the
@@ -157,7 +156,7 @@ class DataUploader:
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
-        self.current_burst_seq: int = 1
+        self.scan.current_burst_seq: int = 1
 
         # scalars and image_devices to monitor
         # PVs to monitor for the operation of this Data Uploader
@@ -185,7 +184,7 @@ class DataUploader:
         self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
 
         # monitored scalar upload queue
-        self.scalar_save_queue: Queue[ScalarSaveData] = Queue()
+        self.scalar_save_queue: Queue[Measurement] = Queue()
         self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue)
 
         logging.info(f"DataUploader ready to run.")
@@ -455,7 +454,7 @@ class DataUploader:
 
             self.burst = Burst(timestamp=datetime.now(tz=UTC), 
                                scan=self.scan, 
-                               seq=self.current_burst_seq,
+                               seq=self.scan.current_burst_seq,
                                number_of_shots=self.burst_pvs['burst_num_shots'].value,
                                repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
@@ -463,20 +462,15 @@ class DataUploader:
             self.burst_pvs['burst_timestamp'].put(str(int(self.burst.timestamp.timestamp() * 1e3)))
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            # add shots
-            for shot_seq in range(1, self.burst.number_of_shots + 1):
-                self.burst.shots.append(
-                    Shot(timestamp = self.burst.timestamp + timedelta(seconds=shot_seq / self.burst.repetition_rate),
-                         seq = shot_seq,
-                        ) 
-                )
-
             with SQLAlchemySession() as sa_session:
                 sa_session.add(self.burst)
                 sa_session.commit()
 
             self.reset_counters()
-            self.current_burst_seq += 1
+            self.scan.current_burst_seq += 1
+
+            # create map of shot sequence to shot object
+            self.burst.shot_directory: dict[ShotSeq, Shot] = {}
 
             pva.put("TakeNShots:BurstInDB", 1)
 
@@ -498,7 +492,7 @@ class DataUploader:
     def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
         logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
-        self.current_burst_seq = 1
+        self.scan.current_burst_seq = 1
 
     def scan_title_monitor_callback(self, value: str, **kwargs):
         self.scan.title = value
@@ -556,10 +550,19 @@ class DataUploader:
             return
 
         try:
-            # shot = self.burst.shots[variable.counter]
-            self.scalar_save_queue.put(ScalarSaveData(
+            shot_seq = ShotSeq(variable.counter + 1)
+            
+            # create new Shot if this shot_seq is new
+            if shot_seq not in self.burst.shot_directory:
+                self.burst.shot_directory[shot_seq] = Shot(
+                    timestamp=self.burst.timestamp + timedelta(seconds=(shot_seq - 1) / self.burst.repetition_rate), 
+                    burst=self.burst, 
+                    seq=shot_seq,
+                )
+
+            self.scalar_save_queue.put(Measurement(
                 variable = variable,
-                shot = self.burst.shots[variable.counter],
+                shot = self.burst.shot_directory[shot_seq],
                 value = value,
             ))
 
@@ -572,19 +575,17 @@ class DataUploader:
 
 
 class ScalarsSavedTracker:
-    def __init__(self, variables: list[Variable], number_of_shots: int, cache_ready_shots: bool = True):
+    def __init__(self, variables: list[Variable], cache_ready_shots: bool = True):
         """ 
         Parameters
         ----------
         variables : list[Variable]
-        number_of_shots : int
         cache_ready_shots : bool
             Whether to cache shots that are ready, separated by source (and 
-            by set of allowed statuses). If it can be assumed that a True result 
-            for a given shot 
+            by set of allowed statuses). If it's possible for a shot complete 
+            result to revert, set to False. 
         """
         self.variables: list[Variable] = variables
-        self.number_of_shots: int = number_of_shots
         self.cache_ready_shots: bool = cache_ready_shots
         
         # separate list of Variables by source
@@ -599,23 +600,23 @@ class ScalarsSavedTracker:
 
         # generate dict[str, ScalarSaveStatus] based on variable status. This 
         # will be copied for every shot
-        single_shot_scalar_save_status = {}
+        self.single_shot_scalar_save_status = {}
         for variable in variables:
             if (    ((variable.pv is not None) and variable.pv.connected)
                 and (variable.dtype is not None)
                ):
-                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
+                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
             else:
-                single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
+                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
 
         # make <number_of_shots> copies of this dictionary. (Use copy() to make 
         # sure it isn't just <number_of_shots> references to the same dict object!)
-        self.scalar_save_status: list[dict[str, ScalarSaveStatus]] = [single_shot_scalar_save_status.copy() for _ in range(number_of_shots)]
+        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(lambda _: self.single_shot_scalar_save_status.copy())
 
         # cache shots that are ready for a given variable source and set of allowed
         # statuses
         # it's a dict of set so that we can check against (shot_seq, variable_source) as well as (shot_seq, variable_source, ready_status_tuple)
-        self.shot_ready_cache: dict[tuple[ShotSeq, VariableSource], set[tuple[ScalarSaveStatus]]] = {}
+        self.shot_ready_cache: defaultdict[tuple[ShotSeq, VariableSource], set[tuple[ScalarSaveStatus]]] = defaultdict(set)
 
     def update(self, variable: Variable, shot: Shot, status: ScalarSaveStatus = ScalarSaveStatus.Saved):
         """ Set new save status of a variable for a given shot_seq
@@ -627,7 +628,7 @@ class ScalarsSavedTracker:
         status : ScalarSaveStatus
             default is Saved
         """
-        self.scalar_save_status[shot.seq - 1][variable.name] = status
+        self.scalar_save_status[shot.seq][variable.name] = status
 
         # if this updated a shot/variable_source combination which we have 
         # previously cached as ready (for some set of ready_statuses), remove it
@@ -638,31 +639,30 @@ class ScalarsSavedTracker:
                             "combination had already been marked as ready for at "
                             "least some result_status set."
                            )
-    
+
     def all_scalars_ready(self, 
-                          shot_seq: Optional[ShotSeq | Iterable[ShotSeq]] = None,
-                          variable_sources: VariableSource | set[VariableSource] = {VariableSource.fetch, VariableSource.monitor, VariableSource.image_backend},
-                          ready_statuses: ScalarSaveStatus | set[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
+                          shot_seq: ShotSeq | Iterable[ShotSeq],
+                          variable_sources: Optional[VariableSource | Iterable[VariableSource]] = None,
+                          ready_statuses: ScalarSaveStatus | Iterable[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
                          ) -> bool:
         """ Returns whether all scalars are ready for one or more shots
 
         Parameters
         ----------
-        shot_seq : Optional[ShotSeq | Iterable[ShotSeq]], optional
-            one-indexed shot number, or list of shot numbers, or None. If None, 
-            check all shots
-        variable_sources : VariableSource | list[VariableSource], optional
-            Check only variables that are fetched, monitored, or image_backedn, or 
+        shot_seq : ShotSeq | Iterable[ShotSeq]
+            one-indexed shot number, or list of shot numbers
+        variable_sources : VariableSource | Iterable[VariableSource], optional
+            Check only variables that are fetched, monitored, or image_backend, or 
             combination thereof.
-            By default all of fetched, monitored, and image_backend
+            By default all sources
         ready_statuses : ScalarSaveStatus | list[ScalarSaveStatus], optional
             Which save statuses to consider ready. 
             By default all except Waiting: [Saved, NotExpecting, Error, TimedOut]
         
         """
-        # default shot_seq is all shots
-        if shot_seq is None:
-            shot_seq = range(1, self.number_of_shots + 1)
+
+        if variable_sources is None:
+            variable_sources = list(self.variables_by_source.keys())
 
         # for list or range of shot seq numbers, just recursively check each shot
         if isinstance(shot_seq, Iterable):
@@ -696,16 +696,13 @@ class ScalarsSavedTracker:
                 return True
 
         # finally check the directory
-        ready = all(self.scalar_save_status[shot_seq - 1][variable.name] in ready_statuses
+        ready = all(self.scalar_save_status[shot_seq][variable.name] in ready_statuses
                     for variable in self.variables_by_source[variable_sources]
                    )
         
         # update cache if we found a ready shot/variable_source combination (for 
         # given ready_statuses)
         if ready and self.cache_ready_shots:
-            if shot_variable_source_cache_key in self.shot_ready_cache:
-                self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
-            else:
-                self.shot_ready_cache[shot_variable_source_cache_key] = {ready_statuses_cache_key}
+            self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
 
         return ready
