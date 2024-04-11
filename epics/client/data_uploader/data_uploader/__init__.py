@@ -218,10 +218,11 @@ class UpdateScalarsSavedStatusThread(Thread):
                                          ]:
             
             highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
-            shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
-            self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
-
-
+            if highest_seq_all_scalars_ready > 0:
+                shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
+                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
+            else:
+                self.data_uploader.burst_pvs[pv_alias].put("")
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
