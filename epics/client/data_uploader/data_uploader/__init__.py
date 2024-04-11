@@ -38,27 +38,26 @@ if TYPE_CHECKING:
     from p4p.client.thread import Subscription as P4PSubscription
 
 # objects representing images and scalars
-from measurement_db.orm.tables import Session, Scan, Shot, Measurement
+from measurement_db.orm.tables import ImageDevice, Variable
+from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 
-# Get measurement DB table classes, and agument them
-from measurement_db.orm.tables import Burst as Burst_
-class Burst(Burst_):
-    __allow_unmapped__ = True
-    shot_directory: dict[ShotSeq, Shot]
-    scalars_saved_tracker: ScalarsSavedTracker
+# Declare types of attributes that are attached to the ORM objects
+if TYPE_CHECKING:
+    class Scan(Scan):
+        current_burst_seq: int
 
-from measurement_db.orm.tables import Variable as Variable_
-class Variable(Variable_):
-    __allow_unmapped__ = True
-    pv: PV
-    info: dict
-    dtype: Type
-    counter: int
+    class Burst(Burst):
+        shot_directory: dict[ShotSeq, Shot]
+        scalars_saved_tracker: ScalarsSavedTracker
 
-from measurement_db.orm.tables import ImageDevice as ImageDevice_
-class ImageDevice(ImageDevice_):
-    __allow_unmapped__ = True
-    counter: int
+    class Variable(Variable):
+        pv: PV
+        info: dict
+        dtype: Type
+        counter: int
+
+    class ImageDevice(ImageDevice):
+        counter: int
 
 from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
@@ -240,7 +239,7 @@ class DataUploader:
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
-        self.scan.current_burst_seq: int = 1
+        self.scan.current_burst_seq = 1
 
         # scalars and image_devices to monitor
         # PVs to monitor for the operation of this Data Uploader
