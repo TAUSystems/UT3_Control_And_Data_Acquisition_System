@@ -42,11 +42,13 @@ from measurement_db.orm.tables import Session, Scan, Shot, Measurement
 # Get measurement DB table classes, and agument them
 from measurement_db.orm.tables import Burst as Burst_
 class Burst(Burst_):
+    __allow_unmapped__ = True
     shot_directory: dict[ShotSeq, Shot]
     scalars_saved_tracker: ScalarsSavedTracker
 
 from measurement_db.orm.tables import Variable as Variable_
 class Variable(Variable_):
+    __allow_unmapped__ = True
     pv: PV
     info: dict
     dtype: Type
@@ -54,6 +56,7 @@ class Variable(Variable_):
 
 from measurement_db.orm.tables import ImageDevice as ImageDevice_
 class ImageDevice(ImageDevice_):
+    __allow_unmapped__ = True
     counter: int
 
 from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
