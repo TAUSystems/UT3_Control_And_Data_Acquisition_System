@@ -565,6 +565,8 @@ class DataUploader:
             self.scan.current_burst_seq += 1
 
             # create map of shot sequence to shot object
+            self.burst.shot_directory = {}
+
             # Scalars Saved Tracker
             variables_to_track = [variable for variable in self.variables if (
                 # varible is connected to its PV through the pyepics pv.PV class
