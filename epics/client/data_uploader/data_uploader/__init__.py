@@ -162,9 +162,12 @@ class UpdateScalarsSavedStatusThread(Thread):
     def __init__(self, 
                  queue: Queue,
                  data_uploader: DataUploader,
+                 **kwargs
                 ):
         self.queue = queue
         self.data_uploader = data_uploader
+
+        super().__init__(**kwargs)
 
     def run(self):
         while True:
