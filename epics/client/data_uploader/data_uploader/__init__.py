@@ -675,7 +675,11 @@ class DataUploader:
             ))
 
         except Exception as err:
-            self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
+            try:
+                self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
+            except Exception:
+                pass
+
             logging.error(f"Error in scalar_pv_callback: {err}")
 
         finally:
