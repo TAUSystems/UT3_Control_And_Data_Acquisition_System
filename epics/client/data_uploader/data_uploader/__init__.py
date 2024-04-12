@@ -460,7 +460,7 @@ class DataUploader:
                                repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
 
-            self.burst_pvs['burst_timestamp'].put(str(int(self.burst.timestamp.timestamp() * 1e3)), wait=True)
+            self.burst_pvs['burst_timestamp'].put(self.burst.timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"), wait=True)
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
             # add shots
