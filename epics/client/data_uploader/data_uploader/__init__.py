@@ -87,7 +87,7 @@ PV_NAMES: dict[str, PVName] = {
     'all_scalars_ready':  "Data:Scalars:FetchedValuesReady",
 }
 
-from threading import Thread
+from threading import Thread, Lock
 from queue import Queue, Empty
 
 class ImageUploadThread(Thread):
@@ -277,6 +277,9 @@ class DataUploader:
         self.update_scalars_saved_queue: Queue[Measurement | Iterable[Measurement]] = Queue()
         # and thread that updates the tracker and posts to PVs
         self.update_scalars_saved_thread = UpdateScalarsSavedStatusThread(self.update_scalars_saved_queue, self)
+
+        # thread lock to prevent multiple threads creating the same shot.
+        self.new_shot_lock = Lock()
 
         logging.info(f"DataUploader ready to run.")
 
@@ -488,7 +491,16 @@ class DataUploader:
                                      and (variable.dtype is not None) and issubclass(variable.dtype, Number)
                                  ]
 
-            # shot = self.burst.shots[self.fetch_trigger_variable.counter]
+            shot_seq = ShotSeq(self.fetch_trigger_variable.counter + 1)
+
+            # create shot if it doesn't exist
+            if shot_seq not in self.burst.shot_directory:
+                self.create_new_shot(shot_seq)
+
+            # then grab it from directory
+            shot = self.burst.shot_directory[shot_seq]
+
+            # fetch values
             values = [variable.pv.get() for variable in variables_to_fetch]
             measurements_inserted: list[Measurement] = []
             with SQLAlchemySession() as sa_session:
@@ -585,6 +597,29 @@ class DataUploader:
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
 
+
+    def create_new_shot(self, shot_seq: ShotSeq):
+        """ Thread-safe creation of new Shot in Burst
+
+        Using a lock is necessary because several callbacks - i.e. threads - 
+        check if a shot exists, and if not create it and add it to the burst
+        shot_directory.
+
+        Parameters
+        ----------
+        seq : ShotSeq
+
+        """
+        with self.new_shot_lock:
+            if shot_seq in self.burst.shot_directory:
+                return
+
+            self.burst.shot_directory[shot_seq] = Shot(
+                timestamp=self.burst.timestamp + timedelta(seconds=(shot_seq - 1) / self.burst.repetition_rate), 
+                burst=self.burst, 
+                seq=shot_seq,
+            )
+
     def session_title_monitor_callback(self, value: str, **kwargs):
         self.session = Session(title=value, timestamp=datetime.now(tz=UTC))
         logging.info(f"New session \"{self.session.title}\"")
@@ -626,10 +661,14 @@ class DataUploader:
             return
 
         try:
-            # determine shot datetime and shot id
-            shot_datetime = self.burst.timestamp + timedelta(seconds=(image_device.counter + 1) / self.burst.repetition_rate)
+            shot_seq = ShotSeq(image_device.counter + 1)
 
-            shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot_datetime:%Y-%m-%dT%H-%M-%S-%fZ}"
+            if shot_seq not in self.burst.shot_directory:
+                self.create_new_shot(shot_seq)
+            shot = self.burst.shot_directory[shot_seq]
+
+            # determine shot id
+            shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
 
             # convert NDArray to tiff file byte array
             tiff_bytes = BytesIO()
@@ -662,12 +701,7 @@ class DataUploader:
 
             # create new Shot if this shot_seq is new
             if shot_seq not in self.burst.shot_directory:
-                self.burst.shot_directory[shot_seq] = Shot(
-                    timestamp=self.burst.timestamp + timedelta(seconds=(shot_seq - 1) / self.burst.repetition_rate), 
-                    burst=self.burst, 
-                    seq=shot_seq,
-                )
-
+                self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
             self.scalar_save_queue.put(Measurement(
