@@ -61,6 +61,11 @@ PV_NAMES: dict[str, PVName] = {
     'scan_title': "Data:Scan:Title",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
+
+    'fetched_scalars_ready':  "Data:Scalars:FetchedValuesReady",
+    'monitored_scalars_ready':  "Data:Scalars:FetchedValuesReady",
+    'image_backend_scalars_ready':  "Data:Scalars:FetchedValuesReady",
+    'all_scalars_ready':  "Data:Scalars:FetchedValuesReady",
 }
 
 from threading import Thread
@@ -104,11 +109,25 @@ class ScalarSaveThread(Thread):
         self.num_measurements_per_transaction = num_measurements_per_transaction
         self.no_new_measurements_timeout = no_new_measurements_timeout
 
+        self.measurements_inserted: list[Measurement] = []
+
         super().__init__(**kwargs)
     
+    def commit(self):
+        try:
+            self.sa_session.commit()
+            logging.info(f"Inserted {len(self.measurements_inserted)} monitored measurements.")
+        except Exception as err:
+            logging.error(f"Error inserting {len(self.measurements_inserted)} monitored measurements: {err}")
+
+
+        for measurement in self.measurements_inserted:
+            burst: Burst = measurement.shot.burst
+            burst.scalars_saved_tracker.update(measurement.variable, measurement.shot)
+        self.measurements_inserted = []
+
     def run(self):
-        sa_session = SQLAlchemySession()
-        num_measurements_in_session = 0
+        self.sa_session = SQLAlchemySession()
 
         try:
             while True:
@@ -117,31 +136,79 @@ class ScalarSaveThread(Thread):
                     # timeout period
                     measurement: Measurement = self.queue.get(timeout=self.no_new_measurements_timeout)
 
-                    sa_session.add(measurement)
-                    num_measurements_in_session += 1
+                    self.sa_session.add(measurement)
+                    self.measurements_inserted.append(measurement)
 
                     # If the number of measurements in the session has reached the
                     # desired transaction size, commit them. 
-                    if num_measurements_in_session >= self.num_measurements_per_transaction:
-                        sa_session.commit()
-                        logging.info(f"Inserted {num_measurements_in_session} monitored measurements.")
-                        num_measurements_in_session = 0
+                    if len(self.measurements_inserted) >= self.num_measurements_per_transaction:
+                        self.commit()
 
                 except Empty:
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
-                    sa_session.commit()
-                    logging.info(f"Inserted {num_measurements_in_session} monitored measurements after no new scalars for {self.no_new_measurements_timeout:.1f} sec.")
-                    num_measurements_in_session = 0
+                    if len(self.measurements_inserted) > 0:
+                        self.commit()
 
         except Exception as err:
             logging.error(f"Error in ScalarSaveThread: {err}")
 
         finally:
-            sa_session.close()
+            self.sa_session.close()
 
 
+class UpdateScalarsSavedStatusThread(Thread):
+    def __init__(self, 
+                 queue: Queue,
+                 data_uploader: DataUploader,
+                 **kwargs
+                ):
+        self.queue = queue
+        self.data_uploader = data_uploader
+
+        super().__init__(**kwargs)
+
+    def run(self):
+        while True:
+            measurements = self.queue.get()
+            self.update(measurements)
+
+    def update(self, measurements: Measurement | Iterable[Measurement]):
+        
+        if not isinstance(measurements, Iterable):
+            measurements = [measurements]
+
+        for measurement in measurements:
+            # burst is not necessarily the current burst (could still be handling
+            # scalars from a previous burst) so get it from the shot.
+            burst: Burst = measurement.shot.burst
+            burst.scalars_saved_tracker.update(measurement.variable, measurement.shot)
+
+        self.update_scalars_ready_pvs()
+
+    def update_scalars_ready_pvs(self):
+        """ Write timestamp of shot for which all scalars are ready to PVs
+
+        Check what the most recent shot is for which all scalars - and all scalars 
+        for all previous shots in the burst - are ready i.e. available in database, 
+        and write this shot's timestamp to the associated PV. 
+
+        There are PVs for fetched, monitored, image_backend, and "all" scalars. 
+
+        """
+        for pv_alias, variable_source in [('fetched_scalars_ready', VariableSource.fetch), 
+                                          ('monitored_scalars_ready', VariableSource.monitor), 
+                                          ('image_backend_scalars_ready', VariableSource.image_backend), 
+                                          ('all_scalars_ready', None),  # None in ScalarsSavedTracker.highest_seq_all_scalars_ready defaults to all variable sources
+                                         ]:
+            
+            highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
+            if highest_seq_all_scalars_ready > 0:
+                shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
+                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
+            else:
+                self.data_uploader.burst_pvs[pv_alias].put("")
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
@@ -187,6 +254,11 @@ class DataUploader:
         self.scalar_save_queue: Queue[Measurement] = Queue()
         self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue)
 
+        # scalars saved tracker queue
+        self.update_scalars_saved_queue: Queue[Measurement | Iterable[Measurement]] = Queue()
+        # and thread that updates the tracker and posts to PVs
+        self.update_scalars_saved_thread = UpdateScalarsSavedStatusThread(self.update_scalars_saved_queue, self)
+
         logging.info(f"DataUploader ready to run.")
 
     def run(self) -> None:
@@ -210,6 +282,7 @@ class DataUploader:
         # start image and scalar uploaders
         self.image_upload_thread.start()
         self.scalar_save_thread.start()
+        self.update_scalars_saved_thread.start()
 
         # make sure our burst status type matches the mbbo PV values
         self.check_burst_status_enum()
@@ -398,19 +471,22 @@ class DataUploader:
 
             # shot = self.burst.shots[self.fetch_trigger_variable.counter]
             values = [variable.pv.get() for variable in variables_to_fetch]
+            measurements_inserted: list[Measurement] = []
             with SQLAlchemySession() as sa_session:
-                shot = sa_session.merge(self.burst.shots[self.fetch_trigger_variable.counter], load=False)
-                num_measurements_inserted = 0
+                shot = sa_session.merge(self.burst.shot_directory[self.fetch_trigger_variable.counter + 1], load=False)
                 for variable, value in zip(variables_to_fetch, values):
                     if value is None:
-                        logging.warning(f"No value for {variable.name}. Possibly it went offline. Removing from list of variables to fetch on trigger.")
+                        logging.warning(f"No value for {variable.name}. Possibly it went offline.")
+                        self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
                         continue
                     variable_merged = sa_session.merge(variable, load=False)
                     sa_session.add(Measurement(variable=variable_merged, shot=shot, value=float(value)))
-                    num_measurements_inserted += 1
+                    measurements_inserted.append(Measurement(variable=variable, shot=shot))
                 sa_session.commit()
 
-            logging.info(f"Inserted {num_measurements_inserted} measurements fetched on trigger variable")
+            self.update_scalars_saved_queue.put(measurements_inserted)
+
+            logging.info(f"Inserted {len(measurements_inserted)} measurements fetched on trigger variable")
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
@@ -470,8 +546,21 @@ class DataUploader:
             self.scan.current_burst_seq += 1
 
             # create map of shot sequence to shot object
-            self.burst.shot_directory: dict[ShotSeq, Shot] = {}
+            self.burst.shot_directory = {}
 
+            # Scalars Saved Tracker
+            variables_to_track = [variable for variable in self.variables if (
+                # varible is connected to its PV through the pyepics pv.PV class
+                (variable.pv is not None) and variable.pv.connected
+                # Currently, I'm not fetching non-numeric variables. 
+                and (variable.dtype is not None) and issubclass(variable.dtype, Number)
+                # Currently, I'm only tracking fetched and monitored variables, 
+                # not image_backend. 
+                and (variable.source in {VariableSource.fetch, VariableSource.monitor})
+            )]
+            self.burst.scalars_saved_tracker = ScalarsSavedTracker(variables_to_track)
+
+            # Finally, notify system that scalar database is ready for this Burst
             pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
@@ -551,7 +640,7 @@ class DataUploader:
 
         try:
             shot_seq = ShotSeq(variable.counter + 1)
-            
+
             # create new Shot if this shot_seq is new
             if shot_seq not in self.burst.shot_directory:
                 self.burst.shot_directory[shot_seq] = Shot(
@@ -560,9 +649,11 @@ class DataUploader:
                     seq=shot_seq,
                 )
 
+            shot = self.burst.shot_directory[shot_seq]
+
             self.scalar_save_queue.put(Measurement(
                 variable = variable,
-                shot = self.burst.shot_directory[shot_seq],
+                shot = shot,
                 value = value,
             ))
 
@@ -580,7 +671,26 @@ class DataUploader:
 
 
 class ScalarsSavedTracker:
-    def __init__(self, variables: list[Variable], cache_ready_shots: bool = True):
+    """ An object to keep track of saved-to-db status of variables for each shot
+
+    Provides all_scalars_ready() method which checks whether all variables for a 
+    given shot or set of shots are ready (what "ready" means can be customized)
+
+    Typical workflow is: 
+        scalars_saved_tracker = ScalarsSavedTracker(variables, number_of_shots)
+        for variable in variables:
+            try:
+                # do stuff to save a measurement to a database
+                scalars_saved_tracker(variable, shot)
+            except:
+                scalars_saved_tracker(variable, shot, ScalarSaveStatus.Error)
+        
+        # check if all shots up to now are ready. 
+        if scalars_saved_tracker.all_scalars_ready(range(1, shot.seq + 1)):
+            # do stuff
+    
+    """
+    def __init__(self, variables: Iterable[Variable], cache_ready_shots: bool = True):
         """ 
         Parameters
         ----------
@@ -590,33 +700,28 @@ class ScalarsSavedTracker:
             by set of allowed statuses). If it's possible for a shot complete 
             result to revert, set to False. 
         """
-        self.variables: list[Variable] = variables
-        self.cache_ready_shots: bool = cache_ready_shots
+        if len(variables) == 0:
+            raise ValueError("There should be at least one variable to track.")
         
+        self.variables: list[Variable] = list(variables)
+        self.cache_ready_shots: bool = cache_ready_shots
+
         # separate list of Variables by source
-        self.variables_by_source: dict[VariableSource, list[Variable]] = {
-            VariableSource.fetch: [],
-            VariableSource.monitor: [],
-            VariableSource.image_backend: [],
-        }
+        self.variables_by_source: defaultdict[VariableSource, list[Variable]] = defaultdict(list)
         for variable in variables:
-            if variable.source in self.variables_by_source:
-                self.variables_by_source[variable.source].append(variable)
+            self.variables_by_source[variable.source].append(variable)
 
-        # generate dict[str, ScalarSaveStatus] based on variable status. This 
-        # will be copied for every shot
-        self.single_shot_scalar_save_status = {}
-        for variable in variables:
-            if (    ((variable.pv is not None) and variable.pv.connected)
-                and (variable.dtype is not None)
-               ):
-                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.Waiting
-            else:
-                self.single_shot_scalar_save_status[variable.name] = ScalarSaveStatus.NotExpecting
-
-        # make <number_of_shots> copies of this dictionary. (Use copy() to make 
-        # sure it isn't just <number_of_shots> references to the same dict object!)
-        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(lambda _: self.single_shot_scalar_save_status.copy())
+        # This is the main directory of scalar save status by shot number and 
+        # variable. 
+        # Referencing a yet unknown shot seq initializes it with a dict of 
+        # ScalarSaveStatus.Waiting for all variables. Note that this dict is 
+        # newly created every time (otherwise every shot would have a reference 
+        # to the same variables dict)
+        def initial_scalar_save_status_for_shot():
+            return {variable.name: ScalarSaveStatus.Waiting
+                    for variable in variables
+                   }
+        self.scalar_save_status: defaultdict[ShotSeq, dict[str, ScalarSaveStatus]] = defaultdict(initial_scalar_save_status_for_shot)
 
         # cache shots that are ready for a given variable source and set of allowed
         # statuses
@@ -711,3 +816,46 @@ class ScalarsSavedTracker:
             self.shot_ready_cache[shot_variable_source_cache_key].add(ready_statuses_cache_key)
 
         return ready
+
+
+    def highest_seq_all_scalars_ready(self, 
+                                      variable_sources: Optional[VariableSource | Iterable[VariableSource]] = None,
+                                      ready_statuses: ScalarSaveStatus | Iterable[ScalarSaveStatus] = {ScalarSaveStatus.Saved, ScalarSaveStatus.NotExpecting, ScalarSaveStatus.Error, ScalarSaveStatus.TimedOut},
+                                     ) -> ShotSeq:
+        """ Return highest seq for which all of (1..seq) are ready
+
+        Returns 0 if scalars aren't ready for shot with seq = 1.
+
+        Parameters
+        ----------
+        variable_sources : VariableSource | Iterable[VariableSource], optional
+            Check only variables that are fetched, monitored, or image_backend, or 
+            combination thereof.
+            By default all sources
+        ready_statuses : ScalarSaveStatus | list[ScalarSaveStatus], optional
+            Which save statuses to consider ready. 
+            By default all except Waiting: [Saved, NotExpecting, Error, TimedOut]
+        
+        """
+
+        if variable_sources is None:
+            variable_sources = list(self.variables_by_source.keys())
+
+        highest_seq: ShotSeq = 0
+        while True:
+            # currently checking highest_seq + 1
+            shot_seq = highest_seq + 1
+            
+            # if this shot hasn't even been registered in the directory, deem it
+            # not ready and exit
+            if shot_seq not in self.scalar_save_status:
+                break
+
+            # if this shot isn't ready, exit
+            if not self.all_scalars_ready(shot_seq, variable_sources, ready_statuses):
+                break
+
+            # all shots up to shot_seq are ready.
+            highest_seq = shot_seq
+
+        return highest_seq
