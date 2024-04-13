@@ -40,6 +40,25 @@ if TYPE_CHECKING:
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
 from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
+
+# Declare types of attributes that are attached to the ORM objects
+if TYPE_CHECKING:
+    class Scan(Scan):
+        current_burst_seq: int
+
+    class Burst(Burst):
+        shot_directory: dict[ShotSeq, Shot]
+        scalars_saved_tracker: ScalarsSavedTracker
+
+    class Variable(Variable):
+        pv: PV
+        info: dict
+        dtype: Type
+        counter: int
+
+    class ImageDevice(ImageDevice):
+        counter: int
+
 from measurement_db.orm.tables import VariableSource, EPICSAccessProtocol
 from measurement_db.utils import get_sqlalchemy_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -223,7 +242,7 @@ class DataUploader:
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
-        self.scan.current_burst_seq: int = 1
+        self.scan.current_burst_seq = 1
 
         # scalars and image_devices to monitor
         # PVs to monitor for the operation of this Data Uploader
@@ -391,7 +410,7 @@ class DataUploader:
 
             variable.info = {}
             try:
-                info = variable.pv.info
+                info: str | None = variable.pv.info
                 if info is not None:
                     variable.info = parse_cainfo(info)
                     variable.dtype = parse_dtype(variable.info['type'])
