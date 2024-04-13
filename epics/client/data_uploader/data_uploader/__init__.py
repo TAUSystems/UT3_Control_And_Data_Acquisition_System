@@ -502,22 +502,13 @@ class DataUploader:
 
             # fetch values
             values = [variable.pv.get() for variable in variables_to_fetch]
-            measurements_inserted: list[Measurement] = []
-            with SQLAlchemySession() as sa_session:
-                shot = sa_session.merge(self.burst.shot_directory[self.fetch_trigger_variable.counter + 1], load=False)
-                for variable, value in zip(variables_to_fetch, values):
-                    if value is None:
-                        logging.warning(f"No value for {variable.name}. Possibly it went offline.")
-                        self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
-                        continue
-                    variable_merged = sa_session.merge(variable, load=False)
-                    sa_session.add(Measurement(variable=variable_merged, shot=shot, value=float(value)))
-                    measurements_inserted.append(Measurement(variable=variable, shot=shot))
-                sa_session.commit()
 
-            self.update_scalars_saved_queue.put(measurements_inserted)
-
-            logging.info(f"Inserted {len(measurements_inserted)} measurements fetched on trigger variable")
+            for variable, value in zip(variables_to_fetch, values):
+                if value is None:
+                    logging.warning(f"No value for {variable.name}. Possibly it went offline.")
+                    self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
+                    continue
+                self.scalar_save_queue.put(Measurement(variable=variable, shot=shot, value=float(value)))
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
