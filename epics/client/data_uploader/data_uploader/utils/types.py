@@ -27,9 +27,7 @@ class BurstStatus(Enum):
     Idle         = 1
     Preparing    = 2
     Armed        = 3
-    Force        = 4
-    Running      = 5
-    Stop         = 6
+    Running      = 4
 
 class ScalarSaveStatus(Enum):
     """ Status of a scalar being saved to the measurement database

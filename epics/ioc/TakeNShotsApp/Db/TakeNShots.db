@@ -75,8 +75,8 @@ record(seq, TakeNShots:ArmSeq) {
 
 record(calcout, TakeNShots:TriggerGenerationIdle) {
   field(DESC, "Acts when Status changes to non-running")
-# Timing:TriggerGeneration:Status = Disconnected, Idle, Stop
-  field(CALC, "A == 0 || A == 1 || A == 6")
+# Timing:TriggerGeneration:Status = Disconnected, Idle
+  field(CALC, "A == 0 || A == 1")
   field(INPA, "Timing:TriggerGeneration:Status CP")
   field(OUT, "TakeNShots:IdleSeq.PROC")
   field(OOPT, "Transition To Non-zero")
