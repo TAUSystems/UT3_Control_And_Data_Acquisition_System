@@ -134,11 +134,12 @@ class ScalarSaveThread(Thread):
     
     def commit(self):
         try:
-            self.sa_session.commit()
+            with SQLAlchemySession() as sa_session:
+                sa_session.add_all(self.measurements_inserted)
+                sa_session.commit()
             logging.info(f"Inserted {len(self.measurements_inserted)} monitored measurements.")
         except Exception as err:
             logging.error(f"Error inserting {len(self.measurements_inserted)} monitored measurements: {err}")
-
 
         for measurement in self.measurements_inserted:
             burst: Burst = measurement.shot.burst
@@ -146,7 +147,6 @@ class ScalarSaveThread(Thread):
         self.measurements_inserted = []
 
     def run(self):
-        self.sa_session = SQLAlchemySession()
 
         try:
             while True:
@@ -155,7 +155,7 @@ class ScalarSaveThread(Thread):
                     # timeout period
                     measurement: Measurement = self.queue.get(timeout=self.no_new_measurements_timeout)
 
-                    self.sa_session.add(measurement)
+                    # self.sa_session.add(measurement)
                     self.measurements_inserted.append(measurement)
 
                     # If the number of measurements in the session has reached the
@@ -174,7 +174,7 @@ class ScalarSaveThread(Thread):
             logging.error(f"Error in ScalarSaveThread: {err}")
 
         finally:
-            self.sa_session.close()
+            pass # self.sa_session.close()
 
 
 class UpdateScalarsSavedStatusThread(Thread):
@@ -227,7 +227,7 @@ class UpdateScalarsSavedStatusThread(Thread):
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
                 self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
                 logging.info(f"All \"{variable_source.name}\" scalars for shots up to shot {highest_seq_all_scalars_ready} "
-                             f"({shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")}) ready. Timestamp written to {self.data_uploader.burst_pvs[pv_alias]}"
+                             f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')}) ready. Timestamp written to {self.data_uploader.burst_pvs[pv_alias]}"
                             ) 
             else:
                 self.data_uploader.burst_pvs[pv_alias].put("")
@@ -590,7 +590,7 @@ class DataUploader:
             pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
-            logging.error(f"Unable to create burst and shots: {err}")
+            logging.error(f"Unable to create burst: {err}")
 
 
     def create_new_shot(self, shot_seq: ShotSeq):
