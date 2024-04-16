@@ -123,6 +123,8 @@ class ImageUploadThread(Thread):
 
 
 class ScalarSaveThread(Thread):
+    """ A thread to save measurements to DB and update the ScalarsSavedTracker
+    """
     def __init__(self, 
                  queue: Queue[Measurement | Iterable[Measurement]], 
                  num_measurements_per_transaction = 20, 
@@ -130,8 +132,7 @@ class ScalarSaveThread(Thread):
                  update_scalars_saved_tracker_queue: Queue = None, 
                  **kwargs
                 ):
-        """ A thread to save measurements to DB and update the ScalarsSavedTracker
-
+        """ 
         Parameters
         ----------
         queue : Queue[Measurement | Iterable[Measurement]]
@@ -152,22 +153,25 @@ class ScalarSaveThread(Thread):
 
         self.update_scalars_saved_tracker_queue = update_scalars_saved_tracker_queue
 
-        self.measurements_inserted: list[Measurement] = []
+        self.measurements_to_save: list[Measurement] = []
 
         super().__init__(**kwargs)
     
     def commit(self):
+        """ Saves measurements to database and updates ScalarsSavedTracker
+        """
         try:
             with SQLAlchemySession() as sa_session:
-                sa_session.add_all(self.measurements_inserted)
+                sa_session.add_all(self.measurements_to_save)
                 sa_session.commit()
-            logging.info(f"Inserted {len(self.measurements_inserted)} monitored measurements.")
+            logging.info(f"Inserted {len(self.measurements_to_save)} monitored measurements.")
         except Exception as err:
-            logging.error(f"Error inserting {len(self.measurements_inserted)} monitored measurements: {err}")
+            logging.error(f"Error inserting {len(self.measurements_to_save)} monitored measurements: {err}")
 
-        self.update_scalars_saved_tracker_queue.put(self.measurements_inserted)
+        self.update_scalars_saved_tracker_queue.put(self.measurements_to_save)
 
-        self.measurements_inserted = []
+        # Clear measurements_to_save
+        self.measurements_to_save = []
 
     def run(self):
 
@@ -176,27 +180,24 @@ class ScalarSaveThread(Thread):
                 try:
                     # raises Empty exception if no scalar data arrives within the 
                     # timeout period
-                    measurement = self.queue.get(timeout=self.no_new_measurements_timeout)
-
-                    if isinstance(measurement, Iterable):
-                        if not all(isinstance(m, Measurement) for m in measurement):
-                            raise TypeError(f"Object of type other than Measurement obtained from ScalarSaveThread queue.")
-                        self.measurements_inserted.extend(measurement)
-                    else:
-                        if not isinstance(measurement, Measurement):
-                            raise TypeError(f"Object of type {type(measurement)} instead of Measurement obtained from ScalarSaveThread queue.")
-                        self.measurements_inserted.append(measurement)
+                    match measurement_or_measurements := self.queue.get(timeout=self.no_new_measurements_timeout):
+                        case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
+                            self.measurements_to_save.extend(measurements)
+                        case Measurement(measurement):
+                            self.measurements_to_save.append(measurement)
+                        case _:
+                            raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
 
                     # If the number of measurements in the session has reached the
                     # desired transaction size, commit them. 
-                    if len(self.measurements_inserted) >= self.num_measurements_per_transaction:
+                    if len(self.measurements_to_save) >= self.num_measurements_per_transaction:
                         self.commit()
 
                 except Empty:
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
-                    if len(self.measurements_inserted) > 0:
+                    if len(self.measurements_to_save) > 0:
                         self.commit()
 
         except Exception as err:
@@ -223,8 +224,16 @@ class UpdateScalarsSavedStatusThread(Thread):
             self.update(measurements)
 
     
-    def update(self, measurements: Measurement | Iterable[Measurement]):
+    def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
+        """ Update ScalarsSavedTrackers associated with the shots and variables 
+            in the measurement or measurements
 
+        Parameters
+        ----------
+        measurements : Measurement | Iterable[Measurement]
+            Single measurement or list of measurements whose shot/variable 
+            combination mark as ScalarSaveStatus.Saved. 
+        """
         def update_one(measurement: Measurement):
             if not isinstance(measurement, Measurement):
                 raise TypeError(f"Object of type {type(measurement)} instead of Measurement found in UpdateScalarsSavedStatusThread queue.")
@@ -234,11 +243,11 @@ class UpdateScalarsSavedStatusThread(Thread):
             burst: Burst = measurement.shot.burst
             burst.scalars_saved_tracker.update(measurement.variable, measurement.shot)
 
-        if isinstance(measurements, Iterable):
-            for measurement in measurements:
+        if isinstance(measurement_or_measurements, Iterable):
+            for measurement in measurement_or_measurements:
                 update_one(measurement)
-        else:
-            update_one(measurements)
+        else:  # scalar Measurement
+            update_one(measurement_or_measurements)
 
         self.update_scalars_ready_pvs()
 
