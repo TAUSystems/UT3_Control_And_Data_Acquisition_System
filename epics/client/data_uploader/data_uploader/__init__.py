@@ -372,17 +372,18 @@ class DataUploader:
                 ('burst_status', [self.burst_status_monitor_callback]),
                 ('burst_frequency', []),
                 ('burst_num_shots', []),
+
                 ('session_title', [self.session_title_monitor_callback]),
                 ('scan_title', [self.scan_title_monitor_callback]),
                 ('scan_number', [self.scan_number_monitor_callback]),
+
+                ('session_timestamp', [self.session_timestamp_monitor_callback]),
+                ('scan_timestamp', [self.scan_timestamp_monitor_callback]),
+                ('burst_timestamp', []),
             ]:
 
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=callbacks, )
             logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
-
-        # PV connections without monitoring
-        for pv_alias in ['burst_timestamp']:
-            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
@@ -453,7 +454,7 @@ class DataUploader:
         try:
             pva.put("TakeNShots:BurstInDB", 0)
 
-            self.burst = Burst(timestamp=datetime.now(tz=UTC), 
+            self.burst = Burst(timestamp=self.datetime_from_pv_string(self.burst_pvs['burst_timestamp'].get()),
                                scan=self.scan, 
                                seq=self.current_burst_seq,
                                number_of_shots=self.burst_pvs['burst_num_shots'].value,
@@ -483,26 +484,29 @@ class DataUploader:
         except Exception as err:
             logging.error(f"Unable to create burst and shots: {err}")
 
+
+    def session_timestamp_monitor_callback(self, value: str, **kwargs):
+        self.session = Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value))
+        logging.info(f"New session {self.session.timestamp} with title \"{self.session.title}\"")
+
     def session_title_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=value, timestamp=datetime.now(tz=UTC))
-        logging.info(f"New session \"{self.session.title}\"")
+        self.session.title = value
+        logging.info(f"Set session title to \"{self.session.title}\"")
 
-        # if not self.enable_callbacks:
-        #     return
 
-        # with SQLAlchemySession() as sa_session:
-        #     sa_session.add(self.session)
-        #     sa_session.commit()
-
+    def scan_timestamp_monitor_callback(self, value: str, **kwargs):
+        self.scan = Scan(timestamp=self.datetime_from_pv_string(value), title=self.scan.title, seq=self.scan.seq, session=self.session)
+        logging.info(f"New scan {self.scan.timestamp}, number {self.scan.seq} with title \"{self.scan.title}\"")
+        self.current_burst_seq = 1
 
     def scan_number_monitor_callback(self, value: int, **kwargs):
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
-        logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
-        self.current_burst_seq = 1
+        self.scan.seq = value
+        logging.info(f"Scan number set to \"{self.scan.seq}\"")
 
     def scan_title_monitor_callback(self, value: str, **kwargs):
         self.scan.title = value
         logging.info(f"Scan title set to \"{self.scan.title}\"")
+
 
     def reset_counters(self):
         for variable in self.variables:
@@ -570,6 +574,23 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
+
+    def datetime_from_pv_string(datetime_str: str) -> datetime:
+        """ Turn string obtained from session, scan, or burst timestamp PV into datetime
+
+        Assumes %Y-%m-%d %H:%M:%S.%f format, in UTC.
+
+        Parameters
+        ----------
+        datetime_str : str
+
+        Returns
+        -------
+        utc_datetime : datetime
+            datetime with UTC timezone
+
+        """
+        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
 
 class ScalarsSavedTracker:
     def __init__(self, variables: list[Variable], number_of_shots: int, cache_ready_shots: bool = True):
