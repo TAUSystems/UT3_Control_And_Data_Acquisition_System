@@ -594,7 +594,7 @@ class DataUploader:
 
         """
         try:
-            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
+            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ").replace(tzinfo=UTC)
         except ValueError:
             logging.warning(f"Unable to parse datetime string {datetime_str}. Returning current time.")
             return datetime.now(tz=UTC)
