@@ -183,7 +183,7 @@ class ScalarSaveThread(Thread):
                     match measurement_or_measurements := self.queue.get(timeout=self.no_new_measurements_timeout):
                         case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
                             self.measurements_to_save.extend(measurements)
-                        case Measurement(measurement):
+                        case Measurement() as measurement:
                             self.measurements_to_save.append(measurement)
                         case _:
                             raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
@@ -271,12 +271,12 @@ class UpdateScalarsSavedStatusThread(Thread):
             if highest_seq_all_scalars_ready > 0:
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
                 self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
-                logging.info(f"All \"{variable_source.name}\" scalars for shots up to shot {highest_seq_all_scalars_ready} "
+                logging.info(f"All \"{variable_source.name if variable_source else 'all'}\" scalars for shots up to shot {highest_seq_all_scalars_ready} "
                              f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')}) ready. Timestamp written to {self.data_uploader.burst_pvs[pv_alias]}"
                             ) 
             else:
                 self.data_uploader.burst_pvs[pv_alias].put("")
-                logging.info(f"No shots have \"{variable_source.name}\" scalars ready.")
+                logging.info(f"No shots have \"{variable_source.name if variable_source else 'all'}\" scalars ready.")
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
