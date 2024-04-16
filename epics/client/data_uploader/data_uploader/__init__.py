@@ -579,7 +579,7 @@ class DataUploader:
             variable.counter += 1
 
 
-    def datetime_from_pv_string(datetime_str: str) -> datetime:
+    def datetime_from_pv_string(self, datetime_str: str) -> datetime:
         """ Turn string obtained from session, scan, or burst timestamp PV into datetime
 
         Assumes %Y-%m-%d %H:%M:%S.%f format, in UTC.
