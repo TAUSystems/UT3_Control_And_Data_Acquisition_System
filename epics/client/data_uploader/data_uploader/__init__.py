@@ -54,13 +54,14 @@ PV_NAMES: dict[str, PVName] = {
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
 
-    'session_title': "Data:Scan:Session",
-    'scan_number': "Data:Scan:Number",
+    'session_timestamp': "Data:Session:Timestamp",
+    'session_title': "Data:Session:Title",
+
     'scan_title': "Data:Scan:Title",
+    'scan_number': "Data:Scan:Number",
+    'scan_timestamp': "Data:Scan:Timestamp",
 
     'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
-    'scan_timestamp': "Data:Scan:ScanTimestamp",
-    'session_timestamp': "Data:Scan:SessionTimestamp",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
