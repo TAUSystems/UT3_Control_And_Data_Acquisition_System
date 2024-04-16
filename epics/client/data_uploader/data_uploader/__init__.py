@@ -515,7 +515,12 @@ class DataUploader:
             logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
 
         # PV connections without monitoring
-        for pv_alias in ['burst_timestamp']:
+        for pv_alias in ['burst_timestamp', 
+                         'fetched_scalars_ready', 
+                         'monitored_scalars_ready', 
+                         'image_backend_scalars_ready', 
+                         'all_scalars_ready', 
+                        ]:
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
