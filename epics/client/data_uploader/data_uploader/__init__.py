@@ -593,7 +593,11 @@ class DataUploader:
             datetime with UTC timezone
 
         """
-        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
+        try:
+            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
+        except ValueError:
+            logging.warning(f"Unable to parse datetime string {datetime_str}. Returning current time.")
+            return datetime.now(tz=UTC)
 
 class ScalarsSavedTracker:
     def __init__(self, variables: list[Variable], number_of_shots: int, cache_ready_shots: bool = True):
