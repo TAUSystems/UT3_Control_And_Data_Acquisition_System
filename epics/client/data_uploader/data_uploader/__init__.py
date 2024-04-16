@@ -51,13 +51,16 @@ SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 # these are the PVs necessary for operating this DataUploader
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
-    'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
 
     'session_title': "Data:Scan:Session",
     'scan_number': "Data:Scan:Number",
     'scan_title': "Data:Scan:Title",
+
+    'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
+    'scan_timestamp': "Data:Scan:ScanTimestamp",
+    'session_timestamp': "Data:Scan:SessionTimestamp",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 }
