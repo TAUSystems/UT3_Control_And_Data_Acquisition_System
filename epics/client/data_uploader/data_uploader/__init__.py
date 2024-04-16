@@ -82,9 +82,9 @@ PV_NAMES: dict[str, PVName] = {
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 
     'fetched_scalars_ready':  "Data:Scalars:FetchedValuesReady",
-    'monitored_scalars_ready':  "Data:Scalars:FetchedValuesReady",
-    'image_backend_scalars_ready':  "Data:Scalars:FetchedValuesReady",
-    'all_scalars_ready':  "Data:Scalars:FetchedValuesReady",
+    'monitored_scalars_ready':  "Data:Scalars:MonitoredValuesReady",
+    'image_backend_scalars_ready':  "Data:Scalars:ImageValuesReady",
+    'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
 from threading import Thread, Lock
