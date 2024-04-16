@@ -501,7 +501,7 @@ class DataUploader:
     def scan_timestamp_monitor_callback(self, value: str, **kwargs):
         self.scan = Scan(timestamp=self.datetime_from_pv_string(value), title=self.scan.title, seq=self.scan.seq, session=self.session)
         logging.info(f"New scan {self.scan.timestamp}, number {self.scan.seq} with title \"{self.scan.title}\"")
-        self.current_burst_seq = 1
+        self.scan.current_burst_seq = 1
 
     def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan.seq = value
