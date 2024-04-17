@@ -29,4 +29,8 @@ dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeHistogram 0
 # Enable Stats
 dbpf $(PREFIX)Stats:Spectrometer:Pointing:EnableCallbacks 1
 
+# ## Tiff settings
+
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:FilePath "/tmp/ndfiletiff-test"
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:EnableCallbacks  1
 
