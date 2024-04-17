@@ -71,13 +71,17 @@ SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 # these are the PVs necessary for operating this DataUploader
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
-    'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
     'burst_num_shots': "Timing:TriggerGeneration:NumShots",
 
-    'session_title': "Data:Scan:Session",
-    'scan_number': "Data:Scan:Number",
+    'session_timestamp': "Data:Session:Timestamp",
+    'session_title': "Data:Session:Title",
+
     'scan_title': "Data:Scan:Title",
+    'scan_number': "Data:Scan:Number",
+    'scan_timestamp': "Data:Scan:Timestamp",
+
+    'burst_timestamp': "Timing:TriggerGeneration:BurstTimestamp",
 
     'fetch_trigger_pv': "E:Spectrometer:Pointing:ArrayCounter_RBV",
 
@@ -515,17 +519,21 @@ class DataUploader:
                 ('burst_status', [self.burst_status_monitor_callback]),
                 ('burst_frequency', []),
                 ('burst_num_shots', []),
+
                 ('session_title', [self.session_title_monitor_callback]),
                 ('scan_title', [self.scan_title_monitor_callback]),
                 ('scan_number', [self.scan_number_monitor_callback]),
+
+                ('session_timestamp', [self.session_timestamp_monitor_callback]),
+                ('scan_timestamp', [self.scan_timestamp_monitor_callback]),
+                ('burst_timestamp', []),
             ]:
 
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=callbacks, )
             logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
 
         # PV connections without monitoring
-        for pv_alias in ['burst_timestamp', 
-                         'fetched_scalars_ready', 
+        for pv_alias in ['fetched_scalars_ready', 
                          'monitored_scalars_ready', 
                          'image_backend_scalars_ready', 
                          'all_scalars_ready', 
@@ -604,14 +612,13 @@ class DataUploader:
         try:
             pva.put("TakeNShots:BurstInDB", 0)
 
-            self.burst = Burst(timestamp=datetime.now(tz=UTC), 
+            self.burst = Burst(timestamp=self.datetime_from_pv_string(self.burst_pvs['burst_timestamp'].get()),
                                scan=self.scan, 
                                seq=self.scan.current_burst_seq,
                                number_of_shots=self.burst_pvs['burst_num_shots'].value,
                                repetition_rate=self.burst_pvs['burst_frequency'].value,
                               )
 
-            self.burst_pvs['burst_timestamp'].put(self.burst.timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"), wait=True)
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
             with SQLAlchemySession() as sa_session:
@@ -665,26 +672,35 @@ class DataUploader:
                 seq=shot_seq,
             )
 
+
+    def session_timestamp_monitor_callback(self, value: str, **kwargs):
+        self.session = Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value))
+        logging.info(f"New session {self.session.timestamp} with title \"{self.session.title}\"")
+
     def session_title_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=value, timestamp=datetime.now(tz=UTC))
-        logging.info(f"New session \"{self.session.title}\"")
+        self.session.title = value
+        logging.info(f"Set session title to \"{self.session.title}\"")
 
-        # if not self.enable_callbacks:
-        #     return
 
-        # with SQLAlchemySession() as sa_session:
-        #     sa_session.add(self.session)
-        #     sa_session.commit()
-
+    def scan_timestamp_monitor_callback(self, value: str, **kwargs):
+        self.scan = Scan(timestamp=self.datetime_from_pv_string(value), title=self.scan.title, seq=self.scan.seq, session=self.session)
+        logging.info(f"New scan {self.scan.timestamp}, number {self.scan.seq} with title \"{self.scan.title}\"")
+        self.scan.current_burst_seq = 1
 
     def scan_number_monitor_callback(self, value: int, **kwargs):
+<<<<<<< HEAD
         self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
         logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
         self.scan.current_burst_seq = 1
+=======
+        self.scan.seq = value
+        logging.info(f"Scan number set to \"{self.scan.seq}\"")
+>>>>>>> feature/use_UI_provided_timestamps
 
     def scan_title_monitor_callback(self, value: str, **kwargs):
         self.scan.title = value
         logging.info(f"Scan title set to \"{self.scan.title}\"")
+
 
     def reset_counters(self):
         for variable in self.variables:
@@ -767,6 +783,27 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
+
+    def datetime_from_pv_string(self, datetime_str: str) -> datetime:
+        """ Turn string obtained from session, scan, or burst timestamp PV into datetime
+
+        Assumes %Y-%m-%d %H:%M:%S.%f format, in UTC.
+
+        Parameters
+        ----------
+        datetime_str : str
+
+        Returns
+        -------
+        utc_datetime : datetime
+            datetime with UTC timezone
+
+        """
+        try:
+            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ").replace(tzinfo=UTC)
+        except ValueError:
+            logging.warning(f"Unable to parse datetime string {datetime_str}. Returning current time.")
+            return datetime.now(tz=UTC)
 
 class ScalarsSavedTracker:
     """ An object to keep track of saved-to-db status of variables for each shot
