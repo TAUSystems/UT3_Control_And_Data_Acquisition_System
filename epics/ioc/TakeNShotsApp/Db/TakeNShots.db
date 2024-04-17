@@ -49,11 +49,10 @@ record(bo, TakeNShots:BurstInDB) {
 record(calcout, TakeNShots:CheckReadyToArm) {
   field(DESC, "When ready, run Arm sequence")
 # Timing:TriggerGeneration:Status == Preparing
-  field(CALC, "(A == 2) && (B || C) && D")
+  field(CALC, "(A == 2) && B && C")
   field(INPA, "Timing:TriggerGeneration:Status CP")
-  field(INPB, "Timing:TriggerGeneration:HardwareBypass CP")
-  field(INPC, "TakeNShots:CheckCamerasAcquiring CP")
-  field(INPD, "TakeNShots:BurstInDB CP")
+  field(INPB, "TakeNShots:CheckCamerasAcquiring CP")
+  field(INPC, "TakeNShots:BurstInDB CP")
   field(OUT, "TakeNShots:ArmSeq.PROC")
   field(OOPT, "Transition To Non-zero")
   field(DOPT, "Use OCAL")
@@ -94,7 +93,7 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 }
 
 #! Further lines contain data used by VisualDCT
-#! View(777,819,1.1)
+#! View(523,751,1.1)
 #! Record(TakeNShots:TriggerGenerationPreparing,480,993,0,1,"TakeNShots:TriggerGenerationPreparing")
 #! Field("TakeNShots:TriggerGenerationPreparing.INPA",16777215,1,"TakeNShots:TriggerGenerationPreparing.INPA")
 #! Field("TakeNShots:TriggerGenerationPreparing.OUT",16777215,1,"TakeNShots:TriggerGenerationPreparing.OUT")
@@ -116,13 +115,12 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! Field("TakeNShots:CheckCamerasAcquiring.VAL",16777215,1,"TakeNShots:CheckCamerasAcquiring.VAL")
 #! Record(TakeNShots:BurstInDB,1480,1315,0,1,"TakeNShots:BurstInDB")
 #! Field("TakeNShots:BurstInDB.VAL",16777215,1,"TakeNShots:BurstInDB.VAL")
-#! Record(TakeNShots:CheckReadyToArm,1800,983,0,1,"TakeNShots:CheckReadyToArm")
+#! Record(TakeNShots:CheckReadyToArm,1800,997,0,1,"TakeNShots:CheckReadyToArm")
 #! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
-#! Field("TakeNShots:CheckReadyToArm.INPB",16777215,1,"TakeNShots:CheckReadyToArm.INPB")
+#! Field("TakeNShots:CheckReadyToArm.INPB",16777215,0,"TakeNShots:CheckReadyToArm.INPB")
+#! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckCamerasAcquiring.VAL")
 #! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
-#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckCamerasAcquiring.VAL")
-#! Field("TakeNShots:CheckReadyToArm.INPD",16777215,0,"TakeNShots:CheckReadyToArm.INPD")
-#! Link("TakeNShots:CheckReadyToArm.INPD","TakeNShots:BurstInDB.VAL")
+#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:BurstInDB.VAL")
 #! Field("TakeNShots:CheckReadyToArm.OUT",16777215,1,"TakeNShots:CheckReadyToArm.OUT")
 #! Link("TakeNShots:CheckReadyToArm.OUT","TakeNShots:ArmSeq.PROC")
 #! Record(TakeNShots:ArmSeq,2100,1027,0,1,"TakeNShots:ArmSeq")
