@@ -688,14 +688,8 @@ class DataUploader:
         self.scan.current_burst_seq = 1
 
     def scan_number_monitor_callback(self, value: int, **kwargs):
-<<<<<<< HEAD
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), title=self.scan.title, seq=value, session=self.session)
-        logging.info(f"New scan, number {self.scan.seq} with title \"{self.scan.title}\"")
-        self.scan.current_burst_seq = 1
-=======
         self.scan.seq = value
         logging.info(f"Scan number set to \"{self.scan.seq}\"")
->>>>>>> feature/use_UI_provided_timestamps
 
     def scan_title_monitor_callback(self, value: str, **kwargs):
         self.scan.title = value
