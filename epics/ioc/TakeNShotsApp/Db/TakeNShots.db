@@ -2,9 +2,9 @@
 #! DBDSTART
 #! DBDEND
 
-# ## Start Burst
 
-# When Status changes to Preparing, start acquisition on cameras 
+# ## Start Burst
+# When Status changes to Preparing, start acquisition on cameras
 record(calcout, TakeNShots:TriggerGenerationPreparing) {
   field(DESC, "Acts when Status changes to Preparing")
 # Timing:TriggerGeneration:Status == Preparing
@@ -30,8 +30,7 @@ record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
   field(SCAN, "Passive")
 }
 
-
-# Wait for cameras to all be in acquisition mode. 
+# Wait for cameras to all be in acquisition mode.
 record(calc, TakeNShots:CheckCamerasAcquiring) {
   field(DESC, "Check all cameras are in Acquiring mode")
   field(CALC, "A && B && C")
@@ -39,7 +38,6 @@ record(calc, TakeNShots:CheckCamerasAcquiring) {
   field(INPB, "E:Spectrometer:LowEnergy:Acquire_RBV CP")
   field(INPC, "E:Spectrometer:HighEnergy:Acquire_RBV CP")
 }
-
 
 # At the same time, a new Burst and Shots should be written to the measurement 
 # database by the data_uploader client. Wait for this to complete.
@@ -51,10 +49,11 @@ record(bo, TakeNShots:BurstInDB) {
 record(calcout, TakeNShots:CheckReadyToArm) {
   field(DESC, "When ready, run Arm sequence")
 # Timing:TriggerGeneration:Status == Preparing
-  field(CALC, "(A == 2) && B && C")
+  field(CALC, "(A == 2) && (B || C) && D")
   field(INPA, "Timing:TriggerGeneration:Status CP")
-  field(INPB, "TakeNShots:CheckCamerasAcquiring CP")
-  field(INPC, "TakeNShots:BurstInDB CP")
+  field(INPB, "Timing:TriggerGeneration:HardwareBypass CP")
+  field(INPC, "TakeNShots:CheckCamerasAcquiring CP")
+  field(INPD, "TakeNShots:BurstInDB CP")
   field(OUT, "TakeNShots:ArmSeq.PROC")
   field(OOPT, "Transition To Non-zero")
   field(DOPT, "Use OCAL")
@@ -70,9 +69,7 @@ record(seq, TakeNShots:ArmSeq) {
   field(DOL1, "0")
 }
 
-
 # ## Stop Burst
-
 record(calcout, TakeNShots:TriggerGenerationIdle) {
   field(DESC, "Acts when Status changes to non-running")
 # Timing:TriggerGeneration:Status = Disconnected, Idle
@@ -81,7 +78,6 @@ record(calcout, TakeNShots:TriggerGenerationIdle) {
   field(OUT, "TakeNShots:IdleSeq.PROC")
   field(OOPT, "Transition To Non-zero")
 }
-
 
 record(seq, TakeNShots:IdleSeq) {
   field(DESC, "Take actions when Status turns Idle")
@@ -97,55 +93,38 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DOL, "0")
 }
 
-
 #! Further lines contain data used by VisualDCT
-#! View(61,1469,1.1)
-#! Record(TakeNShots:CheckCamerasAcquiring,1480,993,0,1,"TakeNShots:CheckCamerasAcquiring")
-#! Field("TakeNShots:CheckCamerasAcquiring.INPA",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPA")
-#! Field("TakeNShots:CheckCamerasAcquiring.INPB",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPB")
-#! Field("TakeNShots:CheckCamerasAcquiring.INPC",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPC")
-#! Field("TakeNShots:CheckCamerasAcquiring.VAL",16777215,1,"TakeNShots:CheckCamerasAcquiring.VAL")
-#! Record(TakeNShots:CameraAcquisitionStopFanOut,1120,1873,0,0,"TakeNShots:CameraAcquisitionStopFanOut")
-#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTA",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTA")
-#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTB")
-#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTC")
-#! Field("TakeNShots:CameraAcquisitionStopFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStopFanOut.PROC")
-#! Record(TakeNShots:CameraAcquisitionStartFanOut,1080,999,0,0,"TakeNShots:CameraAcquisitionStartFanOut")
-#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTA",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTA")
-#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTB")
-#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTC")
-#! Field("TakeNShots:CameraAcquisitionStartFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStartFanOut.PROC")
-#! Record(TakeNShots:CheckReadyToArm,1800,997,0,1,"TakeNShots:CheckReadyToArm")
-#! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
-#! Field("TakeNShots:CheckReadyToArm.INPB",16777215,0,"TakeNShots:CheckReadyToArm.INPB")
-#! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckCamerasAcquiring.VAL")
-#! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
-#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckReadyToArm/INPC")
-#! Field("TakeNShots:CheckReadyToArm.OUT",16777215,1,"TakeNShots:CheckReadyToArm.OUT")
-#! Link("TakeNShots:CheckReadyToArm.OUT","TakeNShots:ArmSeq.PROC")
-#! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
-#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckReadyToArm/INPC")
-#! Connector("TakeNShots:CheckReadyToArm/INPC","TakeNShots:BurstInDB.VAL",1720,1330,16777215,"",0)
-#! Record(TakeNShots:TriggerGenerationIdle,520,1893,0,1,"TakeNShots:TriggerGenerationIdle")
-#! Field("TakeNShots:TriggerGenerationIdle.INPA",16777215,1,"TakeNShots:TriggerGenerationIdle.INPA")
-#! Field("TakeNShots:TriggerGenerationIdle.OUT",16777215,1,"TakeNShots:TriggerGenerationIdle.OUT")
-#! Link("TakeNShots:TriggerGenerationIdle.OUT","TakeNShots:IdleSeq.PROC")
+#! View(777,819,1.1)
 #! Record(TakeNShots:TriggerGenerationPreparing,480,993,0,1,"TakeNShots:TriggerGenerationPreparing")
 #! Field("TakeNShots:TriggerGenerationPreparing.INPA",16777215,1,"TakeNShots:TriggerGenerationPreparing.INPA")
 #! Field("TakeNShots:TriggerGenerationPreparing.OUT",16777215,1,"TakeNShots:TriggerGenerationPreparing.OUT")
 #! Link("TakeNShots:TriggerGenerationPreparing.OUT","TakeNShots:PreparingSeq.PROC")
-#! Record(TakeNShots:BurstInDB,1480,1315,0,1,"TakeNShots:BurstInDB")
-#! Field("TakeNShots:BurstInDB.VAL",16777215,1,"TakeNShots:BurstInDB.VAL")
 #! Record(TakeNShots:PreparingSeq,760,1001,0,1,"TakeNShots:PreparingSeq")
 #! Field("TakeNShots:PreparingSeq.LNK0",16777215,1,"TakeNShots:PreparingSeq.LNK0")
 #! Link("TakeNShots:PreparingSeq.LNK0","TakeNShots:PreparingSeq/LNK0")
 #! Field("TakeNShots:PreparingSeq.PROC",16777215,0,"TakeNShots:PreparingSeq.PROC")
 #! Connector("TakeNShots:PreparingSeq/LNK0","TakeNShots:CameraAcquisitionStartFanOut.PROC",1000,1160,16777215,"",0)
-#! Record(TakeNShots:IdleSeq,800,1901,0,1,"TakeNShots:IdleSeq")
-#! Field("TakeNShots:IdleSeq.LNK0",16777215,1,"TakeNShots:IdleSeq.LNK0")
-#! Link("TakeNShots:IdleSeq.LNK0","TakeNShots:IdleSeq/LNK0")
-#! Field("TakeNShots:IdleSeq.PROC",16777215,0,"TakeNShots:IdleSeq.PROC")
-#! Connector("TakeNShots:IdleSeq/LNK0","TakeNShots:CameraAcquisitionStopFanOut.PROC",1040,2040,16777215,"",0)
+#! Record(TakeNShots:CameraAcquisitionStartFanOut,1080,999,0,0,"TakeNShots:CameraAcquisitionStartFanOut")
+#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTA",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTA")
+#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTB")
+#! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTC")
+#! Field("TakeNShots:CameraAcquisitionStartFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStartFanOut.PROC")
+#! Record(TakeNShots:CheckCamerasAcquiring,1480,993,0,1,"TakeNShots:CheckCamerasAcquiring")
+#! Field("TakeNShots:CheckCamerasAcquiring.INPA",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPA")
+#! Field("TakeNShots:CheckCamerasAcquiring.INPB",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPB")
+#! Field("TakeNShots:CheckCamerasAcquiring.INPC",16777215,1,"TakeNShots:CheckCamerasAcquiring.INPC")
+#! Field("TakeNShots:CheckCamerasAcquiring.VAL",16777215,1,"TakeNShots:CheckCamerasAcquiring.VAL")
+#! Record(TakeNShots:BurstInDB,1480,1315,0,1,"TakeNShots:BurstInDB")
+#! Field("TakeNShots:BurstInDB.VAL",16777215,1,"TakeNShots:BurstInDB.VAL")
+#! Record(TakeNShots:CheckReadyToArm,1800,983,0,1,"TakeNShots:CheckReadyToArm")
+#! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
+#! Field("TakeNShots:CheckReadyToArm.INPB",16777215,1,"TakeNShots:CheckReadyToArm.INPB")
+#! Field("TakeNShots:CheckReadyToArm.INPC",16777215,0,"TakeNShots:CheckReadyToArm.INPC")
+#! Link("TakeNShots:CheckReadyToArm.INPC","TakeNShots:CheckCamerasAcquiring.VAL")
+#! Field("TakeNShots:CheckReadyToArm.INPD",16777215,0,"TakeNShots:CheckReadyToArm.INPD")
+#! Link("TakeNShots:CheckReadyToArm.INPD","TakeNShots:BurstInDB.VAL")
+#! Field("TakeNShots:CheckReadyToArm.OUT",16777215,1,"TakeNShots:CheckReadyToArm.OUT")
+#! Link("TakeNShots:CheckReadyToArm.OUT","TakeNShots:ArmSeq.PROC")
 #! Record(TakeNShots:ArmSeq,2100,1027,0,1,"TakeNShots:ArmSeq")
 #! Field("TakeNShots:ArmSeq.LNK0",16777215,1,"TakeNShots:ArmSeq.LNK0")
 #! Field("TakeNShots:ArmSeq.DOL0",16777215,1,"TakeNShots:ArmSeq.DOL0")
@@ -155,6 +134,20 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! Connector("TakeNShots:ArmSeq/LNK1","TakeNShots:ArmSeq/LNK11",2340,1335,16777215,"",0)
 #! Connector("TakeNShots:ArmSeq/LNK11","TakeNShots:ArmSeq/LNK12",1880,1480,16777215,"",0)
 #! Connector("TakeNShots:ArmSeq/LNK12","TakeNShots:BurstInDB.VAL",1420,1445,16777215,"",0)
+#! Record(TakeNShots:TriggerGenerationIdle,520,1893,0,1,"TakeNShots:TriggerGenerationIdle")
+#! Field("TakeNShots:TriggerGenerationIdle.INPA",16777215,1,"TakeNShots:TriggerGenerationIdle.INPA")
+#! Field("TakeNShots:TriggerGenerationIdle.OUT",16777215,1,"TakeNShots:TriggerGenerationIdle.OUT")
+#! Link("TakeNShots:TriggerGenerationIdle.OUT","TakeNShots:IdleSeq.PROC")
+#! Record(TakeNShots:IdleSeq,800,1901,0,1,"TakeNShots:IdleSeq")
+#! Field("TakeNShots:IdleSeq.LNK0",16777215,1,"TakeNShots:IdleSeq.LNK0")
+#! Link("TakeNShots:IdleSeq.LNK0","TakeNShots:IdleSeq/LNK0")
+#! Field("TakeNShots:IdleSeq.PROC",16777215,0,"TakeNShots:IdleSeq.PROC")
+#! Connector("TakeNShots:IdleSeq/LNK0","TakeNShots:CameraAcquisitionStopFanOut.PROC",1040,2040,16777215,"",0)
+#! Record(TakeNShots:CameraAcquisitionStopFanOut,1120,1873,0,0,"TakeNShots:CameraAcquisitionStopFanOut")
+#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTA",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTA")
+#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTB")
+#! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTC")
+#! Field("TakeNShots:CameraAcquisitionStopFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStopFanOut.PROC")
 #! Box(Box2,460,820,2540,1700,0,16777215,null)
 #! Box(Box1,460,1760,1320,2380,0,16777215,null)
 #! TextBox(TB4,520,1840,740,1900,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to be Idle\n",null)

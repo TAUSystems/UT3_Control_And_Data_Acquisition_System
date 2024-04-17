@@ -4,6 +4,9 @@ from argparse import ArgumentParser
 from datetime import datetime, timezone
 from time import sleep
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
+
 from epics import caput
 from epics.pv import PV
 
@@ -18,6 +21,9 @@ pvs: dict[str, PV] = {
     'session_title': PV("Data:Scan:Session"),
     'scan_number': PV("Data:Scan:Number"),
     'scan_title': PV("Data:Scan:Title"),
+
+    'burst_in_db': PV("TakeNShots:BurstInDB", auto_monitor=False),
+
 }
 
 def configure_cameras():
@@ -48,24 +54,38 @@ def main(num_shots: int, frequency: float):
         raise ValueError("Frequency should be between 0.01 and 50.0 Hz")
 
     configure_cameras()
-    start_acquisition()
-    while not pvs['pointing_acquire_rbv'].value:
-        sleep(0.02)
+    # start_acquisition()
+    # while not pvs['pointing_acquire_rbv'].value:
+    #     sleep(0.02)
+
+    # Disable processing BurstInDB record, in particular preventing it from triggering
+    # setting Status to Armed.
+    PV("TakeNShots:BurstInDB.DISA").put(1, wait=True)
 
     try:
-        # pvs['session_title'].put(f"Simulate burst {datetime.now(tz=timezone.utc):%Y-%m-%dT%H:%M:%SZ}", wait=True)
-        pvs['scan_description'].put(f"Scan-001 burst sim: {num_shots} sh at {frequency:.1f} Hz", wait=True)
+        pvs['scan_number'].put(1, wait=True)
+        pvs['scan_title'].put(f"burst sim: {num_shots} @ {frequency:.1f} Hz", wait=True)
+        
         pvs['burst_num_shots'].put(num_shots, wait=True)
         pvs['burst_frequency'].put(frequency, wait=True)
-        pvs['burst_timestamp'].put(str(int(datetime.now().timestamp() * 1000)), wait=True)
+
+        logging.info("Setting Burst status to Preparing")
+        pvs['burst_status'].put(BurstStatus.Preparing.name)
+
+        logging.info("Waiting for BurstInDB...")
+        while not pvs['burst_in_db'].get():
+            sleep(0.1)
+        logging.info("Burst ready. Firing triggers.")
 
         for shot_number in range(num_shots):
             trigger_cameras()
             sleep(1 / frequency)
+
     finally:
         stop_acquisition()
-
-    pvs['burst_status'].put(BurstStatus.Idle.name)
+        PV("TakeNShots:BurstInDB.DISA").put(0)
+        pvs['burst_status'].put(BurstStatus.Idle.name, wait=True)
+        logging.info("Finished setting burst status to Idle.")
 
 if __name__ == "__main__":
     ap = ArgumentParser()

@@ -51,8 +51,3 @@ class ImageUploadData(NamedTuple):
     device_name: DeviceName
     shot_id: str
     image_data: bytes
-
-class ScalarSaveData(NamedTuple):
-    variable: Variable
-    shot: Shot
-    value: float
