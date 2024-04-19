@@ -91,9 +91,3 @@ dbLoadRecords("$(ADCORE)/db/NDFileTIFF.template",  "P=$(PREFIX),R=Tiff:$(PORT):,
 set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
 set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
 
-
-####################################################################################################################
-# TakeNShots database
-dbLoadRecords("$(TOP)/TakeNShotsApp/Db/TakeNShots.db")
-set_requestfile_path("$(TOP)/TakeNShotsApp/Db/TakeNShots.db");
-
