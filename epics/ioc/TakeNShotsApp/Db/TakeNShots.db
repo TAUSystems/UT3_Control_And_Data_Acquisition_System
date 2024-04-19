@@ -110,11 +110,11 @@ record(scalcout, TakeNShots:FormatBurstTimestampForTiff) {
 
 record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
   field(DOL1, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
-  field(LNK1, "E:Tiff:Spectrometer:Pointing:FileName")
+  field(LNK1, "E:Tiff:Spectrometer:Pointing:FileName PP")
   field(DOL2, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
-  field(LNK2, "E:Tiff:Spectrometer:LowEnergy:FileName")
+  field(LNK2, "E:Tiff:Spectrometer:LowEnergy:FileName PP")
   field(DOL3, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
-  field(LNK3, "E:Tiff:Spectrometer:HighEnergy:FileName")
+  field(LNK3, "E:Tiff:Spectrometer:HighEnergy:FileName PP")
   field(DOL4, "1")
   field(LNK4, "E:Tiff:Spectrometer:Pointing:FileNumber")
   field(DOL5, "1")
