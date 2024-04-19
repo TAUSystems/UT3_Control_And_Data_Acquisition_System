@@ -98,9 +98,9 @@ record(scalcout, TakeNShots:FormatBurstTimestampForTiff) {
 # The BurstTimestamp PV has format "%Y-%m-%d %H:%M:%S.%fZ" which must be converted 
 # to "%Y-%m-%dT%H-%M-%S-%fZ". So replace the space with 'T', the colons and period 
 # with dashes.
-# the final formatted string is "Burst-yyyy-mm-dd-HH-MM-SS-ffffffZ-Shot-" to which
+# the final formatted string is "burst-yyyy-mm-dd-HH-MM-SS-ffffffZ-shot-" to which
 # the shot number will be appended by the NDFileTiff plugin.
-  field(CALC, "'Burst-' + AA{' ','T'}{':','-'}{':','-'}{'.','-'} + '-Shot-'")
+  field(CALC, "'burst-' + AA{' ','T'}{':','-'}{':','-'}{'.','-'} + '-shot-'")
   field(OUT, "TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
   field(OOPT, "Every Time")
   field(DOPT, "Use OCAL")
@@ -201,4 +201,4 @@ record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
 #! TextBox(TB8,1460,1240,1700,1300,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
 #! TextBox(TB7,1480,940,1720,960,0,"Dialog",12,1,16777215,"Check that all cameras are acquiring",null)
 #! TextBox(TB6,480,1780,820,1800,0,"Dialog",12,1,16777215,"Stop Acquisition",null)
-#! TextBox(TB5,1440,1860,1780,1900,0,"Dialog",12,1,16777215,"Monitor BurstTimestamp and format it to \nBurst-yyyy-mm-dd-HH-MM-SS-FFFFFFZ-Shot-",null)
+#! TextBox(TB5,1440,1860,1780,1900,0,"Dialog",12,1,16777215,"Monitor BurstTimestamp and format it to \nburst-yyyy-mm-dd-HH-MM-SS-FFFFFFZ-shot-",null)
