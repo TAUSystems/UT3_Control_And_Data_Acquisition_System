@@ -92,8 +92,33 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DOL, "0")
 }
 
+# Prepare saving images to tiff
+record(scalcout, TakeNShots:FormatBurstTimestampForTiff) {
+  field(DESC, "Generate Tiff:*:Filename")
+# The BurstTimestamp PV has format "%Y-%m-%d %H:%M:%S.%fZ" which must be converted 
+# to "%Y-%m-%dT%H-%M-%S-%fZ". So replace the space with 'T', the colons and period 
+# with dashes.
+# the final formatted string is "Burst-yyyy-mm-dd-HH-MM-SS-ffffffZ-Shot-" to which
+# the shot number will be appended by the NDFileTiff plugin.
+  field(CALC, "'Burst-' + AA{' ','T'}{':','-'}{':','-'}{'.','-'} + '-Shot-'")
+  field(OUT, "TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use OCAL")
+  field(INAA, "Timing:TriggerGeneration:BurstTimestamp CP")
+  field(OCAL, "1")
+}
+
+record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
+  field(DOL1, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK1, "E:Tiff:Spectrometer:Pointing:FileName")
+  field(DOL2, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK2, "E:Tiff:Spectrometer:LowEnergy:FileName")
+  field(DOL3, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK3, "E:Tiff:Spectrometer:HighEnergy:FileName")
+}
+
 #! Further lines contain data used by VisualDCT
-#! View(523,751,1.1)
+#! View(984,1562,1.0)
 #! Record(TakeNShots:TriggerGenerationPreparing,480,993,0,1,"TakeNShots:TriggerGenerationPreparing")
 #! Field("TakeNShots:TriggerGenerationPreparing.INPA",16777215,1,"TakeNShots:TriggerGenerationPreparing.INPA")
 #! Field("TakeNShots:TriggerGenerationPreparing.OUT",16777215,1,"TakeNShots:TriggerGenerationPreparing.OUT")
@@ -115,7 +140,7 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! Field("TakeNShots:CheckCamerasAcquiring.VAL",16777215,1,"TakeNShots:CheckCamerasAcquiring.VAL")
 #! Record(TakeNShots:BurstInDB,1480,1315,0,1,"TakeNShots:BurstInDB")
 #! Field("TakeNShots:BurstInDB.VAL",16777215,1,"TakeNShots:BurstInDB.VAL")
-#! Record(TakeNShots:CheckReadyToArm,1800,997,0,1,"TakeNShots:CheckReadyToArm")
+#! Record(TakeNShots:CheckReadyToArm,1800,998,0,1,"TakeNShots:CheckReadyToArm")
 #! Field("TakeNShots:CheckReadyToArm.INPA",16777215,1,"TakeNShots:CheckReadyToArm.INPA")
 #! Field("TakeNShots:CheckReadyToArm.INPB",16777215,0,"TakeNShots:CheckReadyToArm.INPB")
 #! Link("TakeNShots:CheckReadyToArm.INPB","TakeNShots:CheckCamerasAcquiring.VAL")
@@ -146,15 +171,34 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTB")
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTC")
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStopFanOut.PROC")
+#! Record(TakeNShots:FormatBurstTimestampForTiff,1440,1905,0,0,"TakeNShots:FormatBurstTimestampForTiff")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.OUT",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.OUT")
+#! Link("TakeNShots:FormatBurstTimestampForTiff.OUT","TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.INAA",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.INAA")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.SVAL",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Record(TakeNShots:FormattedBurstTimestampForTiffFanOut,1740,1919,0,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3")
+#! Box(Box0,1380,1760,2000,2300,0,16777215,null)
 #! Box(Box2,460,820,2540,1700,0,16777215,null)
 #! Box(Box1,460,1760,1320,2380,0,16777215,null)
 #! TextBox(TB4,520,1840,740,1900,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to be Idle\n",null)
 #! TextBox(TB3,480,840,800,880,0,"Dialog",12,1,16777215,"Start acquisition",null)
 #! TextBox(TB2,480,920,680,980,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to transition to Preparing\n",null)
+#! TextBox(TB1,1420,1780,1760,1820,0,"Dialog",12,1,16777215,"Set FileName property of NDFileTiff plugins",null)
 #! TextBox(TB12,2100,920,2340,980,0,"Dialog",12,1,16777215,"Set Status to Armed, and reset BurstInDB to 0.",null)
 #! TextBox(TB0,1080,940,1240,980,0,"Dialog",12,1,16777215,"Start acquisition mode on all cameras",null)
 #! TextBox(TB11,1800,920,2040,980,0,"Dialog",12,1,16777215,"In Preparing state, when all cameras are acquiring and Burst is in DB, run Arm sequence.",null)
 #! TextBox(TB9,1120,1820,1280,1860,0,"Dialog",12,1,16777215,"Stop acquisition mode on all cameras",null)
-#! TextBox(TB8,1480,1260,1720,1320,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
+#! TextBox(TB8,1460,1240,1700,1300,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
 #! TextBox(TB7,1480,940,1720,960,0,"Dialog",12,1,16777215,"Check that all cameras are acquiring",null)
 #! TextBox(TB6,480,1780,820,1800,0,"Dialog",12,1,16777215,"Stop Acquisition",null)
+#! TextBox(TB5,1440,1860,1780,1900,0,"Dialog",12,1,16777215,"Monitor BurstTimestamp and format it to \nBurst-yyyy-mm-dd-HH-MM-SS-FFFFFFZ-Shot-",null)
