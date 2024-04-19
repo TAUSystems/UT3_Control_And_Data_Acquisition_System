@@ -115,6 +115,12 @@ record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
   field(LNK2, "E:Tiff:Spectrometer:LowEnergy:FileName")
   field(DOL3, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
   field(LNK3, "E:Tiff:Spectrometer:HighEnergy:FileName")
+  field(DOL4, "1")
+  field(LNK4, "E:Tiff:Spectrometer:Pointing:FileNumber")
+  field(DOL5, "1")
+  field(LNK5, "E:Tiff:Spectrometer:LowEnergy:FileNumber")
+  field(DOL6, "1")
+  field(LNK6, "E:Tiff:Spectrometer:HighEnergy:FileNumber")
 }
 
 #! Further lines contain data used by VisualDCT
@@ -176,7 +182,7 @@ record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
 #! Link("TakeNShots:FormatBurstTimestampForTiff.OUT","TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
 #! Field("TakeNShots:FormatBurstTimestampForTiff.INAA",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.INAA")
 #! Field("TakeNShots:FormatBurstTimestampForTiff.SVAL",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.SVAL")
-#! Record(TakeNShots:FormattedBurstTimestampForTiffFanOut,1740,1919,0,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut")
+#! Record(TakeNShots:FormattedBurstTimestampForTiffFanOut,1740,1836,0,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut")
 #! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
 #! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1")
 #! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1","TakeNShots:FormatBurstTimestampForTiff.SVAL")
@@ -187,6 +193,9 @@ record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
 #! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1")
 #! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2")
 #! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK4",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK4")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK5",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK5")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK6",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK6")
 #! Box(Box0,1380,1760,2000,2300,0,16777215,null)
 #! Box(Box2,460,820,2540,1700,0,16777215,null)
 #! Box(Box1,460,1760,1320,2380,0,16777215,null)
