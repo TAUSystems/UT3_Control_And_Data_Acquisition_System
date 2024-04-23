@@ -72,7 +72,7 @@ SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
-    'burst_num_shots': "Timing:TriggerGeneration:NumShots",
+    'burst_num_shots': "Timing:TriggerGeneration:NumShots_GET",
 
     'session_timestamp': "Data:Session:Timestamp",
     'session_title': "Data:Session:Title",
