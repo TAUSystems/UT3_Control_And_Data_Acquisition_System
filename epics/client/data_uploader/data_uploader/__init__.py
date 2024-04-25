@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from .utils.types import DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.thread import Subscription as P4PSubscription
+    from numpy.typing import NDArray
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -691,8 +692,14 @@ class DataUploader:
         self.scan.seq = value
         logging.info(f"Scan number set to \"{self.scan.seq}\"")
 
-    def scan_title_monitor_callback(self, value: str, **kwargs):
-        self.scan.title = value
+    def scan_title_monitor_callback(self, value: NDArray, **kwargs):
+        """ Decode byte array and set scan.title
+
+        The scan title PV is of waveform type (to accommodate long strings), which 
+        appears as an np.ndarray of dtype int representing ascii characters. 
+        
+        """
+        self.scan.title = ''.join(map(chr, value))
         logging.info(f"Scan title set to \"{self.scan.title}\"")
 
 
