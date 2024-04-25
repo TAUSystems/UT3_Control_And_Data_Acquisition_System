@@ -275,10 +275,10 @@ class UpdateScalarsSavedStatusThread(Thread):
             highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
             if highest_seq_all_scalars_ready > 0:
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
-                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
+                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%fZ"))
                 if variable_source is None:  # all variable sources
                     logging.info(f"All scalars for shots up to shot {highest_seq_all_scalars_ready} "
-                                 f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')}) ready."
+                                 f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%fZ')}) ready."
                                 ) 
             else:
                 self.data_uploader.burst_pvs[pv_alias].put("")
