@@ -15,10 +15,13 @@ record(calcout, TakeNShots:TriggerGenerationPreparing) {
 }
 
 record(seq, TakeNShots:PreparingSeq) {
-# Currently there is only one action.
   field(DESC, "Take actions when Status Preparing")
+  # start acquisition on cameras
   field(LNK0, "TakeNShots:CameraAcquisitionStartFanOut.PROC")
   field(DOL0, "1")
+  # start timeout timer
+  field(LNK1, "TakeNShots:PreparingTimeout:StartTimer.PROC")
+  field(DOL1, "1")
 }
 
 record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
@@ -92,18 +95,49 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DOL, "0")
 }
 
+record(ao, TakeNShots:PreparingTimeout:Time) {
+  field(DESC, "Time in seconds before Preparing times out")
+  field(VAL, "10")
+  field(OUT, "TakeNShots:PreparingTimeout:StartTimer.DLY1")
+}
+
+record(bo, TakeNShots:PreparingTimeout:HasTimedOut) {
+  field(OSV, "MINOR")
+}
+
+record(calcout, TakeNShots:PreparingTimeout:Check) {
+  # if after Time seconds, the status is still in Preparing, set HasTimedOut
+  field(CALC, "A == 2")
+  field(INPA, "Timing:TriggerGeneration:Status")
+  field(OUT, "TakeNShots:PreparingTimeout:HasTimedOut")
+  field(DOPT, "Use CALC")
+}
+
+record(seq, TakeNShots:PreparingTimeout:StartTimer) {
+  field(DOL0, "0")
+  field(LNK0, "TakeNShots:PreparingTimeout:HasTimedOut")
+  field(DLY1, "10")
+  field(DOL1, "1")
+  field(LNK1, "TakeNShots:PreparingTimeout:Check.PROC")
+}
+
 #! Further lines contain data used by VisualDCT
-#! View(523,751,1.1)
+#! View(592,1759,1.1)
 #! Record(TakeNShots:TriggerGenerationPreparing,480,993,0,1,"TakeNShots:TriggerGenerationPreparing")
 #! Field("TakeNShots:TriggerGenerationPreparing.INPA",16777215,1,"TakeNShots:TriggerGenerationPreparing.INPA")
 #! Field("TakeNShots:TriggerGenerationPreparing.OUT",16777215,1,"TakeNShots:TriggerGenerationPreparing.OUT")
 #! Link("TakeNShots:TriggerGenerationPreparing.OUT","TakeNShots:PreparingSeq.PROC")
-#! Record(TakeNShots:PreparingSeq,760,1001,0,1,"TakeNShots:PreparingSeq")
+#! Record(TakeNShots:PreparingSeq,760,973,0,1,"TakeNShots:PreparingSeq")
 #! Field("TakeNShots:PreparingSeq.LNK0",16777215,1,"TakeNShots:PreparingSeq.LNK0")
 #! Link("TakeNShots:PreparingSeq.LNK0","TakeNShots:PreparingSeq/LNK0")
 #! Field("TakeNShots:PreparingSeq.PROC",16777215,0,"TakeNShots:PreparingSeq.PROC")
-#! Connector("TakeNShots:PreparingSeq/LNK0","TakeNShots:CameraAcquisitionStartFanOut.PROC",1000,1160,16777215,"",0)
-#! Record(TakeNShots:CameraAcquisitionStartFanOut,1080,999,0,0,"TakeNShots:CameraAcquisitionStartFanOut")
+#! Connector("TakeNShots:PreparingSeq/LNK0","TakeNShots:CameraAcquisitionStartFanOut.PROC",1040,1150,16777215,"",0)
+#! Field("TakeNShots:PreparingSeq.LNK1",16777215,1,"TakeNShots:PreparingSeq.LNK1")
+#! Link("TakeNShots:PreparingSeq.LNK1","TakeNShots:PreparingSeq/LNK11")
+#! Connector("TakeNShots:PreparingSeq/LNK1","TakeNShots:PreparingSeq/LNK12",1460,1660,16777215,"",0)
+#! Connector("TakeNShots:PreparingSeq/LNK11","TakeNShots:PreparingSeq/LNK1",1000,1405,16777215,"",0)
+#! Connector("TakeNShots:PreparingSeq/LNK12","TakeNShots:PreparingTimeout:StartTimer.PROC",1920,1915,16777215,"",0)
+#! Record(TakeNShots:CameraAcquisitionStartFanOut,1120,979,0,0,"TakeNShots:CameraAcquisitionStartFanOut")
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTA",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTA")
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTB")
 #! Field("TakeNShots:CameraAcquisitionStartFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStartFanOut.OUTC")
@@ -152,9 +186,28 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
 #! TextBox(TB3,480,840,800,880,0,"Dialog",12,1,16777215,"Start acquisition",null)
 #! TextBox(TB2,480,920,680,980,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to transition to Preparing\n",null)
 #! TextBox(TB12,2100,920,2340,980,0,"Dialog",12,1,16777215,"Set Status to Armed, and reset BurstInDB to 0.",null)
-#! TextBox(TB0,1080,940,1240,980,0,"Dialog",12,1,16777215,"Start acquisition mode on all cameras",null)
+#! TextBox(TB0,1120,920,1280,960,0,"Dialog",12,1,16777215,"Start acquisition mode on all cameras",null)
 #! TextBox(TB11,1800,920,2040,980,0,"Dialog",12,1,16777215,"In Preparing state, when all cameras are acquiring and Burst is in DB, run Arm sequence.",null)
 #! TextBox(TB9,1120,1820,1280,1860,0,"Dialog",12,1,16777215,"Stop acquisition mode on all cameras",null)
 #! TextBox(TB8,1480,1260,1720,1320,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
 #! TextBox(TB7,1480,940,1720,960,0,"Dialog",12,1,16777215,"Check that all cameras are acquiring",null)
 #! TextBox(TB6,480,1780,820,1800,0,"Dialog",12,1,16777215,"Stop Acquisition",null)
+#! Box(Box0,1960,1760,2540,2260,0,16777215,null)
+#! TextBox(TB10,2000,1780,2340,1800,0,"Dialog",12,1,16777215,"Check for a timeout in Preparing and handle it",null)
+#! Record(TakeNShots:PreparingTimeout:Time,2040,1821,0,1,"TakeNShots:PreparingTimeout:Time")
+#! Field("TakeNShots:PreparingTimeout:Time.OUT",16777215,0,"TakeNShots:PreparingTimeout:Time.OUT")
+#! Link("TakeNShots:PreparingTimeout:Time.OUT","TakeNShots:PreparingTimeout:StartTimer.DLY1")
+#! Record(TakeNShots:PreparingTimeout:HasTimedOut,2320,1849,0,1,"TakeNShots:PreparingTimeout:HasTimedOut")
+#! Field("TakeNShots:PreparingTimeout:HasTimedOut.VAL",16777215,0,"TakeNShots:PreparingTimeout:HasTimedOut.VAL")
+#! Record(TakeNShots:PreparingTimeout:Check,2340,1987,0,1,"TakeNShots:PreparingTimeout:Check")
+#! Field("TakeNShots:PreparingTimeout:Check.PROC",16777215,0,"TakeNShots:PreparingTimeout:Check.PROC")
+#! Field("TakeNShots:PreparingTimeout:Check.INPA",16777215,1,"TakeNShots:PreparingTimeout:Check.INPA")
+#! Field("TakeNShots:PreparingTimeout:Check.OUT",16777215,0,"TakeNShots:PreparingTimeout:Check.OUT")
+#! Link("TakeNShots:PreparingTimeout:Check.OUT","TakeNShots:PreparingTimeout:HasTimedOut.VAL")
+#! Record(TakeNShots:PreparingTimeout:StartTimer,2040,1993,0,1,"TakeNShots:PreparingTimeout:StartTimer")
+#! Field("TakeNShots:PreparingTimeout:StartTimer.LNK0",16777215,1,"TakeNShots:PreparingTimeout:StartTimer.LNK0")
+#! Link("TakeNShots:PreparingTimeout:StartTimer.LNK0","TakeNShots:PreparingTimeout:HasTimedOut.VAL")
+#! Field("TakeNShots:PreparingTimeout:StartTimer.LNK1",16777215,1,"TakeNShots:PreparingTimeout:StartTimer.LNK1")
+#! Link("TakeNShots:PreparingTimeout:StartTimer.LNK1","TakeNShots:PreparingTimeout:Check.PROC")
+#! Field("TakeNShots:PreparingTimeout:StartTimer.PROC",16777215,0,"TakeNShots:PreparingTimeout:StartTimer.PROC")
+#! Field("TakeNShots:PreparingTimeout:StartTimer.DLY1",16777215,0,"TakeNShots:PreparingTimeout:StartTimer.DLY1")
