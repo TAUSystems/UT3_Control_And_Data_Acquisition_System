@@ -2,8 +2,9 @@
 #! DBDSTART
 #! DBDEND
 
+include "PreparingTimeout.db"
 
-# ## Start Burst
+# Start Burst
 # When Status changes to Preparing, start acquisition on cameras
 record(calcout, TakeNShots:TriggerGenerationPreparing) {
   field(DESC, "Acts when Status changes to Preparing")
@@ -16,10 +17,10 @@ record(calcout, TakeNShots:TriggerGenerationPreparing) {
 
 record(seq, TakeNShots:PreparingSeq) {
   field(DESC, "Take actions when Status Preparing")
-  # start acquisition on cameras
+# start acquisition on cameras
   field(LNK0, "TakeNShots:CameraAcquisitionStartFanOut.PROC")
   field(DOL0, "1")
-  # start timeout timer
+# start timeout timer
   field(LNK1, "TakeNShots:PreparingTimeout:StartTimer.PROC")
   field(DOL1, "1")
 }
