@@ -2,7 +2,7 @@
 #! DBDSTART
 #! DBDEND
 
-include "PreparingTimeout.db"
+# include "TakeNShotsApp/Db/PreparingTimeout.db"
 
 # Start Burst
 # When Status changes to Preparing, start acquisition on cameras
