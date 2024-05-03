@@ -88,7 +88,7 @@ PV_NAMES: dict[str, PVName] = {
 
     'fetched_scalars_ready':  "Data:Scalars:FetchedValuesReady",
     'monitored_scalars_ready':  "Data:Scalars:MonitoredValuesReady",
-    'image_backend_scalars_ready':  "Data:Scalars:ImageValuesReady",
+    'image_backend_scalars_ready':  "Data:Scalars:ImagesValuesReady",
     'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
