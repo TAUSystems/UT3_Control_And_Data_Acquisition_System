@@ -102,7 +102,7 @@ record(calcout, TakeNShots:PreparingTimeout:ProcessTimeout) {
   field(OUT, "Timing:TriggerGeneration:Command PP")
   field(OOPT, "Transition To Non-zero")
   field(DOPT, "Use OCAL")
-  field(OCAL, "2")
+  field(OCAL, "3")
 }
 
 #! Further lines contain data used by VisualDCT
