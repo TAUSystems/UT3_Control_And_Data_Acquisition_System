@@ -2,4 +2,5 @@
 # TakeNShots database
 dbLoadRecords("$(TOP)/TakeNShotsApp/Db/TakeNShots.db")
 set_requestfile_path("$(TOP)/TakeNShotsApp/Db/TakeNShots.db");
-
+dbLoadRecords("$(TOP)/TakeNShotsApp/Db/PreparingTimeout.db")
+set_requestfile_path("$(TOP)/TakeNShotsApp/Db/PreparingTimeout.db");

@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from .utils.types import DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.thread import Subscription as P4PSubscription
+    from numpy.typing import NDArray
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -72,7 +73,7 @@ SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
 PV_NAMES: dict[str, PVName] = {
     'burst_status': "Timing:TriggerGeneration:Status",
     'burst_frequency': "Timing:TriggerGeneration:Frequency_GET",
-    'burst_num_shots': "Timing:TriggerGeneration:NumShots",
+    'burst_num_shots': "Timing:TriggerGeneration:NumShots_GET",
 
     'session_timestamp': "Data:Session:Timestamp",
     'session_title': "Data:Session:Title",
@@ -87,7 +88,7 @@ PV_NAMES: dict[str, PVName] = {
 
     'fetched_scalars_ready':  "Data:Scalars:FetchedValuesReady",
     'monitored_scalars_ready':  "Data:Scalars:MonitoredValuesReady",
-    'image_backend_scalars_ready':  "Data:Scalars:ImageValuesReady",
+    'image_backend_scalars_ready':  "Data:Scalars:ImagesValuesReady",
     'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
@@ -274,13 +275,14 @@ class UpdateScalarsSavedStatusThread(Thread):
             highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
             if highest_seq_all_scalars_ready > 0:
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
-                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f"))
-                logging.info(f"All \"{variable_source.name if variable_source else 'all'}\" scalars for shots up to shot {highest_seq_all_scalars_ready} "
-                             f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')}) ready. Timestamp written to {self.data_uploader.burst_pvs[pv_alias]}"
-                            ) 
+                self.data_uploader.burst_pvs[pv_alias].put(shot_timestamp.strftime("%Y-%m-%d %H:%M:%S.%fZ"))
+                if variable_source is None:  # all variable sources
+                    logging.info(f"All scalars for shots up to shot {highest_seq_all_scalars_ready} "
+                                 f"({shot_timestamp.strftime('%Y-%m-%d %H:%M:%S.%fZ')}) ready."
+                                ) 
             else:
                 self.data_uploader.burst_pvs[pv_alias].put("")
-                logging.info(f"No shots have \"{variable_source.name if variable_source else 'all'}\" scalars ready.")
+                # logging.info(f"No shots have all scalars ready.")
 
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
@@ -691,8 +693,14 @@ class DataUploader:
         self.scan.seq = value
         logging.info(f"Scan number set to \"{self.scan.seq}\"")
 
-    def scan_title_monitor_callback(self, value: str, **kwargs):
-        self.scan.title = value
+    def scan_title_monitor_callback(self, value: NDArray, **kwargs):
+        """ Decode byte array and set scan.title
+
+        The scan title PV is of waveform type (to accommodate long strings), which 
+        appears as an np.ndarray of dtype int representing ascii characters. 
+        
+        """
+        self.scan.title = ''.join(map(chr, value))
         logging.info(f"Scan title set to \"{self.scan.title}\"")
 
 
