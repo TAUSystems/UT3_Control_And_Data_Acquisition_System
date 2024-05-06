@@ -44,6 +44,10 @@ dbLoadRecords("NDStats.template",  "P=$(PREFIX),R=Stats:$(PORT):,  PORT=$(PORT):
 NDTimeSeriesConfigure("$(PORT):STATS_TS", $(QSIZE), 0, "$(PORT):STATS", 1, 1, 0, 0, 0, 0)
 dbLoadRecords("$(ADCORE)/db/NDTimeSeries.template", "P=$(PREFIX),R=Stats:TS:$(PORT):, PORT=$(PORT):STATS_TS,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT):STATS,NDARRAY_ADDR=1,NCHANS=$(NCHANS),ENABLED=0")
 
+# Add Tiff file save
+NDFileTIFFConfigure("$(PORT):TIFF", $(QSIZE), 0, "$(PORT)", 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDFileTIFF.template",  "P=$(PREFIX),R=Tiff:$(PORT):,PORT=$(PORT):TIFF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
+
 ####################################################################################################################
 # The port name for the detector
 epicsEnvSet("PORT",   "Spectrometer:LowEnergy")
@@ -58,6 +62,10 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 # NDPva
 NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)Pva:$(PORT):Image, 0, 0, 0)
 dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
+
+# Add Tiff file save
+NDFileTIFFConfigure("$(PORT):TIFF", $(QSIZE), 0, "$(PORT)", 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDFileTIFF.template",  "P=$(PREFIX),R=Tiff:$(PORT):,PORT=$(PORT):TIFF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 ####################################################################################################################
 # The port name for the detector
@@ -75,13 +83,11 @@ dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)Pva:$(PORT):Image, 0, 0, 0)
 dbLoadRecords("NDPva.template",  "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
+# Add Tiff file save
+NDFileTIFFConfigure("$(PORT):TIFF", $(QSIZE), 0, "$(PORT)", 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDFileTIFF.template",  "P=$(PREFIX),R=Tiff:$(PORT):,PORT=$(PORT):TIFF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
+
 ####################################################################################################################
 set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
 set_requestfile_path("$(ADSPINNAKER)/spinnakerApp/Db")
-
-
-####################################################################################################################
-# TakeNShots database
-dbLoadRecords("$(TOP)/TakeNShotsApp/Db/TakeNShots.db")
-set_requestfile_path("$(TOP)/TakeNShotsApp/Db/TakeNShots.db");
 

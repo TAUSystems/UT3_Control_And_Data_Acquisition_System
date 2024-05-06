@@ -2,8 +2,8 @@
 #! DBDSTART
 #! DBDEND
 
-# include "TakeNShotsApp/Db/PreparingTimeout.db"
 
+# include "TakeNShotsApp/Db/PreparingTimeout.db"
 # Start Burst
 # When Status changes to Preparing, start acquisition on cameras
 record(calcout, TakeNShots:TriggerGenerationPreparing) {
@@ -21,7 +21,7 @@ record(seq, TakeNShots:PreparingSeq) {
   field(LNK0, "TakeNShots:CameraAcquisitionStartFanOut.PROC")
   field(DOL0, "1")
 # start timeout timer
-  #field(LNK1, "")
+#field(LNK1, "")
   field(DOL1, "1")
 }
 
@@ -96,6 +96,37 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DOL, "0")
 }
 
+# Prepare saving images to tiff
+record(scalcout, TakeNShots:FormatBurstTimestampForTiff) {
+  field(DESC, "Generate Tiff:*:Filename")
+# The BurstTimestamp PV has format "%Y-%m-%d %H:%M:%S.%fZ" which must be converted 
+# to "%Y-%m-%dT%H-%M-%S-%fZ". So replace the space with 'T', the colons and period 
+# with dashes.
+# the final formatted string is "burst-yyyy-mm-dd-HH-MM-SS-ffffffZ-shot-" to which
+# the shot number will be appended by the NDFileTiff plugin.
+  field(CALC, "'burst-' + AA{' ','T'}{':','-'}{':','-'}{'.','-'} + '-shot-'")
+  field(OUT, "TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use OCAL")
+  field(INAA, "Timing:TriggerGeneration:BurstTimestamp CP")
+  field(OCAL, "1")
+}
+
+record(sseq, TakeNShots:FormattedBurstTimestampForTiffFanOut) {
+  field(DOL1, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK1, "E:Tiff:Spectrometer:Pointing:FileName PP")
+  field(DOL2, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK2, "E:Tiff:Spectrometer:LowEnergy:FileName PP")
+  field(DOL3, "TakeNShots:FormatBurstTimestampForTiff.SVAL")
+  field(LNK3, "E:Tiff:Spectrometer:HighEnergy:FileName PP")
+  field(DOL4, "1")
+  field(LNK4, "E:Tiff:Spectrometer:Pointing:FileNumber")
+  field(DOL5, "1")
+  field(LNK5, "E:Tiff:Spectrometer:LowEnergy:FileNumber")
+  field(DOL6, "1")
+  field(LNK6, "E:Tiff:Spectrometer:HighEnergy:FileNumber")
+}
+
 record(calcout, TakeNShots:PreparingTimeout:ProcessTimeout) {
   field(CALC, "A")
   field(INPA, "TakeNShots:PreparingTimeout:HasTimedOut CP")
@@ -106,27 +137,7 @@ record(calcout, TakeNShots:PreparingTimeout:ProcessTimeout) {
 }
 
 #! Further lines contain data used by VisualDCT
-#! View(651,1359,1.0)
-#! Record(TakeNShots:PreparingTimeout:IsPreparing,360,1047,0,1,"TakeNShots:PreparingTimeout:IsPreparing")
-#! Field("TakeNShots:PreparingTimeout:IsPreparing.INPA",16777215,0,"TakeNShots:PreparingTimeout:IsPreparing.INPA")
-#! Link("TakeNShots:PreparingTimeout:IsPreparing.INPA","TakeNShots:PreparingTimeout:IsPreparing/INPA")
-#! Field("TakeNShots:PreparingTimeout:IsPreparing.OUT",16777215,1,"TakeNShots:PreparingTimeout:IsPreparing.OUT")
-#! Link("TakeNShots:PreparingTimeout:IsPreparing.OUT","TakeNShots:PreparingTimeout:IsPreparingDFanOut.VAL")
-#! Connector("TakeNShots:PreparingTimeout:IsPreparing/INPA",null,280,1160,16777215,"",3)
-#! Record(TakeNShots:PreparingTimeout:IsPreparingDFanOut,640,1061,0,1,"TakeNShots:PreparingTimeout:IsPreparingDFanOut")
-#! Field("TakeNShots:PreparingTimeout:IsPreparingDFanOut.VAL",16777215,1,"TakeNShots:PreparingTimeout:IsPreparingDFanOut.VAL")
-#! Field("TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTA",16777215,1,"TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTA")
-#! Link("TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTA","TakeNShots:PreparingTimeout:IsPreparingDFanOut/OUTA")
-#! Field("TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTB",16777215,1,"TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTB")
-#! Link("TakeNShots:PreparingTimeout:IsPreparingDFanOut.OUTB","TakeNShots:PreparingTimeout:IsPreparingDFanOut/OUTB")
-#! Connector("TakeNShots:PreparingTimeout:IsPreparingDFanOut/OUTB","TakeNShots:PreparingTimeout:Timer.VAL",860,1300,16777215,"",0)
-#! Connector("TakeNShots:PreparingTimeout:IsPreparingDFanOut/OUTA","TakeNShots:PreparingTimeout:ResetHasTimedOut.PROC",860,1160,16777215,"",0)
-#! Record(TakeNShots:PreparingTimeout:ResetHasTimedOut,1000,973,0,1,"TakeNShots:PreparingTimeout:ResetHasTimedOut")
-#! Field("TakeNShots:PreparingTimeout:ResetHasTimedOut.INPA",16777215,0,"TakeNShots:PreparingTimeout:ResetHasTimedOut.INPA")
-#! Link("TakeNShots:PreparingTimeout:ResetHasTimedOut.INPA","TakeNShots:PreparingTimeout:IsPreparingDFanOut.VAL")
-#! Field("TakeNShots:PreparingTimeout:ResetHasTimedOut.PROC",16777215,0,"TakeNShots:PreparingTimeout:ResetHasTimedOut.PROC")
-#! Record(TakeNShots:PreparingTimeout:Timer,1000,1267,0,1,"TakeNShots:PreparingTimeout:Timer")
-#! Field("TakeNShots:PreparingTimeout:Timer.VAL",16777215,0,"TakeNShots:PreparingTimeout:Timer.VAL")
+#! View(202,1073,1.0)
 #! Record(TakeNShots:TriggerGenerationPreparing,480,993,0,1,"TakeNShots:TriggerGenerationPreparing")
 #! Field("TakeNShots:TriggerGenerationPreparing.INPA",16777215,1,"TakeNShots:TriggerGenerationPreparing.INPA")
 #! Field("TakeNShots:TriggerGenerationPreparing.OUT",16777215,1,"TakeNShots:TriggerGenerationPreparing.OUT")
@@ -179,28 +190,47 @@ record(calcout, TakeNShots:PreparingTimeout:ProcessTimeout) {
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTB",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTB")
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.OUTC",16777215,1,"TakeNShots:CameraAcquisitionStopFanOut.OUTC")
 #! Field("TakeNShots:CameraAcquisitionStopFanOut.PROC",16777215,0,"TakeNShots:CameraAcquisitionStopFanOut.PROC")
-#! Box(Box2,460,820,2540,1700,0,16777215,null)
-#! Box(Box1,460,1760,1320,2380,0,16777215,null)
-#! TextBox(TB4,1000,1180,1220,1260,0,"Dialog",12,1,16777215,"Start timer. This bo is in momentary mode, meaning if set to 1 it processes again after the delay given in HIGH. ",null)
-#! TextBox(TB3,1000,920,1220,960,0,"Dialog",12,1,16777215,"Reset HasTimedOut to NoTimeout when no longer Preparing",null)
-#! TextBox(TB2,1700,780,1920,820,0,"Dialog",12,1,16777215,"Indicator whether Preparing has timed out",null)
-#! TextBox(TB1,360,1020,740,1060,0,"Dialog",12,1,16777215,"Check for status change to and from Preparing, and route result",null)
-#! TextBox(TB12,2100,920,2340,980,0,"Dialog",12,1,16777215,"Set Status to Armed, and reset BurstInDB to 0.",null)
-#! TextBox(TB0,360,760,580,800,0,"Dialog",12,1,16777215,"Control PV to set timeout period",null)
-#! TextBox(TB11,1800,920,2040,980,0,"Dialog",12,1,16777215,"In Preparing state, when all cameras are acquiring and Burst is in DB, run Arm sequence.",null)
-#! TextBox(TB10,40,500,520,560,0,"Dialog",18,1,16777215,"Check for a timeout in Preparing",null)
-#! TextBox(TB9,1120,1820,1280,1860,0,"Dialog",12,1,16777215,"Stop acquisition mode on all cameras",null)
-#! TextBox(TB8,1480,1260,1720,1320,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
-#! TextBox(TB7,1480,940,1720,960,0,"Dialog",12,1,16777215,"Check that all cameras are acquiring",null)
-#! TextBox(TB6,480,1780,820,1800,0,"Dialog",12,1,16777215,"Stop Acquisition",null)
-#! TextBox(TB5,1420,980,1640,1060,0,"Dialog",12,1,16777215,"Check if TImeout has occurred by seeing if Status is still Preparing when Timer turns to 0.",null)
-#! Box(Box0,1400,1760,2260,2040,0,16777215,null)
-#! TextBox(TB13,1420,1780,1640,1820,0,"Dialog",12,1,16777215,"Watch for Preparing timeouts",null)
-#! Record(TakeNShots:PreparingTimeout:ProcessTimeout,1760,1839,0,1,"TakeNShots:PreparingTimeout:ProcessTimeout")
+#! Record(TakeNShots:FormatBurstTimestampForTiff,1440,1905,0,0,"TakeNShots:FormatBurstTimestampForTiff")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.OUT",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.OUT")
+#! Link("TakeNShots:FormatBurstTimestampForTiff.OUT","TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.INAA",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.INAA")
+#! Field("TakeNShots:FormatBurstTimestampForTiff.SVAL",16777215,1,"TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Record(TakeNShots:FormattedBurstTimestampForTiffFanOut,1740,1836,0,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.PROC")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL1","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL2","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3",16777215,0,"TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3")
+#! Link("TakeNShots:FormattedBurstTimestampForTiffFanOut.DOL3","TakeNShots:FormatBurstTimestampForTiff.SVAL")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK1")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK2")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK3")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK4",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK4")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK5",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK5")
+#! Field("TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK6",16777215,1,"TakeNShots:FormattedBurstTimestampForTiffFanOut.LNK6")
+#! Record(TakeNShots:PreparingTimeout:ProcessTimeout,2380,1839,0,1,"TakeNShots:PreparingTimeout:ProcessTimeout")
 #! Field("TakeNShots:PreparingTimeout:ProcessTimeout.INPA",16777215,0,"TakeNShots:PreparingTimeout:ProcessTimeout.INPA")
 #! Link("TakeNShots:PreparingTimeout:ProcessTimeout.INPA","TakeNShots:PreparingTimeout:ProcessTimeout/INPA")
 #! Field("TakeNShots:PreparingTimeout:ProcessTimeout.OUT",16777215,1,"TakeNShots:PreparingTimeout:ProcessTimeout.OUT")
 #! Link("TakeNShots:PreparingTimeout:ProcessTimeout.OUT","TakeNShots:PreparingTimeout:ProcessTimeout/OUT")
-#! Connector("TakeNShots:PreparingTimeout:ProcessTimeout/INPA",null,1700,1980,16777215,"",3)
-#! Connector("TakeNShots:PreparingTimeout:ProcessTimeout/OUT",null,2000,2000,16777215,"",2)
-#! TextBox(TB14,1760,1800,1980,1840,0,"Dialog",12,1,16777215,"Write Stop to Command when Timeout detected.",null)
+#! Connector("TakeNShots:PreparingTimeout:ProcessTimeout/OUT",null,2620,2000,16777215,"",2)
+#! Connector("TakeNShots:PreparingTimeout:ProcessTimeout/INPA",null,2320,1980,16777215,"",3)
+#! TextBox(TB4,520,1840,740,1900,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to be Idle\n",null)
+#! TextBox(TB14,2380,1800,2600,1840,0,"Dialog",12,1,16777215,"Write Stop to Command when Timeout detected.",null)
+#! TextBox(TB2,480,920,680,980,0,"Dialog",12,1,16777215,"Watch for Timing:TriggerGeneration:Status to transition to Preparing\n",null)
+#! TextBox(TB12,2100,920,2340,980,0,"Dialog",12,1,16777215,"Set Status to Armed, and reset BurstInDB to 0.",null)
+#! TextBox(TB11,1800,920,2040,980,0,"Dialog",12,1,16777215,"In Preparing state, when all cameras are acquiring and Burst is in DB, run Arm sequence.",null)
+#! TextBox(TB10,40,500,520,560,0,"Dialog",18,1,16777215,"Check for a timeout in Preparing",null)
+#! TextBox(TB9,1120,1820,1280,1860,0,"Dialog",12,1,16777215,"Stop acquisition mode on all cameras",null)
+#! TextBox(TB8,1460,1240,1700,1300,0,"Dialog",12,1,16777215,"Check that Burst and Shots have been written to measurement database, so that measurements can be inserted.",null)
+#! TextBox(TB7,1480,940,1720,960,0,"Dialog",12,1,16777215,"Check that all cameras are acquiring",null)
+#! TextBox(TB5,1440,1860,1780,1900,0,"Dialog",12,1,16777215,"Monitor BurstTimestamp and format it to \nburst-yyyy-mm-dd-HH-MM-SS-FFFFFFZ-shot-",null)
+#! Box(Box_StartAcquisition,460,820,2540,1700,0,16777215,null)
+#! TextBox(TB_StartAcquisitionTitle,480,840,800,880,0,"Dialog",12,1,16777215,"Start acquisition",null)
+#! Box(Box_StopAcquisition,460,1760,1320,2380,0,16777215,null)
+#! TextBox(TB_StopAcquisitionTitle,480,1780,820,1800,0,"Dialog",12,1,16777215,"Stop Acquisition",null)
+#! Box(Box_TiffFileName,1380,1760,2000,2300,0,16777215,null)
+#! TextBox(TB_TiffFileNameTitle,1400,1780,1740,1820,0,"Dialog",12,1,16777215,"Set FileName property of NDFileTiff plugins",null)
+#! Box(Box_PreparingTimeout,2040,1760,2900,2080,0,16777215,null)
+#! TextBox(TB_PreparingTimeoutTitle,2060,1780,2280,1820,0,"Dialog",12,1,16777215,"Watch for Preparing timeouts",null)

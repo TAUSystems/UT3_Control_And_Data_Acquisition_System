@@ -29,4 +29,29 @@ dbpf $(PREFIX)Stats:Spectrometer:Pointing:ComputeHistogram 0
 # Enable Stats
 dbpf $(PREFIX)Stats:Spectrometer:Pointing:EnableCallbacks 1
 
+# ## Tiff settings
+epicsEnvSet("TIFF_BASE_DIR", "/mnt/EPICS-DAQ-Test/raw")
 
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:FilePath "$(TIFF_BASE_DIR)/E_Spectrometer_Pointing"
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:FileTemplate "%s%s%05d.tif"
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:FileName "burst-1970-01-01T00-00-00-000000Z-shot-"
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:FileNumber 1
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:AutoSave 1
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:AutoIncrement 1
+dbpf $(PREFIX)Tiff:Spectrometer:Pointing:EnableCallbacks  1
+
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:FilePath "$(TIFF_BASE_DIR)/E_Spectrometer_LowEnergy"
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:FileTemplate "%s%s%05d.tif"
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:FileName "burst-1970-01-01T00-00-00-000000Z-shot-"
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:FileNumber 1
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:AutoSave 1
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:AutoIncrement 1
+dbpf $(PREFIX)Tiff:Spectrometer:LowEnergy:EnableCallbacks  1
+
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:FilePath "$(TIFF_BASE_DIR)/E_Spectrometer_HighEnergy"
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:FileTemplate "%s%s%05d.tif"
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:FileName "burst-1970-01-01T00-00-00-000000Z-shot-"
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:FileNumber 1
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:AutoSave 1
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:AutoIncrement 1
+dbpf $(PREFIX)Tiff:Spectrometer:HighEnergy:EnableCallbacks  1
