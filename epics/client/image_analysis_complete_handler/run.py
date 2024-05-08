@@ -15,6 +15,7 @@ from image_analysis_complete_handler.handlers.analysis_folder_links import Creat
 if TYPE_CHECKING:
     from image_analysis_complete_handler.handlers.base import ImageAnalysisCompleteHandler
 
+from redis.exceptions import ConnectionError
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -55,13 +56,13 @@ handlers: list[ImageAnalysisCompleteHandler] = [
 ]
 
 def listen_for_and_process_analysis_complete_messages():
-    redis_client = get_redis_client()
-    ps = redis_client.pubsub()
+    redis_client = get_redis_client(retry_on_error=[ConnectionError], health_check_interval=30)
+    ps = redis_client.pubsub(ignore_subscribe_messages=True)
     ps.subscribe('image_analysis_complete_ch')
     logging.info("Subscribed to image_analysis_complete_ch")
 
     while True:
-        message = ps.get_message(ignore_subscribe_messages=True, timeout=None)
+        message = ps.get_message(timeout=None)
         logging.info(f"Message received from channel: {message}")
 
         if message is None:
