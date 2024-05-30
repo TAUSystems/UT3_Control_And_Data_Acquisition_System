@@ -94,6 +94,10 @@ PV_NAMES: dict[str, PVName] = {
     'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
+LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[DeviceName, PVName] = {
+    "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
+}
+
 from threading import Thread, Lock
 from queue import Queue, Empty
 
@@ -351,12 +355,13 @@ class DataUploader:
         self.load_scalar_pv_list()
         self.load_image_pv_list()
 
-        # subscribe to burst PVs
         self.subscribe_to_burst_pvs()
 
         # subscribe to PVs in IOCs
         self.subscribe_to_image_pvs()
         self.subscribe_to_scalar_pvs()
+
+        self.subscribe_to_last_analyzed_shot_id_pvs()
 
         # start image and scalar uploaders
         self.image_upload_thread.start()
@@ -416,6 +421,12 @@ class DataUploader:
             self.subscriptions[self.fetch_trigger_variable.name].close()
         except (KeyError, AttributeError):
             logging.warning("No fetch trigger PV subscription to close.")
+
+        # unsubscribe to last analyzed shot id PVs
+        for image_device in self.image_devices:
+            if hasattr(image_device, 'last_analyzed_shot_id_pva_monitor') and image_device.last_analyzed_shot_id_pva_monitor is not None:
+                image_device.last_analyzed_shot_id_pva_monitor.close()
+                logging.info(f"Closed PVAccess subscription for {image_device.last_analyzed_shot_id_pv_name}")
 
     def load_image_pv_list(self) -> None:
         """ 
@@ -519,7 +530,6 @@ class DataUploader:
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
 
-    
     def subscribe_to_burst_pvs(self) -> None:
         """
         """
@@ -549,6 +559,20 @@ class DataUploader:
                          'all_scalars_ready', 
                         ]:
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
+
+    def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
+        """_summary_
+        """
+        for image_device in self.image_devices:
+
+            if image_device.name not in LAST_ANALYZED_SHOT_ID_PV_NAMES:
+                continue
+
+            image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
+
+            image_device.last_analyzed_shot_id_pva_monitor = \
+                pva.monitor(image_device.last_analyzed_shot_id_pv_name, partial(self.image_analysis_complete_callback, image_device))
+            logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over pvAccess")
 
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
@@ -793,6 +817,33 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
+    def image_analysis_complete_callback(self, device_name: DeviceName, shot_id_str: NTBase) -> None:
+        """ Callback for last_analyzed_shot_id PV """
+
+        # derive shot number from shot_id string
+        burst_datetime, shot_datetime = parse_shot_id(shot_id_str)
+        shot_seq = ShotSeq((shot_datetime - burst_datetime).total_seconds() * self.burst.repetition_rate + 1)
+
+        # create shot if it doesn't exist
+        if shot_seq not in self.burst.shot_directory:
+            self.create_new_shot(shot_seq)
+
+        # then grab it from directory
+        shot = self.burst.shot_directory[shot_seq]
+
+        # make sure the shot timestamp matches the shot_id_str timestamp
+        assert abs((shot.timestamp - shot_datetime).total_seconds()) < 1e-5, \
+            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for device {device_name}"
+
+        # update scalars tracker for all image_backend variables associated with 
+        # this device 
+        self.update_scalars_saved_queue.put(
+            [Measurement(variable=variable, shot=shot) 
+             for variable in self.variables 
+             if variable.source == VariableSource.image_backend 
+                 and variable.name.startswith(device_name)
+            ]
+        )
 
     def datetime_from_pv_string(self, datetime_str: str) -> datetime:
         """ Turn string obtained from session, scan, or burst timestamp PV into datetime
