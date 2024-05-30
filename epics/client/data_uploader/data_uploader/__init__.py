@@ -411,6 +411,12 @@ class DataUploader:
             pv.clear_callbacks()
             logging.info(f"Closed Channel Access subscriptions for {pv.pvname}")
 
+        # unsubscribe to fetch trigger PV
+        try:
+            self.subscriptions[self.fetch_trigger_variable.name].close()
+        except (KeyError, AttributeError):
+            logging.warning("No fetch trigger PV subscription to close.")
+
     def load_image_pv_list(self) -> None:
         """ 
         """
