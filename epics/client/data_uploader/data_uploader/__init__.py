@@ -682,9 +682,6 @@ class DataUploader:
                 (variable.pv is not None) and variable.pv.connected
                 # Currently, I'm not fetching non-numeric variables. 
                 and (variable.dtype is not None) and issubclass(variable.dtype, Number)
-                # Currently, I'm only tracking fetched and monitored variables, 
-                # not image_backend. 
-                and (variable.source in {VariableSource.fetch, VariableSource.monitor})
             )]
             self.burst.scalars_saved_tracker = ScalarsSavedTracker(variables_to_track)
 
