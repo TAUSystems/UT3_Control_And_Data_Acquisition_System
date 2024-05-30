@@ -485,6 +485,17 @@ class DataUploader:
                 # pull the value of the pv, otherwise it will be None, and PV.info chokes.
                 variable.pv.get()
 
+            elif variable.source == VariableSource.image_backend:
+                # these don't have associated PVs
+                variable.pv = None
+
+            if variable.source == VariableSource.image_backend:
+                # image_backend variables don't have associated PVs
+                variable.info = {}
+                variable.dtype = None
+                continue
+
+            # get cainfo for the variable
             variable.info = {}
             try:
                 info: str | None = variable.pv.info
