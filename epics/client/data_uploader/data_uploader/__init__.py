@@ -42,6 +42,8 @@ if TYPE_CHECKING:
 from measurement_db.orm.tables import ImageDevice, Variable
 from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 
+from .utils.image_analysis_backend import parse_shot_id
+
 # Declare types of attributes that are attached to the ORM objects
 if TYPE_CHECKING:
     class Scan(Scan):
