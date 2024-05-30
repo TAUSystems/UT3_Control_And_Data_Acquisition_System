@@ -873,13 +873,13 @@ class ScalarsSavedTracker:
     given shot or set of shots are ready (what "ready" means can be customized)
 
     Typical workflow is: 
-        scalars_saved_tracker = ScalarsSavedTracker(variables, number_of_shots)
+        scalars_saved_tracker = ScalarsSavedTracker(variables)
         for variable in variables:
             try:
                 # do stuff to save a measurement to a database
-                scalars_saved_tracker(variable, shot)
+                scalars_saved_tracker.update(variable, shot)
             except:
-                scalars_saved_tracker(variable, shot, ScalarSaveStatus.Error)
+                scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
         
         # check if all shots up to now are ready. 
         if scalars_saved_tracker.all_scalars_ready(range(1, shot.seq + 1)):
@@ -930,7 +930,7 @@ class ScalarsSavedTracker:
         Parameters
         ----------
         variable : Variable
-        shot : Shot | ShotSeq
+        shot : Shot
         status : ScalarSaveStatus
             default is Saved
         """
@@ -987,8 +987,8 @@ class ScalarsSavedTracker:
 
         # at this point, shot_seq is a scalar ShotSeq, and variable_sources is a
         # scalar VariableSource
-        assert isinstance(shot_seq, int)
-        assert isinstance(variable_sources, VariableSource)
+        assert isinstance(shot_seq, int), f"ScalarsSavedTracker.all_scalars_ready: shot_seq is not an int but {type(shot_seq)}."
+        assert isinstance(variable_sources, VariableSource), f"ScalarsSavedTracker.all_scalars_ready: variable_sources is not a VariableSource but {type(variable_sources)}."
 
         # look in cache to see whether this shot/variable_source combination is 
         # ready
