@@ -45,6 +45,7 @@ def insert_data():
     ])
 
     # electron spectrometer
+    # Stats plugin
     variables.extend([
         Variable(name=f"E:Stats:Spectrometer:Pointing:{metric}_RBV",
                  source=VariableSource.monitor,
@@ -56,11 +57,20 @@ def insert_data():
                       ]
     ])
 
+    # image devices
     image_devices.extend([
         ImageDevice(name=f"E:Spectrometer:{screen}", image_pv_name=f"E:Pva:Spectrometer:{screen}:Image")
         for screen in ['Pointing', 'LowEnergy', 'HighEnergy']
     ])
 
+    # image backend scalars
+    variables.extend([
+        Variable(name=f"E:Spectrometer:LowEnergy:{metric}", 
+                 source=VariableSource.image_backend, 
+                 epics_access_protocol=None
+                )
+        for metric in ['total_brightness_AU', 'mean_energy_MeV', 'std_energy_MeV', 'dE_over_E']
+    ])
 
     # insert them
     with SQLAlchemySession(get_sqlalchemy_engine()) as sa_session:
