@@ -492,7 +492,7 @@ class DataUploader:
             if variable.source == VariableSource.image_backend:
                 # image_backend variables don't have associated PVs
                 variable.info = {}
-                variable.dtype = None
+                variable.dtype = float
                 continue
 
             # get cainfo for the variable
