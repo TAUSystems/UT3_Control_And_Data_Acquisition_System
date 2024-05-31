@@ -45,10 +45,10 @@ COPY ./measurement_db ./measurement_db
 
 # install MariaDB Connector
 RUN apt update && \
-    apt install -y wget curl gcc
+    apt install -y wget curl gcc apt-transport-https
 RUN cd /tmp && \
     wget https://r.mariadb.com/downloads/mariadb_repo_setup && \
-    echo "30d2a05509d1c129dd7dd8430507e6a7729a4854ea10c9dcf6be88964f3fdc25  mariadb_repo_setup" \
+    echo "26e5bf36846003c4fe455713777a4e4a613da0df3b7f74b6dad1cb901f324a84  mariadb_repo_setup" \
         | sha256sum -c -  && \
     chmod +x mariadb_repo_setup  && \
     ./mariadb_repo_setup --mariadb-server-version="mariadb-10.11" && \
