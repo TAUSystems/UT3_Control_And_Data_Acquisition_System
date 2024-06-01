@@ -679,7 +679,9 @@ class DataUploader:
             # Scalars Saved Tracker
             variables_to_track = [variable for variable in self.variables if (
                 # varible is connected to its PV through the pyepics pv.PV class
-                (variable.pv is not None) and variable.pv.connected
+                (((variable.pv is not None) and variable.pv.connected)
+                 or (variable.source == VariableSource.image_backend)  # does not have an associated PV
+                )
                 # Currently, I'm not fetching non-numeric variables. 
                 and (variable.dtype is not None) and issubclass(variable.dtype, Number)
             )]
