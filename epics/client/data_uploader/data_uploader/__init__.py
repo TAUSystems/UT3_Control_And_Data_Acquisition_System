@@ -828,7 +828,7 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    def image_analysis_complete_callback(self, device_name: DeviceName, value: NDArray, **kwargs) -> None:
+    def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
         
         Parameters
@@ -859,7 +859,7 @@ class DataUploader:
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 
-                 and variable.name.startswith(device_name)
+                 and variable.name.startswith(device.name)
             ]
         )
 
