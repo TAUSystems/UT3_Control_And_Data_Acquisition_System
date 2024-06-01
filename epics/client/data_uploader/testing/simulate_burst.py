@@ -19,8 +19,10 @@ pvs: dict[str, PV] = {
     'burst_num_shots': PV("Timing:TriggerGeneration:NumShots"),
 
     'session_title': PV("Data:Scan:Session"),
+    'session_timestamp': PV("Data:Session:Timestamp"),
     'scan_number': PV("Data:Scan:Number"),
     'scan_title': PV("Data:Scan:Title"),
+    'scan_timestamp': PV("Data:Scan:Timestamp"),
 
     'burst_in_db': PV("TakeNShots:BurstInDB", auto_monitor=False),
 
@@ -63,11 +65,15 @@ def main(num_shots: int, frequency: float):
     PV("TakeNShots:BurstInDB.DISA").put(1, wait=True)
 
     try:
+        pvs['session_timestamp'].put(datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%fZ"), wait=True)
+
         pvs['scan_number'].put(1, wait=True)
         pvs['scan_title'].put(f"burst sim: {num_shots} @ {frequency:.1f} Hz", wait=True)
-        
+        pvs['scan_timestamp'].put(datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%fZ"), wait=True)
+
         pvs['burst_num_shots'].put(num_shots, wait=True)
         pvs['burst_frequency'].put(frequency, wait=True)
+        pvs['burst_timestamp'].put(datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%fZ"), wait=True)
 
         logging.info("Setting Burst status to Preparing")
         pvs['burst_status'].put(BurstStatus.Preparing.name)
