@@ -836,6 +836,9 @@ class DataUploader:
         value : str
             Shot ID string             
         """
+        if not self.enable_callbacks:
+            return
+        
         shot_id_str = ''.join(map(chr, value))[:-1]
 
         # derive shot number from shot_id string
