@@ -582,7 +582,7 @@ class DataUploader:
             image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
 
             image_device.last_analyzed_shot_id_pv = \
-                PV(image_device.last_analyzed_shot_id_pv_name, callback=partial(self.image_analysis_complete_callback, image_device))
+                PV(image_device.last_analyzed_shot_id_pv_name + '.$', callback=partial(self.image_analysis_complete_callback, image_device))
             logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
 
 
@@ -828,7 +828,7 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    def image_analysis_complete_callback(self, device_name: DeviceName, value: str, **kwargs) -> None:
+    def image_analysis_complete_callback(self, device_name: DeviceName, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
         
         Parameters
@@ -836,8 +836,10 @@ class DataUploader:
         value : str
             Shot ID string             
         """
+        shot_id_str = ''.join(map(chr, value))[:-1]
+
         # derive shot number from shot_id string
-        burst_datetime, shot_datetime = parse_shot_id(value)
+        burst_datetime, shot_datetime = parse_shot_id(shot_id_str)
         shot_seq = ShotSeq((shot_datetime - burst_datetime).total_seconds() * self.burst.repetition_rate + 1)
 
         # create shot if it doesn't exist
