@@ -581,9 +581,10 @@ class DataUploader:
 
             image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
 
-            image_device.last_analyzed_shot_id_pva_monitor = \
-                pva.monitor(image_device.last_analyzed_shot_id_pv_name, partial(self.image_analysis_complete_callback, image_device))
-            logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over pvAccess")
+            image_device.last_analyzed_shot_id_pv = \
+                PV(image_device.last_analyzed_shot_id_pv_name, callback=partial(self.image_analysis_complete_callback, image_device))
+            logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
+
 
     def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
@@ -827,11 +828,16 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    def image_analysis_complete_callback(self, device_name: DeviceName, shot_id_str: NTBase) -> None:
-        """ Callback for last_analyzed_shot_id PV """
-
+    def image_analysis_complete_callback(self, device_name: DeviceName, value: str, **kwargs) -> None:
+        """ Callback for last_analyzed_shot_id PV 
+        
+        Parameters
+        ----------
+        value : str
+            Shot ID string             
+        """
         # derive shot number from shot_id string
-        burst_datetime, shot_datetime = parse_shot_id(shot_id_str)
+        burst_datetime, shot_datetime = parse_shot_id(value)
         shot_seq = ShotSeq((shot_datetime - burst_datetime).total_seconds() * self.burst.repetition_rate + 1)
 
         # create shot if it doesn't exist
