@@ -836,9 +836,10 @@ class DataUploader:
         value : str
             Shot ID string             
         """
-        if not self.enable_callbacks:
+        if (not self.enable_callbacks) or (not value):
             return
-        
+
+        # value is a byte array; convert to string and drop the null character at the end
         shot_id_str = ''.join(map(chr, value))[:-1]
 
         # derive shot number from shot_id string
@@ -854,7 +855,7 @@ class DataUploader:
 
         # make sure the shot timestamp matches the shot_id_str timestamp
         assert abs((shot.timestamp - shot_datetime).total_seconds()) < 1e-5, \
-            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for device {device_name}"
+            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for device {device.name}"
 
         # update scalars tracker for all image_backend variables associated with 
         # this device 
