@@ -789,7 +789,8 @@ class DataUploader:
             ))
 
         except Exception as err:
-            pass
+            image_device_name = getattr(image_device, 'name', "device with no 'name' attribute")
+            logging.error(f"Error in image_pv_callback for {image_device_name}: {err}")
 
         finally:
             # increase shot counter
@@ -817,12 +818,13 @@ class DataUploader:
             ))
 
         except Exception as err:
+            variable_name = getattr(variable, 'name', "variable with no 'name' attribute")
+            logging.error(f"Error in scalar_pv_callback for {variable_name}: {err}")
+
             try:
                 self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
-            except Exception:
-                pass
-
-            logging.error(f"Error in scalar_pv_callback: {err}")
+            except Exception as scalars_saved_tracker_update_error:
+                logging.error(f"Error updating scalars_saved_tracker for {variable_name}: {scalars_saved_tracker_update_error}")
 
         finally:
             # increase shot counter
