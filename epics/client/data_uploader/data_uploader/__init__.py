@@ -836,7 +836,7 @@ class DataUploader:
         value : str
             Shot ID string             
         """
-        if (not self.enable_callbacks) or (not value):
+        if (not self.enable_callbacks) or (len(value) == 0):
             return
 
         # value is a byte array; convert to string and drop the null character at the end
