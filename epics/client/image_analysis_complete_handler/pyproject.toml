@@ -21,8 +21,8 @@ nose2 = "^0.14.1"
 pyepics = "^3.5.2"
 
 # Access to the channel
-redis = "^5.0.3"
 python-dotenv = "^1.0.1"
+pika = "^1.3.2"
 
 # in case zoneinfo can't find system list of time zones
 tzdata = "^2024.1"

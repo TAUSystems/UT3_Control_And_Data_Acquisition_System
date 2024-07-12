@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import json
 
@@ -15,7 +15,31 @@ from image_analysis_complete_handler.handlers.analysis_folder_links import Creat
 if TYPE_CHECKING:
     from image_analysis_complete_handler.handlers.base import ImageAnalysisCompleteHandler
 
-from redis.exceptions import ConnectionError
+import pika
+
+rabbitmq_host = 'ab61e56d3f5264edfb7dcf7a8ad1f7df-1919169979.us-west-1.elb.amazonaws.com'
+rabbitmq_port = 5672
+
+def callback(ch,method,properties,body):
+    print(f"Received {body} ")
+
+def subscribe(exchange_name):
+    credentials = pika.PlainCredentials(rabbitmq_username, rabbitmq_password)
+    connection= pika.BlockingConnection(pika.ConnectionParameters(host = rabbitmq_host, port = rabbitmq_port, credentials = credentials))
+    channel = connection.channel()
+    channel.exchange_declare(exchange = exchange_name,exchange_type='fanout')
+    result = channel.queue_declare(queue = '', exclusive = True)
+    queue_name = result.method.queue
+    channel.queue_bind(exchange = exchange_name,queue = queue_name)
+    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+    channel.start_consuming()
+# if __name__=="__main__":
+#     subscribe('image_results','image.processed')
+subscribe('topic_logs')
+
+
+
+
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -55,27 +79,41 @@ handlers: list[ImageAnalysisCompleteHandler] = [
     CreateAnalysisFolderLinks(env.get('RESULTS_STORAGE_BASE_DIRECTORY')),
 ]
 
+def get_image_analysis_complete_channel(exchange_name: str, callback: Callable) -> pika.BlockingChannel:
+    credentials = pika.PlainCredentials(env['IMAGE_ANALYSIS_COMPLETE_CH_USERNAME'], env['IMAGE_ANALYSIS_COMPLETE_CH_PASSWORD'])
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host = env['IMAGE_ANALYSIS_COMPLETE_CH_HOST'], port = env['IMAGE_ANALYSIS_COMPLETE_CH_PORT'], credentials = credentials))
+    channel = connection.channel()
+    channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
+    result = channel.queue_declare(queue='', exclusive=True)
+    queue_name = result.method.queue
+    channel.queue_bind(exchange=exchange_name, queue=queue_name)
+    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+    
+    return channel
+
+def message_received_callback(ch, method, properties, body):
+
+    logging.info(f"Message received from channel: {body}")
+
+    if body is None:
+        return
+
+    message_data: ImageAnalysisCompleteData = json.loads(body['data'])
+
+    for handler in handlers:
+        try:
+            handler.handle(message_data)
+            logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
+        except Exception as err:
+            logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
+
+
 def listen_for_and_process_analysis_complete_messages():
-    redis_client = get_redis_client(retry_on_error=[ConnectionError], health_check_interval=30)
-    ps = redis_client.pubsub(ignore_subscribe_messages=True)
-    ps.subscribe('image_analysis_complete_ch')
+    
+    channel = get_image_analysis_complete_channel(env['IMAGE_ANALYSIS_COMPLETE_CH_EXCHANGE_NAME'], message_received_callback)
     logging.info("Subscribed to image_analysis_complete_ch")
+    channel.start_consuming()
 
-    while True:
-        message = ps.get_message(timeout=None)
-        logging.info(f"Message received from channel: {message}")
-
-        if message is None:
-            continue
-
-        message_data: ImageAnalysisCompleteData = json.loads(message['data'])
-
-        for handler in handlers:
-            try:
-                handler.handle(message_data)
-                logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
-            except Exception as err:
-                logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
-
+ 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
