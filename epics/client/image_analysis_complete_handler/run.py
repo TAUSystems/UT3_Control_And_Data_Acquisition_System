@@ -17,30 +17,6 @@ if TYPE_CHECKING:
 
 import pika
 
-rabbitmq_host = 'ab61e56d3f5264edfb7dcf7a8ad1f7df-1919169979.us-west-1.elb.amazonaws.com'
-rabbitmq_port = 5672
-
-def callback(ch,method,properties,body):
-    print(f"Received {body} ")
-
-def subscribe(exchange_name):
-    credentials = pika.PlainCredentials(rabbitmq_username, rabbitmq_password)
-    connection= pika.BlockingConnection(pika.ConnectionParameters(host = rabbitmq_host, port = rabbitmq_port, credentials = credentials))
-    channel = connection.channel()
-    channel.exchange_declare(exchange = exchange_name,exchange_type='fanout')
-    result = channel.queue_declare(queue = '', exclusive = True)
-    queue_name = result.method.queue
-    channel.queue_bind(exchange = exchange_name,queue = queue_name)
-    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
-    channel.start_consuming()
-# if __name__=="__main__":
-#     subscribe('image_results','image.processed')
-subscribe('topic_logs')
-
-
-
-
-
 # TODO: replace by config file
 IMAGE_DEVICES = {
     'E:Spectrometer:LowEnergy': ImageDeviceDirectoryEntry(
@@ -79,16 +55,18 @@ handlers: list[ImageAnalysisCompleteHandler] = [
     CreateAnalysisFolderLinks(env.get('RESULTS_STORAGE_BASE_DIRECTORY')),
 ]
 
-def get_image_analysis_complete_channel(exchange_name: str, callback: Callable) -> pika.BlockingChannel:
+def get_image_analysis_complete_channel(callback: Callable) -> pika.channel.Channel:
+    exchange_name = "image_analysis_complete_ch"
+    queue_name = "image_analysis_complete_handler"
+
     credentials = pika.PlainCredentials(env['IMAGE_ANALYSIS_COMPLETE_CH_USERNAME'], env['IMAGE_ANALYSIS_COMPLETE_CH_PASSWORD'])
     connection = pika.BlockingConnection(pika.ConnectionParameters(host = env['IMAGE_ANALYSIS_COMPLETE_CH_HOST'], port = env['IMAGE_ANALYSIS_COMPLETE_CH_PORT'], credentials = credentials))
     channel = connection.channel()
     channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
-    result = channel.queue_declare(queue='', exclusive=True)
-    queue_name = result.method.queue
+    channel.queue_declare(queue=queue_name, exclusive=True)
     channel.queue_bind(exchange=exchange_name, queue=queue_name)
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
-    
+
     return channel
 
 def message_received_callback(ch, method, properties, body):
@@ -110,7 +88,7 @@ def message_received_callback(ch, method, properties, body):
 
 def listen_for_and_process_analysis_complete_messages():
     
-    channel = get_image_analysis_complete_channel(env['IMAGE_ANALYSIS_COMPLETE_CH_EXCHANGE_NAME'], message_received_callback)
+    channel = get_image_analysis_complete_channel(message_received_callback)
     logging.info("Subscribed to image_analysis_complete_ch")
     channel.start_consuming()
 
