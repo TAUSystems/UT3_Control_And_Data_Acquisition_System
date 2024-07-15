@@ -14,6 +14,7 @@ measurement_db = { path = "../../../measurement_db", develop = true }
 
 # PVAccess for Python
 p4p = "^4.1.12"
+numpy = "^1.26.4"
 nose2 = "^0.14.1"
 
 # Channel Access for Python
