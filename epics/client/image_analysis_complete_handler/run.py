@@ -8,7 +8,6 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 from image_analysis_complete_handler.utils.env import get_env
-from image_analysis_complete_handler.utils.redis import get_redis_client
 from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteData, ImageDeviceDirectoryEntry
 from image_analysis_complete_handler.handlers.last_analyzed_shotid_pv import PopulateLastAnalyzedShotIDPV
 from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
