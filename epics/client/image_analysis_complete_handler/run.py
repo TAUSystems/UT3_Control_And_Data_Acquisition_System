@@ -75,7 +75,7 @@ def message_received_callback(ch, method, properties, body):
     if body is None:
         return
 
-    message_data: ImageAnalysisCompleteData = json.loads(body['data'])
+    message_data: ImageAnalysisCompleteData = json.loads(body)
 
     for handler in handlers:
         try:
