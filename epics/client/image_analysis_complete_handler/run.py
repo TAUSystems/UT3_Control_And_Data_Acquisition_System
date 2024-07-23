@@ -57,9 +57,10 @@ handlers: list[ImageAnalysisCompleteHandler] = [
 def get_image_analysis_complete_channel(callback: Callable) -> pika.channel.Channel:
     exchange_name = "image_analysis_complete_ch"
     queue_name = "image_analysis_complete_handler"
+    virtual_host = "image-analysis-complete"
 
     credentials = pika.PlainCredentials(env['IMAGE_ANALYSIS_COMPLETE_CH_USERNAME'], env['IMAGE_ANALYSIS_COMPLETE_CH_PASSWORD'])
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host = env['IMAGE_ANALYSIS_COMPLETE_CH_HOST'], port = env['IMAGE_ANALYSIS_COMPLETE_CH_PORT'], credentials = credentials))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host = env['IMAGE_ANALYSIS_COMPLETE_CH_HOST'], port = env['IMAGE_ANALYSIS_COMPLETE_CH_PORT'], credentials = credentials, virtual_host=virtual_host))
     channel = connection.channel()
     channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
     channel.queue_declare(queue=queue_name, exclusive=True)
