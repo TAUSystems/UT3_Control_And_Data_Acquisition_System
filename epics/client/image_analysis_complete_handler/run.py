@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import json
 
@@ -8,14 +8,13 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
 from image_analysis_complete_handler.utils.env import get_env
-from image_analysis_complete_handler.utils.redis import get_redis_client
 from image_analysis_complete_handler.utils.types import ImageAnalysisCompleteData, ImageDeviceDirectoryEntry
 from image_analysis_complete_handler.handlers.last_analyzed_shotid_pv import PopulateLastAnalyzedShotIDPV
 from image_analysis_complete_handler.handlers.analysis_folder_links import CreateAnalysisFolderLinks
 if TYPE_CHECKING:
     from image_analysis_complete_handler.handlers.base import ImageAnalysisCompleteHandler
 
-from redis.exceptions import ConnectionError
+import pika
 
 # TODO: replace by config file
 IMAGE_DEVICES = {
@@ -55,27 +54,44 @@ handlers: list[ImageAnalysisCompleteHandler] = [
     CreateAnalysisFolderLinks(env.get('RESULTS_STORAGE_BASE_DIRECTORY')),
 ]
 
+def get_image_analysis_complete_channel(callback: Callable) -> pika.channel.Channel:
+    exchange_name = "image_analysis_complete_ch"
+    queue_name = "image_analysis_complete_handler"
+    virtual_host = "image-analysis-complete"
+
+    credentials = pika.PlainCredentials(env['IMAGE_ANALYSIS_COMPLETE_CH_USERNAME'], env['IMAGE_ANALYSIS_COMPLETE_CH_PASSWORD'])
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host = env['IMAGE_ANALYSIS_COMPLETE_CH_HOST'], port = env['IMAGE_ANALYSIS_COMPLETE_CH_PORT'], credentials = credentials, virtual_host=virtual_host))
+    channel = connection.channel()
+    channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
+    channel.queue_declare(queue=queue_name, exclusive=True)
+    channel.queue_bind(exchange=exchange_name, queue=queue_name)
+    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+
+    return channel
+
+def message_received_callback(ch, method, properties, body):
+
+    logging.info(f"Message received from channel: {body}")
+
+    if body is None:
+        return
+
+    message_data: ImageAnalysisCompleteData = json.loads(body)
+
+    for handler in handlers:
+        try:
+            handler.handle(message_data)
+            logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
+        except Exception as err:
+            logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
+
+
 def listen_for_and_process_analysis_complete_messages():
-    redis_client = get_redis_client(retry_on_error=[ConnectionError], health_check_interval=30)
-    ps = redis_client.pubsub(ignore_subscribe_messages=True)
-    ps.subscribe('image_analysis_complete_ch')
+    
+    channel = get_image_analysis_complete_channel(message_received_callback)
     logging.info("Subscribed to image_analysis_complete_ch")
+    channel.start_consuming()
 
-    while True:
-        message = ps.get_message(timeout=None)
-        logging.info(f"Message received from channel: {message}")
-
-        if message is None:
-            continue
-
-        message_data: ImageAnalysisCompleteData = json.loads(message['data'])
-
-        for handler in handlers:
-            try:
-                handler.handle(message_data)
-                logging.info(f"Message for {message_data['shot_id']} / {message_data['device_name']} handled by {handler.__class__.__name__}")
-            except Exception as err:
-                logging.error(f"Error handling message for {message_data['shot_id']} / {message_data['device_name']} by {handler.__class__.__name__}: {err}")
-
+ 
 if __name__ == '__main__':
     listen_for_and_process_analysis_complete_messages()
