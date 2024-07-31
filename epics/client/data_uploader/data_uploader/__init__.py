@@ -8,7 +8,8 @@ from time import sleep
 import re
 from enum import Enum
 from warnings import warn
-
+from threading import Thread, Lock
+from queue import Queue, Empty
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -31,7 +32,7 @@ from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Type
 if TYPE_CHECKING:
-    from .utils.types import DeviceName, PVName
+    from .utils.types import InstrumentName, DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.thread import Subscription as P4PSubscription
     from numpy.typing import NDArray
@@ -43,7 +44,7 @@ from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 from .utils.image_analysis_backend import parse_shot_id
 
 from .scalars_saved_tracker import ScalarsSavedTracker
-from .image_uploader import ImageUploadThread
+from .image_uploader import ImageUploadThread, ImageCollector
 
 # Declare types of attributes that are attached to the ORM objects
 if TYPE_CHECKING:
@@ -99,9 +100,14 @@ LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[DeviceName, PVName] = {
     "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
 }
 
-from threading import Thread, Lock
-from queue import Queue, Empty
-
+# list of composite devices and their components
+INSTRUMENT_DEVICE_MAP: dict[InstrumentName, list[DeviceName]] = {
+    'E:Spectrometer': [
+        'E:Spectrometer:Pointing',
+        'E:Spectrometer:LowEnergy',
+        'E:Spectrometer:HighEnergy',
+    ],
+}
 
 
 class ScalarSaveThread(Thread):
@@ -300,6 +306,7 @@ class DataUploader:
         # image upload queue
         self.image_upload_queue: Queue[ImageUploadData] = Queue()
         self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
+        self.image_collector = ImageCollector(self.image_upload_thread, instrument_device_map=INSTRUMENT_DEVICE_MAP)
 
         # scalars saved tracker queue
         self.update_scalars_saved_queue: Queue[Measurement | Iterable[Measurement]] = Queue()
@@ -753,7 +760,7 @@ class DataUploader:
             tiff_bytes.seek(0)
 
             # put image data in queue to be uploaded to image endpoint
-            self.image_upload_queue.put(ImageUploadData(
+            self.image_collector.put(ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
                 image_data = tiff_bytes,

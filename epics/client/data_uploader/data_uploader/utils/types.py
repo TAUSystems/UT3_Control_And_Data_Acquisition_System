@@ -6,9 +6,14 @@ from enum import Enum
 if TYPE_CHECKING:
     from measurement_db.orm.tables import Variable, Shot
 
+DeviceName = NewType("DeviceName", str)
+InstrumentName = NewType("InstrumentName", str)
+ShotId = NewType("ShotId", str)
+PVName = NewType("PVName", str)
+
 class ImageAnalysisFinishedMessage(TypedDict):
-    device_name: str
-    shot_id: str
+    device_name: DeviceName
+    shot_id: ShotId
     num_images: int
     num_arrays: int
     num_scalars: int
@@ -18,9 +23,6 @@ class ImageDeviceDirectoryEntry(NamedTuple):
     image_pv_name: str
     array_counter_pv_name: str
     last_analyzed_pv_name: str
-
-DeviceName = NewType("DeviceName", str)
-PVName = NewType("PVName", str)
 
 class BurstStatus(Enum):
     Disconnected = 0
@@ -46,8 +48,11 @@ class ScalarSaveStatus(Enum):
 # a one-indexed sequence number of a shot within a burst
 ShotSeq = NewType("ShotSeq", int)
 
+# Represents the bytestream of a TIFF-formatted image
+TiffBytes = NewType("TiffBytes", bytes)
 
 class ImageUploadData(NamedTuple):
     device_name: DeviceName
     shot_id: str
-    image_data: bytes
+    image_data: TiffBytes
+
