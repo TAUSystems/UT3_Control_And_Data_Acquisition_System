@@ -93,7 +93,9 @@ class ImageCollector:
             return all(device in self.instrument_shot_images[(instrument, shot_id)] for device in self.instrument_device_map[instrument])
 
         if instrument_has_all_device_images_for_shot(instrument, image_upload_data.shot_id):
-            instrument_image_data = self.combine_image_data_into_multipage(self.instrument_shot_images[instrument][image_upload_data.shot_id])
+            instrument_image_data = self.combine_image_data_into_multipage([self.instrument_shot_images[(instrument, image_upload_data.shot_id)][device_name]
+                                                                            for device_name in self.instrument_device_map[instrument]
+                                                                          ])
             self.image_upload_thread.queue.put(ImageUploadData(instrument, image_upload_data.shot_id, instrument_image_data))
             del self.instrument_shot_images[(instrument, image_upload_data.shot_id)]
 
