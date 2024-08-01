@@ -5,8 +5,9 @@ import requests
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
+from .utils.types import ImageUploadData
+
 if TYPE_CHECKING:
-    from .utils.types import ImageUploadData
     from .utils.types import DeviceName, InstrumentName, ShotId, TiffBytes
 
 import logging
@@ -62,7 +63,7 @@ class ImageCollector:
         self.image_upload_thread = image_upload_thread
         self.instrument_device_map = instrument_device_map
         self.generate_reverse_instrument_device_map()
-        
+
         self.instrument_shot_images: dict[tuple[InstrumentName, ShotId], dict[DeviceName, TiffBytes]] = defaultdict(dict)
 
     def generate_reverse_instrument_device_map(self):
