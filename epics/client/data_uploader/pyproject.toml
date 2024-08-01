@@ -11,6 +11,7 @@ python = "^3.10"
 
 # For EPICS pvAccess and Channel Access
 p4p = "^4.1.12"
+numpy = "<2.0"  # p4p isn't compatible with numpy 2.0 but doesn't specify that in its pyproject.toml
 nose2 = "^0.14.1"
 pyepics = { git = "https://github.com/pyepics/pyepics.git", rev = "0b33db782dde77d89ee847bee4e6fc314bc3c30b" }
 
