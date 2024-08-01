@@ -4,9 +4,10 @@ from typing import Iterable, Optional, TYPE_CHECKING
 from collections import defaultdict
 from operator import attrgetter
 
+from .utils.types import ScalarSaveStatus, ShotSeq
+
 if TYPE_CHECKING:
     from measurement_db.orm.tables import Shot, Variable, VariableSource
-    from .utils.types import ScalarSaveStatus, ShotSeq
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
