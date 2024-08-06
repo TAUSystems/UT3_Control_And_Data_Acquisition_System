@@ -37,11 +37,11 @@ class MultiImageUploadData:
     shot_id: ShotId
     images: list[ImageUploadData]
 
-    def tiff_bytes(self) -> TiffBytes:
+    def tiff_bytes(self, compression=tifffile.COMPRESSION.NONE) -> TiffBytes:
         with BytesIO() as b:
             with tifffile.TiffWriter(b) as tif:
                 for image_upload_data in self.images:
-                    tif.write(image_upload_data.image, description=image_upload_data.device_name)
+                    tif.write(image_upload_data.image, description=image_upload_data.device_name, compression=compression)
 
             return b.getvalue()
 
