@@ -33,14 +33,14 @@ class ImageUploadData:
 
 @dataclass
 class MultiImageUploadData:
-    instrument_name: InstrumentName
+    device_name: InstrumentName
     shot_id: ShotId
-    pages: list[ImageUploadData]
+    images: list[ImageUploadData]
 
     def tiff_bytes(self) -> TiffBytes:
         with BytesIO() as b:
             with tifffile.TiffWriter(b) as tif:
-                for image_upload_data in self.pages:
+                for image_upload_data in self.images:
                     tif.write(image_upload_data.image, description=image_upload_data.device_name)
 
             return b.getvalue()
