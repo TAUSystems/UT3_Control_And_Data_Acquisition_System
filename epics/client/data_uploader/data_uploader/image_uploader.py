@@ -66,7 +66,7 @@ class ImageUploadThread(Thread):
     def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
         response = self.requests_session.post(self.image_endpoint_url, 
                                               data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
-                                              files={'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.LZW)},
+                                              files={'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.ADOBE_DEFLATE)},
                                              )
 
         response_data = response.json()
