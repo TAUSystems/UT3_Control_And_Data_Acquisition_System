@@ -4,17 +4,47 @@ from queue import Queue
 import requests
 from typing import TYPE_CHECKING
 from collections import defaultdict
+from dataclasses import dataclass
 
-from .utils.types import ImageUploadData
+import numpy as np
 
 if TYPE_CHECKING:
     from .utils.types import DeviceName, InstrumentName, ShotId, TiffBytes
+
 
 import logging
 import tifffile
 from io import BytesIO 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
+
+@dataclass
+class ImageUploadData:
+    device_name: DeviceName
+    shot_id: ShotId
+    image: np.ndarray
+
+    def tiff_bytes(self):
+        with BytesIO() as b:
+            with tifffile.TiffWriter(b) as tif:
+                tif.write(self.image, description=self.device_name)
+
+            return b.getvalue()
+
+@dataclass
+class MultiImageUploadData:
+    instrument_name: InstrumentName
+    shot_id: ShotId
+    pages: list[ImageUploadData]
+
+    def tiff_bytes(self):
+        with BytesIO() as b:
+            with tifffile.TiffWriter(b) as tif:
+                for image_upload_data in self.pages:
+                    tif.write(image_upload_data.image, description=image_upload_data.device_name)
+
+            return b.getvalue()
+
 
 class ImageUploadThread(Thread):
     def __init__(self, queue: Queue, image_endpoint_url: str, **kwargs):
@@ -33,10 +63,10 @@ class ImageUploadThread(Thread):
         finally:
             self.requests_session.close()
 
-    def upload_image(self, image_upload_data: ImageUploadData):
+    def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
         response = self.requests_session.post(self.image_endpoint_url, 
                                               data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
-                                              files={'image_data': image_upload_data.image_data},
+                                              files={'image_data': image_upload_data.tiff_bytes()},
                                              )
 
         response_data = response.json()
@@ -64,7 +94,7 @@ class ImageCollector:
         self.instrument_device_map = instrument_device_map
         self.generate_reverse_instrument_device_map()
 
-        self.instrument_shot_images: dict[tuple[InstrumentName, ShotId], dict[DeviceName, TiffBytes]] = defaultdict(dict)
+        self.instrument_shot_image_data: dict[tuple[InstrumentName, ShotId], dict[DeviceName, ImageUploadData]] = defaultdict(dict)
 
     def generate_reverse_instrument_device_map(self):
         self.device_instrument_map = {}
@@ -73,6 +103,18 @@ class ImageCollector:
                 if device in self.device_instrument_map:
                     raise ValueError(f"Device {device} is in more than one instrument.")
                 self.device_instrument_map[device] = instrument
+
+    def instrument_has_all_device_images_for_shot(self, instrument: InstrumentName, shot_id: ShotId):
+        return all(device in self.instrument_shot_image_data[(instrument, shot_id)] for device in self.instrument_device_map[instrument])
+
+    def put_completed_instrument_data_in_upload_queue(self, instrument: InstrumentName, shot_id: ShotId):
+        instrument_image_data = MultiImageUploadData(instrument, shot_id, 
+                                                     [self.instrument_shot_image_data[(instrument, shot_id)][device_name]
+                                                      for device_name in self.instrument_device_map[instrument]
+                                                     ]
+                                                    )
+        self.image_upload_thread.queue.put(instrument_image_data)
+        del self.instrument_shot_image_data[(instrument, shot_id)]
 
     def put(self, image_upload_data: ImageUploadData):
         """ Add an image and upload it if all images for the instrument/shot are present
@@ -88,25 +130,7 @@ class ImageCollector:
         except KeyError:
             raise ValueError(f"Device {image_upload_data.device_name} is not in any instrument.")
 
-        self.instrument_shot_images[(instrument, image_upload_data.shot_id)][image_upload_data.device_name] = image_upload_data.image_data
+        self.instrument_shot_image_data[(instrument, image_upload_data.shot_id)][image_upload_data.device_name] = image_upload_data
 
-        def instrument_has_all_device_images_for_shot(instrument: InstrumentName, shot_id: ShotId):
-            return all(device in self.instrument_shot_images[(instrument, shot_id)] for device in self.instrument_device_map[instrument])
-
-        if instrument_has_all_device_images_for_shot(instrument, image_upload_data.shot_id):
-            instrument_image_data = self.combine_image_data_into_multipage([self.instrument_shot_images[(instrument, image_upload_data.shot_id)][device_name]
-                                                                            for device_name in self.instrument_device_map[instrument]
-                                                                          ])
-            self.image_upload_thread.queue.put(ImageUploadData(instrument, image_upload_data.shot_id, instrument_image_data))
-            del self.instrument_shot_images[(instrument, image_upload_data.shot_id)]
-
-    def combine_image_data_into_multipage(self, image_data_list: list[TiffBytes]):
-        multipage_image_data = BytesIO()
-        with tifffile.TiffWriter(multipage_image_data) as tif:
-            for image_data in image_data_list:
-                with tifffile.TiffFile(BytesIO(image_data)) as frame:
-                    tif.write(frame.asarray())
-
-        multipage_image_data.seek(0)
-        return multipage_image_data.read()
-
+        if self.instrument_has_all_device_images_for_shot(instrument, image_upload_data.shot_id):
+            self.put_completed_instrument_data_in_upload_queue(instrument, image_upload_data.shot_id)

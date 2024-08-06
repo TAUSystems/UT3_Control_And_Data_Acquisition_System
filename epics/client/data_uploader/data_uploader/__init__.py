@@ -14,10 +14,6 @@ from queue import Queue, Empty
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
 
-# for image uploader
-from io import BytesIO
-from tifffile import imwrite as write_tiff
-
 # get environment variables, specifically image endpoint url
 from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
@@ -44,7 +40,7 @@ from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 from .utils.image_analysis_backend import parse_shot_id
 
 from .scalars_saved_tracker import ScalarsSavedTracker
-from .image_uploader import ImageUploadThread, ImageCollector
+from .image_uploader import ImageUploadThread, ImageCollector, ImageUploadData
 
 # Declare types of attributes that are attached to the ORM objects
 if TYPE_CHECKING:
@@ -754,16 +750,11 @@ class DataUploader:
             # determine shot id
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
 
-            # convert NDArray to tiff file byte array
-            tiff_bytes = BytesIO()
-            write_tiff(tiff_bytes, image_data)
-            tiff_bytes.seek(0)
-
             # put image data in queue to be uploaded to image endpoint
             self.image_collector.put(ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
-                image_data = tiff_bytes,
+                image_data = image_data,
             ))
 
         except Exception as err:

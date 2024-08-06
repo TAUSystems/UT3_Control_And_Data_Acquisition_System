@@ -50,9 +50,3 @@ ShotSeq = NewType("ShotSeq", int)
 
 # Represents the bytestream of a TIFF-formatted image
 TiffBytes = NewType("TiffBytes", bytes)
-
-class ImageUploadData(NamedTuple):
-    device_name: DeviceName
-    shot_id: str
-    image_data: TiffBytes
-
