@@ -24,10 +24,10 @@ class ImageUploadData:
     shot_id: ShotId
     image: np.ndarray
 
-    def tiff_bytes(self):
+    def tiff_bytes(self, compression=tifffile.COMPRESSION.NONE):
         with BytesIO() as b:
             with tifffile.TiffWriter(b) as tif:
-                tif.write(self.image, description=self.device_name)
+                tif.write(self.image, description=self.device_name, compression=compression)
 
             return b.getvalue()
 
@@ -66,7 +66,7 @@ class ImageUploadThread(Thread):
     def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
         response = self.requests_session.post(self.image_endpoint_url, 
                                               data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
-                                              files={'image_data': image_upload_data.tiff_bytes()},
+                                              files={'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.LZW)},
                                              )
 
         response_data = response.json()

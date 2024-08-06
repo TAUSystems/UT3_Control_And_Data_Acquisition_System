@@ -22,6 +22,7 @@ measurement_db = { path = "../../../measurement_db", develop = true }
 requests = "^2.31.0"
 tifffile = "^2024.2.12"
 python-dotenv = "^1.0.1"
+imagecodecs = "^2024.6.1"
 
 [tool.poetry.group.dev.dependencies]
 hanging-threads = "^2.0.7"
