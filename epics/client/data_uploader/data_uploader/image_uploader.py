@@ -24,7 +24,7 @@ class ImageUploadData:
     shot_id: ShotId
     image: np.ndarray
 
-    def tiff_bytes(self, compression=tifffile.COMPRESSION.NONE):
+    def tiff_bytes(self, compression=tifffile.COMPRESSION.NONE) -> TiffBytes:
         with BytesIO() as b:
             with tifffile.TiffWriter(b) as tif:
                 tif.write(self.image, description=self.device_name, compression=compression)
@@ -37,7 +37,7 @@ class MultiImageUploadData:
     shot_id: ShotId
     pages: list[ImageUploadData]
 
-    def tiff_bytes(self):
+    def tiff_bytes(self) -> TiffBytes:
         with BytesIO() as b:
             with tifffile.TiffWriter(b) as tif:
                 for image_upload_data in self.pages:

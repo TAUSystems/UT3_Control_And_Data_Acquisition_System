@@ -24,7 +24,7 @@ from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
 
-from .utils.types import BurstStatus, ImageUploadData, ScalarSaveStatus, ShotSeq
+from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
 from typing import TYPE_CHECKING, Iterable, Type
 if TYPE_CHECKING:
