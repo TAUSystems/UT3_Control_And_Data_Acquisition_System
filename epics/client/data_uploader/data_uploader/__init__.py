@@ -19,7 +19,7 @@ from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
-from epics import caget_many
+from epics import caget, caget_many
 from epics.pv import PV
 from p4p.client.thread import Context as P4PThreadContext
 pva = P4PThreadContext('pva')
@@ -507,10 +507,28 @@ class DataUploader:
     def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
         """
+        def image_pv_is_available_over_pva(image_device: ImageDevice) -> bool:
+            try:
+                _ = pva.get(image_device.image_pv_name)
+                return True
+            except TimeoutError:
+                return False
+
+        def image_pv_is_available_over_ca(image_device: ImageDevice) -> bool:
+            return (caget(image_device.image_pv_name) is not None)
+
         for image_device in self.image_devices:
-            image_device.pva_monitor = \
-                pva.monitor(image_device.image_pv_name, partial(self.image_pv_callback, image_device))
-            logging.info(f"Monitoring {image_device.image_pv_name} over pvAccess")
+            if image_pv_is_available_over_pva(image_device):            
+                image_device.pva_monitor = \
+                    pva.monitor(image_device.image_pv_name, partial(self.image_pv_callback, image_device))
+                logging.info(f"Monitoring {image_device.image_pv_name} over pvAccess")
+                
+            elif image_pv_is_available_over_ca(image_device):
+                image_device.pv = PV(image_device.image_pv_name, callback=partial(self.image_pv_callback_ca, image_device))
+                logging.info(f"Monitoring {image_device.image_pv_name} over Channel Access")
+
+            else:
+                logging.warning(f"Image PV {image_device.image_pv_name} not available over pvAccess or Channel Access.")
 
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
@@ -765,6 +783,12 @@ class DataUploader:
             # increase shot counter
             image_device.counter += 1
 
+    def image_pv_callback_ca(self, image_device: ImageDevice, value: NDArray, **kwargs) -> None:
+        """ Callback for image PVs over Channel Access
+
+        Adapter to call image_pv_callback with the correct arguments.
+        """
+        self.image_pv_callback(image_device, image_data=value)
 
     def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
         """ TODO
