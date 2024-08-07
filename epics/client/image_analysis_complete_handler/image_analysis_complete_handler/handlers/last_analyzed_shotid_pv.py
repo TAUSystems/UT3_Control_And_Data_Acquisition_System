@@ -16,6 +16,7 @@ class PopulateLastAnalyzedShotIDPV(ImageAnalysisCompleteHandler):
 
     DEFAULT_LAST_ANALYZED_PV_NAMES: dict[DeviceName, PVName] = {
         "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
+        "E:Spectrometer": "E:Spectrometer:LastAnalyzedShotID",
     }
 
     def __init__(self, last_analyzed_pv_names: dict[DeviceName, PVName] = None):

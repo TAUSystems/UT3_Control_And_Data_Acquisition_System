@@ -33,6 +33,11 @@ IMAGE_DEVICES = {
         "E:Pva:Spectrometer:Pointing:ArrayCounter_RBV", 
         None
     ),
+    'E:Spectrometer': ImageDeviceDirectoryEntry(
+        None, 
+        None, 
+        "E:Spectrometer:LastAnalyzedShotID"
+    ),
 }
 
 WORK_QUEUE_NUM_WORKERS = 12
