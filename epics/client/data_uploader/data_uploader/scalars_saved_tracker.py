@@ -5,9 +5,10 @@ from collections import defaultdict
 from operator import attrgetter
 
 from .utils.types import ScalarSaveStatus, ShotSeq
+from measurement_db.orm.tables import VariableSource
 
 if TYPE_CHECKING:
-    from measurement_db.orm.tables import Shot, Variable, VariableSource
+    from measurement_db.orm.tables import Shot, Variable
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
