@@ -103,6 +103,10 @@ INSTRUMENT_DEVICE_MAP: dict[InstrumentName, list[DeviceName]] = {
         'E:Spectrometer:LowEnergy',
         'E:Spectrometer:HighEnergy',
     ],
+    'Plasma:Density': [
+        'Plasma:Density:IntensityMap',
+        'Plasma:Density:PhaseMap',
+    ]
 }
 
 
