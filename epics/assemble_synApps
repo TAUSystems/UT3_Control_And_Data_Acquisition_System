@@ -51,8 +51,8 @@ if ($releasefile eq "default")
 {
 	$modules{'ALIVE'} = 'R1-4-1';
 	# $modules{'ALLENBRADLEY'} = '2.3';
-	$modules{'AREA_DETECTOR'} = 'R3-12-1';
-	$modules{'AREA_DETECTOR_SUBMODULES'} = 'ADCore ADSupport ADSimDetector ADGenICam ADSpinnaker pvaDriver NDDriverStdArrays'; # Space-separated list of extra submodules to check out
+	$modules{'AREA_DETECTOR'} = 'R3-13';
+	$modules{'AREA_DETECTOR_SUBMODULES'} = 'ADCore ADSupport ADSimDetector ADGenICam ADSpinnaker ADPylon pvaDriver NDDriverStdArrays'; # Space-separated list of extra submodules to check out
 	$modules{'ASYN'} = 'R4-44-2';
 	$modules{'AUTOSAVE'} = 'R5-11';
 	$modules{'BUSY'} = 'R1-7-4';

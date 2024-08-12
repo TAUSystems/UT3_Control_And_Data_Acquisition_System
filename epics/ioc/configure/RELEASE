@@ -27,7 +27,7 @@
 
 # If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ = $(MODULES)/seq-ver
-SUPPORT = /home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/synApps/support
+SUPPORT = /home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/synApps/support
 AUTOSAVE = $(SUPPORT)/autosave-R5-11
 ASYN = $(SUPPORT)/asyn-R4-44-2
 BUSY = $(SUPPORT)/busy-R1-7-4
@@ -36,7 +36,7 @@ SSCAN = $(SUPPORT)/sscan-R2-11-6
 STD = $(SUPPORT)/std-R3-6-4
 STREAMDEVICE = $(SUPPORT)/StreamDevice-2-8-24
 
-AREA_DETECTOR = $(SUPPORT)/areaDetector-R3-12-1
+AREA_DETECTOR = $(SUPPORT)/areaDetector-R3-13
 ADCORE = $(AREA_DETECTOR)/ADCore
 ADAPP = $(ADCORE)/ADApp
 ADSUPPORT = $(AREA_DETECTOR)/ADSupport
@@ -46,9 +46,12 @@ ADGENICAM = $(AREA_DETECTOR)/ADGenICam
 ADSPINNAKER = $(AREA_DETECTOR)/ADSpinnaker
 ADSPINNAKER_APP = $(ADSPINNAKER)/spinnakerApp
 ADSPINNAKER_SUPPORT = $(ADSPINNAKER)/spinnakerSupport
+ADPYLON = $(AREA_DETECTOR)/ADPylon
+ADPYLON_APP = $(ADPYLON)/pylonApp
+ADPYLON_SUPPORT = $(ADPYLON)/pylonSupport
 
 # EPICS_BASE should appear last so earlier modules can override stuff:
-EPICS_BASE = /home/dphan/Documents/GitHub/UT3_Control_And_Data_Acquisition_System/epics/epics-base
+EPICS_BASE = /home/ut3daq/Applications/UT3_Control_And_Data_Acquisition_System/epics/epics-base
 
 # Set RULES here if you want to use build rules from somewhere
 # other than EPICS_BASE:
