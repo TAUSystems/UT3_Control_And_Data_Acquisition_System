@@ -65,11 +65,14 @@ def insert_data():
 
     # image backend scalars
     variables.extend([
-        Variable(name=f"E:Spectrometer:LowEnergy:{metric}", 
+        Variable(name=f"E:Spectrometer:{metric}", 
                  source=VariableSource.image_backend, 
                  epics_access_protocol=None
                 )
-        for metric in ['total_brightness_AU', 'mean_energy_MeV', 'std_energy_MeV', 'dE_over_E']
+        for metric in ['total_brightness_AU', 'mean_energy_MeV', 'std_energy_MeV', 'dE_over_E', 
+                       'pointing_deviation_x_mrad', 'pointing_deviation_y_mrad',
+                       'divergence_x_mrad', 'divergence_y_mrad',
+                      ]
     ])
 
     # insert them
