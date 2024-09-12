@@ -754,7 +754,7 @@ class DataUploader:
             self.image_collector.put(ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
-                image_data = image_data,
+                image = image_data,
             ))
 
         except Exception as err:
