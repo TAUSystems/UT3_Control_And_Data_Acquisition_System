@@ -47,8 +47,8 @@ class MultiImageUploadData:
 
 
 class ImageUploadThread(Thread):
-    def __init__(self, queue: Queue, image_endpoint_url: str, **kwargs):
-        self.queue = queue
+    def __init__(self, image_endpoint_url: str, **kwargs):
+        self.queue: Queue[ImageUploadData] = Queue()
         self.image_endpoint_url = image_endpoint_url
         super().__init__(**kwargs)
 
@@ -77,6 +77,10 @@ class ImageUploadThread(Thread):
         else:
             logging.info(f"Posted image data for {image_upload_data.shot_id} / {image_upload_data.device_name}")
 
+    def enqueue(self, image_upload_data: ImageUploadData):
+        """Convenience function to put image_upload_data in upload queue
+        """
+        self.queue.put(image_upload_data)
 
 class ImageCollector:
     """Collects images by instrument and shot and uploads them
