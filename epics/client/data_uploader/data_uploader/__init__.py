@@ -8,8 +8,10 @@ from time import sleep
 import re
 from enum import Enum
 from warnings import warn
-from threading import Thread, Lock
+from threading import Thread
 from queue import Queue, Empty
+
+import asyncio
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -21,8 +23,8 @@ env = get_env(os=True, dotenv=True)
 # EPICS channel access and pvAccess
 from epics import caget_many
 from epics.pv import PV
-from p4p.client.thread import Context as P4PThreadContext
-pva = P4PThreadContext('pva')
+from p4p.client.asyncio import Context as P4PContext
+pva = P4PContext('pva')
 
 from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
@@ -30,7 +32,7 @@ from typing import TYPE_CHECKING, Iterable, Type
 if TYPE_CHECKING:
     from .utils.types import InstrumentName, DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
-    from p4p.client.thread import Subscription as P4PSubscription
+    from p4p.client.asyncio import Subscription as P4PSubscription
     from numpy.typing import NDArray
 
 # objects representing images and scalars
@@ -314,11 +316,11 @@ class DataUploader:
         self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue, update_scalars_saved_tracker_queue=self.update_scalars_saved_queue)
 
         # thread lock to prevent multiple threads creating the same shot.
-        self.new_shot_lock = Lock()
+        self.new_shot_lock = asyncio.Lock()
 
         logging.info(f"DataUploader ready to run.")
 
-    def run(self) -> None:
+    async def run(self) -> None:
         """ Start monitors and listen forever.
         """
 
@@ -326,50 +328,46 @@ class DataUploader:
         self.enable_callbacks = False
 
         # Load scalars and image devices from measurement database
-        self.load_scalar_pv_list()
-        self.load_image_pv_list()
+        await asyncio.gather([
+            self.load_scalar_pv_list(),
+            self.load_image_pv_list(),
+        ])
 
-        self.subscribe_to_burst_pvs()
+        # subscribe to PVs
+        await asyncio.gather([
+            self.subscribe_to_burst_pvs(),
 
-        # subscribe to PVs in IOCs
-        self.subscribe_to_image_pvs()
-        self.subscribe_to_scalar_pvs()
+            # subscribe to PVs in IOCs
+            self.subscribe_to_image_pvs(),
+            self.subscribe_to_scalar_pvs(),
 
-        self.subscribe_to_last_analyzed_shot_id_pvs()
+            # subscribe to fetch trigger PV
+            self.subscribe_to_fetch_trigger_pv(),
+
+            self.subscribe_to_last_analyzed_shot_id_pvs(),
+        ])
 
         # start image and scalar uploaders
+        # TODO: replace threads by async tasks
         self.image_upload_thread.start()
         self.scalar_save_thread.start()
         self.update_scalars_saved_thread.start()
 
         # make sure our burst status type matches the mbbo PV values
-        self.check_burst_status_enum()
-
-        # subscribe to a trigger PV, whose callback fetches values from PVs that 
-        # are not monitored but should be saved
-        self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
-
-        try:
-            self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
-            self.fetch_trigger_variable.counter = 0
-            # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
-            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
-
-        except Exception as err:
-            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over Channel Access: {err}")
+        await self.check_burst_status_enum()
 
         # re-enable callback code after the callbacks for monitor creation have 
         # been called.
-        sleep(0.1)
+        await asyncio.sleep(0.1)
         self.enable_callbacks = True
 
         try:
             while True:
-                sleep(1e9)
+                await asyncio.sleep(1)
         finally:
-            self.close()
+            await self.close()
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """ Close subscriptions
         """
 
@@ -402,21 +400,21 @@ class DataUploader:
                 image_device.last_analyzed_shot_id_pva_monitor.close()
                 logging.info(f"Closed PVAccess subscription for {image_device.last_analyzed_shot_id_pv_name}")
 
-    def load_image_pv_list(self) -> None:
+    async def load_image_pv_list(self) -> None:
         """ 
         """
         with SQLAlchemySession() as sa_session:
              self.image_devices = sa_session.scalars(select(ImageDevice)).all()
 
 
-    def load_scalar_pv_list(self) -> None:
+    async def load_scalar_pv_list(self) -> None:
         """ 
         """
         with SQLAlchemySession() as sa_session:
              self.variables = sa_session.scalars(select(Variable)).all()
 
 
-    def subscribe_to_scalar_pvs(self) -> None:
+    async def subscribe_to_scalar_pvs(self) -> None:
 
         # cainfo is a string that looks like 
 
@@ -487,8 +485,25 @@ class DataUploader:
             # Add a counter attribute to the Variable instance
             variable.counter = 0
 
+    async def subscribe_to_fetch_trigger_pv(self) -> None:
+        """ subscribe to a trigger PV
+        
+        Its callback fetches values from PVs that are not monitored but should 
+        be saved
+        """
+        self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
 
-    def check_burst_status_enum(self) -> None:
+        try:
+            self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
+            self.fetch_trigger_variable.counter = 0
+            # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
+            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
+
+        except Exception as err:
+            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over Channel Access: {err}")
+
+
+    async def check_burst_status_enum(self) -> None:
         """
         """
         mbbo_string_field_names = ['ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST', 'TVST', 'TTST', 'FTST', 'FFST']
@@ -504,7 +519,7 @@ class DataUploader:
                           f"\t{PV_NAMES['burst_status']} = {status_pv_strings}"
                          )
 
-    def subscribe_to_image_pvs(self) -> None:
+    async def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
         """
         for image_device in self.image_devices:
@@ -515,7 +530,7 @@ class DataUploader:
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
 
-    def subscribe_to_burst_pvs(self) -> None:
+    async def subscribe_to_burst_pvs(self) -> None:
         """
         """
 
@@ -545,7 +560,7 @@ class DataUploader:
                         ]:
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
-    def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
+    async def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
         """_summary_
         """
         for image_device in self.image_devices:
@@ -560,7 +575,7 @@ class DataUploader:
             logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
 
 
-    def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
+    async def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
         """
         if not self.enable_callbacks:
@@ -599,7 +614,7 @@ class DataUploader:
             self.fetch_trigger_variable.counter += 1
 
 
-    def burst_status_monitor_callback(self, value: int, **kwargs) -> None:
+    async def burst_status_monitor_callback(self, value: int, **kwargs) -> None:
         """ Callback when status PV changes
 
         camonitor's callback arguments are keyword arguments including pvname, 
@@ -626,7 +641,7 @@ class DataUploader:
             for image_device in self.image_devices:
                 logging.info(f"Handled {image_device.counter:d} updates of image device {image_device.name} during burst.")
 
-    def prepare_burst(self) -> None:
+    async def prepare_burst(self) -> None:
         """ 
         """
         try:
@@ -669,7 +684,7 @@ class DataUploader:
             logging.error(f"Unable to create burst: {err}")
 
 
-    def create_new_shot(self, shot_seq: ShotSeq):
+    async def create_new_shot(self, shot_seq: ShotSeq):
         """ Thread-safe creation of new Shot in Burst
 
         Using a lock is necessary because several callbacks - i.e. threads - 
@@ -692,25 +707,25 @@ class DataUploader:
             )
 
 
-    def session_timestamp_monitor_callback(self, value: str, **kwargs):
+    async def session_timestamp_monitor_callback(self, value: str, **kwargs):
         self.session = Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value))
         logging.info(f"New session {self.session.timestamp} with title \"{self.session.title}\"")
 
-    def session_title_monitor_callback(self, value: str, **kwargs):
+    async def session_title_monitor_callback(self, value: str, **kwargs):
         self.session.title = value
         logging.info(f"Set session title to \"{self.session.title}\"")
 
 
-    def scan_timestamp_monitor_callback(self, value: str, **kwargs):
+    async def scan_timestamp_monitor_callback(self, value: str, **kwargs):
         self.scan = Scan(timestamp=self.datetime_from_pv_string(value), title=self.scan.title, seq=self.scan.seq, session=self.session)
         logging.info(f"New scan {self.scan.timestamp}, number {self.scan.seq} with title \"{self.scan.title}\"")
         self.scan.current_burst_seq = 1
 
-    def scan_number_monitor_callback(self, value: int, **kwargs):
+    async def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan.seq = value
         logging.info(f"Scan number set to \"{self.scan.seq}\"")
 
-    def scan_title_monitor_callback(self, value: NDArray, **kwargs):
+    async def scan_title_monitor_callback(self, value: NDArray, **kwargs):
         """ Decode byte array and set scan.title
 
         The scan title PV is of waveform type (to accommodate long strings), which 
@@ -721,7 +736,7 @@ class DataUploader:
         logging.info(f"Scan title set to \"{self.scan.title}\"")
 
 
-    def reset_counters(self):
+    async def reset_counters(self):
         for variable in self.variables:
             variable.counter = 0
 
@@ -733,7 +748,7 @@ class DataUploader:
         logging.info("Counters reset.")
 
 
-    def image_pv_callback(self, image_device: ImageDevice, image_data: NTNDArray) -> None:
+    async def image_pv_callback(self, image_device: ImageDevice, image_data: NTNDArray) -> None:
         """ Upload tiff-formatted image data to image backend.
         """
 
@@ -766,7 +781,7 @@ class DataUploader:
             image_device.counter += 1
 
 
-    def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
+    async def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
         """ TODO
         """
         if not self.enable_callbacks:
@@ -799,7 +814,7 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
+    async def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
         
         Parameters
