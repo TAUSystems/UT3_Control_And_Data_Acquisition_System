@@ -594,7 +594,7 @@ class DataUploader:
 
             # create shot if it doesn't exist
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
 
             # then grab it from directory
             shot = self.burst.shot_directory[shot_seq]
@@ -632,7 +632,7 @@ class DataUploader:
 
         if self.burst_status == BurstStatus.Preparing:
             assert previous_status != BurstStatus.Preparing
-            self.prepare_burst()
+            await self.prepare_burst()
 
         # when burst ends, spit out variable counts
         if previous_status == BurstStatus.Running and self.burst_status == BurstStatus.Idle:
@@ -698,7 +698,7 @@ class DataUploader:
         seq : ShotSeq
 
         """
-        with self.new_shot_lock:
+        async with self.new_shot_lock:
             if shot_seq in self.burst.shot_directory:
                 return
 
@@ -761,7 +761,7 @@ class DataUploader:
             shot_seq = ShotSeq(image_device.counter + 1)
 
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
             # determine shot id
@@ -794,7 +794,7 @@ class DataUploader:
 
             # create new Shot if this shot_seq is new
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
             self.scalar_saver.enqueue(Measurement(
@@ -836,7 +836,7 @@ class DataUploader:
 
         # create shot if it doesn't exist
         if shot_seq not in self.burst.shot_directory:
-            self.create_new_shot(shot_seq)
+            await self.create_new_shot(shot_seq)
 
         # then grab it from directory
         shot = self.burst.shot_directory[shot_seq]
