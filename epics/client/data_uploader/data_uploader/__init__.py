@@ -9,7 +9,6 @@ import re
 from enum import Enum
 from warnings import warn
 from threading import Thread
-from queue import Queue, Empty
 
 import asyncio
 
@@ -42,7 +41,7 @@ from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 from .utils.image_analysis_backend import parse_shot_id
 
 from .scalars_saved_tracker import ScalarsSavedTracker
-from .image_uploader import ImageUploadThread, ImageCollector, ImageUploadData
+from .image_uploader import ImageUploader, ImageCollector, ImageUploadData
 
 # Declare types of attributes that are attached to the ORM objects
 if TYPE_CHECKING:
@@ -107,13 +106,13 @@ INSTRUMENT_DEVICE_MAP: dict[InstrumentName, list[DeviceName]] = {
     ],
 }
 
-class ScalarSaveThread(Thread):
-    """ A thread to save measurements to DB and update the ScalarsSavedTracker
+class ScalarSaver:
+    """ A Task to save measurements to DB and update the ScalarsSavedTracker
     """
     def __init__(self,  
                  num_measurements_per_transaction = 20, 
                  no_new_measurements_timeout = 1.0, 
-                 update_scalars_saved_tracker_thread: UpdateScalarsSavedStatusThread = None, 
+                 scalars_saved_tracker_updater: ScalarsSavedStatusUpdater = None, 
                  **kwargs
                 ):
         """ 
@@ -127,21 +126,21 @@ class ScalarSaveThread(Thread):
         no_new_measurements_timeout : float, optional
             Write remaining measurements to db if there are no new measurements 
             in queue for this time in seconds, by default 1.0
-        update_scalars_saved_tracker_thread : Thread, optional
-            The thread whose queue to put measurements in that have been saved, 
+        scalars_saved_tracker_updater : ScalarsSavedStatusUpdater, optional
+            The task whose queue to put measurements in that have been saved, 
             so that the scalar_saved_trackers can be updated, by default None
         """
-        self.queue: Queue[Measurement | Iterable[Measurement]] = Queue()
+        self.queue: asyncio.Queue[Measurement | Iterable[Measurement]] = asyncio.Queue()
         self.num_measurements_per_transaction = num_measurements_per_transaction
         self.no_new_measurements_timeout = no_new_measurements_timeout
 
-        self.update_scalars_saved_tracker_thread = update_scalars_saved_tracker_thread
+        self.scalars_saved_tracker_updater = scalars_saved_tracker_updater
 
         self.measurements_to_save: list[Measurement] = []
 
         super().__init__(**kwargs)
     
-    def commit(self):
+    async def commit(self):
         """ Saves measurements to database and updates ScalarsSavedTracker
         """
         try:
@@ -157,35 +156,36 @@ class ScalarSaveThread(Thread):
         # Clear measurements_to_save
         self.measurements_to_save = []
 
-    def run(self):
+    async def run(self):
 
         try:
+
             while True:
                 try:
-                    # raises Empty exception if no scalar data arrives within the 
-                    # timeout period
-                    match measurement_or_measurements := self.queue.get(timeout=self.no_new_measurements_timeout):
-                        case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
-                            self.measurements_to_save.extend(measurements)
-                        case Measurement() as measurement:
-                            self.measurements_to_save.append(measurement)
-                        case _:
-                            raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
-
-                    # If the number of measurements in the session has reached the
-                    # desired transaction size, commit them. 
-                    if len(self.measurements_to_save) >= self.num_measurements_per_transaction:
-                        self.commit()
-
-                except Empty:
+                    measurement_or_measurements = await asyncio.wait_for(self.queue.get(), self.no_new_measurements_timeout)
+                except TimeoutError:
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
                     if len(self.measurements_to_save) > 0:
-                        self.commit()
+                        await self.commit()
+                        continue
+
+                match measurement_or_measurements:
+                    case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
+                        self.measurements_to_save.extend(measurements)
+                    case Measurement() as measurement:
+                        self.measurements_to_save.append(measurement)
+                    case _:
+                        raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
+
+                # If the number of measurements in the session has reached the
+                # desired transaction size, commit them. 
+                if len(self.measurements_to_save) >= self.num_measurements_per_transaction:
+                    await self.commit()
 
         except Exception as err:
-            logging.error(f"Error in ScalarSaveThread: {err}")
+            logging.error(f"Error in ScalarSaver: {err}")
 
         finally:
             pass # self.sa_session.close()
@@ -196,23 +196,23 @@ class ScalarSaveThread(Thread):
         """
         self.queue.put(measurement_or_measurements)
 
-class UpdateScalarsSavedStatusThread(Thread):
+class ScalarsSavedStatusUpdater:
     def __init__(self, 
                  data_uploader: DataUploader,
                  **kwargs
                 ):
-        self.queue: Queue[Measurement | Iterable[Measurement]] = Queue()
+        self.queue: asyncio.Queue[Measurement | Iterable[Measurement]] = asyncio.Queue()
         self.data_uploader = data_uploader
 
         super().__init__(**kwargs)
 
-    def run(self):
+    async def run(self):
         while True:
-            measurements = self.queue.get()
-            self.update(measurements)
+            measurements = await self.queue.get()
+            await self.update(measurements)
 
     
-    def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
+    async def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
         """ Update ScalarsSavedTrackers associated with the shots and variables 
             in the measurement or measurements
 
@@ -237,9 +237,9 @@ class UpdateScalarsSavedStatusThread(Thread):
         else:  # scalar Measurement
             update_one(measurement_or_measurements)
 
-        self.update_scalars_ready_pvs()
+        await self.update_scalars_ready_pvs()
 
-    def update_scalars_ready_pvs(self):
+    async def update_scalars_ready_pvs(self):
         """ Write timestamp of shot for which all scalars are ready to PVs
 
         Check what the most recent shot is for which all scalars - and all scalars 
@@ -309,16 +309,16 @@ class DataUploader:
         self.enable_callbacks: bool = False
 
         # image upload queue
-        self.image_upload_thread = ImageUploadThread(env['IMAGE_BACKEND_ENDPOINT_URL'])
-        self.image_collector = ImageCollector(self.image_upload_thread, instrument_device_map=INSTRUMENT_DEVICE_MAP)
+        self.image_uploader = ImageUploader(env['IMAGE_BACKEND_ENDPOINT_URL'])
+        self.image_collector = ImageCollector(self.image_uploader, instrument_device_map=INSTRUMENT_DEVICE_MAP)
 
         # thread that updates the tracker and posts to PVs
-        self.update_scalars_saved_thread = UpdateScalarsSavedStatusThread(self)
+        self.scalars_saved_status_updater = ScalarsSavedStatusUpdater(self)
 
         # scalar upload queue
-        self.scalar_save_thread = ScalarSaveThread(update_scalars_saved_tracker_thread=self.update_scalars_saved_thread)
+        self.scalar_saver = ScalarSaver(scalars_saved_tracker_updater=self.scalars_saved_status_updater)
 
-        # thread lock to prevent multiple threads creating the same shot.
+        # asyncio lock to prevent multiple coroutines creating the same shot.
         self.new_shot_lock = asyncio.Lock()
 
         logging.info(f"DataUploader ready to run.")
@@ -351,10 +351,9 @@ class DataUploader:
         ])
 
         # start image and scalar uploaders
-        # TODO: replace threads by async tasks
-        self.image_upload_thread.start()
-        self.scalar_save_thread.start()
-        self.update_scalars_saved_thread.start()
+        asyncio.create_task(self.scalar_saver.run())
+        asyncio.create_task(self.scalars_saved_status_updater.run())
+        asyncio.create_task(self.image_uploader.run())
 
         # make sure our burst status type matches the mbbo PV values
         await self.check_burst_status_enum()
@@ -608,7 +607,7 @@ class DataUploader:
                     logging.warning(f"No value for {variable.name}. Possibly it went offline.")
                     self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
                     continue
-                self.scalar_save_thread.enqueue(Measurement(variable=variable, shot=shot, value=float(value)))
+                self.scalar_saver.enqueue(Measurement(variable=variable, shot=shot, value=float(value)))
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
@@ -798,7 +797,7 @@ class DataUploader:
                 self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
-            self.scalar_save_queue.put(Measurement(
+            self.scalar_saver.enqueue(Measurement(
                 variable = variable,
                 shot = shot,
                 value = value,
@@ -848,7 +847,7 @@ class DataUploader:
 
         # update scalars tracker for all image_backend variables associated with 
         # this device 
-        self.update_scalars_saved_thread.enqueue(
+        self.scalars_saved_status_updater.enqueue(
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 

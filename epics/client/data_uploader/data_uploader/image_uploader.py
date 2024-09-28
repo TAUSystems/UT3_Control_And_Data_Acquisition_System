@@ -1,6 +1,5 @@
 from __future__ import annotations
-from threading import Thread
-from queue import Queue
+import asyncio
 import requests
 from typing import TYPE_CHECKING
 from collections import defaultdict
@@ -46,24 +45,28 @@ class MultiImageUploadData:
             return b.getvalue()
 
 
-class ImageUploadThread(Thread):
+class ImageUploader:
     def __init__(self, image_endpoint_url: str, **kwargs):
-        self.queue: Queue[ImageUploadData] = Queue()
+        self.queue: asyncio.Queue[ImageUploadData] = asyncio.Queue()
         self.image_endpoint_url = image_endpoint_url
         super().__init__(**kwargs)
 
-    def run(self):
+        self.upload_tasks = set()
+
+    async def run(self):
         self.requests_session = requests.Session()
 
         try:        
             while True:
-                image_upload_data = self.queue.get()
-                self.upload_image(image_upload_data)
+                image_upload_data = await self.queue.get()
+                image_upload_task = asyncio.create_task(self.upload_image(image_upload_data))
+                self.upload_tasks.add(image_upload_task)
+                image_upload_task.add_done_callback(self.upload_tasks.discard)
 
         finally:
             self.requests_session.close()
 
-    def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
+    async def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
         response = self.requests_session.post(self.image_endpoint_url, 
                                               data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
                                               files={'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.ADOBE_DEFLATE)},
@@ -93,8 +96,8 @@ class ImageCollector:
 
     """
     
-    def __init__(self, image_upload_thread: ImageUploadThread, instrument_device_map: dict[InstrumentName, list[DeviceName]]):
-        self.image_upload_thread = image_upload_thread
+    def __init__(self, image_uploader: ImageUploader, instrument_device_map: dict[InstrumentName, list[DeviceName]]):
+        self.image_uploader = image_uploader
         self.instrument_device_map = instrument_device_map
         self.generate_reverse_instrument_device_map()
 
@@ -117,7 +120,7 @@ class ImageCollector:
                                                       for device_name in self.instrument_device_map[instrument]
                                                      ]
                                                     )
-        self.image_upload_thread.queue.put(instrument_image_data)
+        self.image_uploader.queue.put(instrument_image_data)
         del self.instrument_shot_image_data[(instrument, shot_id)]
 
     def put(self, image_upload_data: ImageUploadData):
