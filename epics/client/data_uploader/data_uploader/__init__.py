@@ -59,6 +59,9 @@ if TYPE_CHECKING:
 
     class ImageDevice(ImageDevice):
         counter: int
+        last_analyzed_shot_id_pv_name: PVName
+        last_analyzed_shot_id_pv: PV
+        pva_monitor: P4PSubscription
 
 from measurement_db.orm.tables import VariableSource
 from measurement_db.utils import get_sqlalchemy_engine
