@@ -151,7 +151,8 @@ class ScalarSaver:
         except Exception as err:
             logging.error(f"Error inserting {len(self.measurements_to_save)} monitored measurements: {err}")
 
-        self.update_scalars_saved_tracker_thread.enqueue(self.measurements_to_save)
+        if self.scalars_saved_tracker_updater is not None:
+            self.scalars_saved_tracker_updater.enqueue(self.measurements_to_save)
 
         # Clear measurements_to_save
         self.measurements_to_save = []
