@@ -356,10 +356,10 @@ class DataUploader:
             self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
             self.fetch_trigger_variable.counter = 0
             # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
-            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over Channel Access")
+            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over PVAccess")
 
         except Exception as err:
-            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over Channel Access: {err}")
+            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over PVAccess: {err}")
 
         # re-enable callback code after the callbacks for monitor creation have 
         # been called.
