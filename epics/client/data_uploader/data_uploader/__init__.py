@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.asyncio import Subscription as P4PSubscription
     from numpy.typing import NDArray
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -66,12 +67,12 @@ if TYPE_CHECKING:
 
 from measurement_db.orm.tables import VariableSource
 from measurement_db.utils import get_sqlalchemy_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy import select
 
-sqlalchemy_engine = get_sqlalchemy_engine()
-sqlalchemy_session_factory = sessionmaker(sqlalchemy_engine, expire_on_commit=False)
-SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
+sqlalchemy_engine: AsyncEngine = get_sqlalchemy_engine(async_=True)
+sqlalchemy_session_factory = async_sessionmaker(sqlalchemy_engine, expire_on_commit=False)
 
 # these are the PVs necessary for operating this DataUploader
 PV_NAMES: dict[str, PVName] = {
@@ -147,9 +148,8 @@ class ScalarSaver:
         """ Saves measurements to database and updates ScalarsSavedTracker
         """
         try:
-            with SQLAlchemySession() as sa_session:
+            async with sqlalchemy_session_factory.begin() as sa_session:
                 sa_session.add_all(self.measurements_to_save)
-                sa_session.commit()
             logging.info(f"Inserted {len(self.measurements_to_save)} monitored measurements.")
         except Exception as err:
             logging.error(f"Error inserting {len(self.measurements_to_save)} monitored measurements: {err}")
@@ -409,15 +409,15 @@ class DataUploader:
     async def load_image_pv_list(self) -> None:
         """ 
         """
-        with SQLAlchemySession() as sa_session:
-             self.image_devices = sa_session.scalars(select(ImageDevice)).all()
+        async with sqlalchemy_session_factory() as sa_session:
+             self.image_devices = (await sa_session.scalars(select(ImageDevice))).all()
 
 
     async def load_scalar_pv_list(self) -> None:
         """ 
         """
-        with SQLAlchemySession() as sa_session:
-             self.variables = sa_session.scalars(select(Variable)).all()
+        async with sqlalchemy_session_factory() as sa_session:
+             self.variables = (await sa_session.scalars(select(Variable))).all()
 
 
     async def subscribe_to_scalar_pvs(self) -> None:
@@ -662,9 +662,8 @@ class DataUploader:
 
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            with SQLAlchemySession() as sa_session:
+            async with sqlalchemy_session_factory.begin() as sa_session:
                 sa_session.add(self.burst)
-                sa_session.commit()
 
             self.reset_counters()
             self.scan.current_burst_seq += 1
