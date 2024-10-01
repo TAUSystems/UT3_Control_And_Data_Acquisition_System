@@ -164,7 +164,7 @@ class ScalarSaver:
         self.measurements_to_save = []
 
     async def run(self):
-
+        logging.info("ScalarSaver running.")
         try:
 
             while True:
@@ -176,7 +176,8 @@ class ScalarSaver:
                     # session
                     if len(self.measurements_to_save) > 0:
                         await self.commit()
-                        continue
+                    
+                    continue
 
                 match measurement_or_measurements:
                     case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
@@ -195,7 +196,7 @@ class ScalarSaver:
             logging.error(f"Error in ScalarSaver: {err}")
 
         finally:
-            pass # self.sa_session.close()
+            logging.info("ScalarSaver closing.")
 
 
     def enqueue(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
