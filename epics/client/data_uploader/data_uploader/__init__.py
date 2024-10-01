@@ -697,7 +697,7 @@ class DataUploader:
             self.burst.scalars_saved_tracker = ScalarsSavedTracker(variables_to_track)
 
             # Finally, notify system that scalar database is ready for this Burst
-            pva.put("TakeNShots:BurstInDB", 1)
+            await pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst: {err}")
@@ -755,7 +755,7 @@ class DataUploader:
         logging.info(f"Scan title set to \"{self.scan.title}\"")
 
 
-    async def reset_counters(self):
+    def reset_counters(self):
         for variable in self.variables:
             variable.counter = 0
 
