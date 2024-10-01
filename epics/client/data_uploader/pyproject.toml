@@ -15,8 +15,10 @@ numpy = "<2.0"  # p4p isn't compatible with numpy 2.0 but doesn't specify that i
 nose2 = "^0.14.1"
 pyepics = { git = "https://github.com/pyepics/pyepics.git", rev = "0b33db782dde77d89ee847bee4e6fc314bc3c30b" }
 
-# For loading image devices and scalar variables
+# For interacting with the measurement db, and for classes such as Burst, Measurement, Variable
 measurement_db = { path = "../../../measurement_db", develop = true }
+sqlalchemy = { version = "^2.0.25", extras = ["asyncio"] }
+asyncpg = "^0.29.0"
 
 # For uploading to image backend
 requests = "^2.31.0"
