@@ -338,13 +338,13 @@ class DataUploader:
         self.enable_callbacks = False
 
         # Load scalars and image devices from measurement database
-        await asyncio.gather([
+        await asyncio.gather(
             self.load_scalar_pv_list(),
             self.load_image_pv_list(),
-        ])
+        )
 
         # subscribe to PVs
-        await asyncio.gather([
+        await asyncio.gather(
             self.subscribe_to_burst_pvs(),
 
             # subscribe to PVs in IOCs
@@ -355,7 +355,7 @@ class DataUploader:
             self.subscribe_to_fetch_trigger_pv(),
 
             self.subscribe_to_last_analyzed_shot_id_pvs(),
-        ])
+        )
 
         # start image and scalar uploaders
         asyncio.create_task(self.scalar_saver.run())
