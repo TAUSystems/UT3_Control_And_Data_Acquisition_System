@@ -27,13 +27,16 @@ pva = P4PContext('pva')
 
 from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
-from typing import TYPE_CHECKING, Iterable, Type
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Coroutine, Callable, Iterable, Type
     from .utils.types import InstrumentName, DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.asyncio import Subscription as P4PSubscription
     from numpy.typing import NDArray
     from sqlalchemy.ext.asyncio import AsyncEngine
+    
+
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -276,6 +279,11 @@ class ScalarsSavedStatusUpdater:
         """
         self.queue.put(measurement_or_measurements)
 
+def make_sync_callback(callback_coroutine: Callable[..., Coroutine], event_loop: asyncio.AbstractEventLoop) -> Callable:
+    def sync_callback(**kwargs):
+        asyncio.run_coroutine_threadsafe(callback_coroutine(**kwargs), event_loop)
+    return sync_callback
+
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
 
@@ -333,6 +341,8 @@ class DataUploader:
     async def run(self) -> None:
         """ Start monitors and listen forever.
         """
+
+        self.event_loop = asyncio.get_running_loop()
 
         # don't run callback code when they are called during monitor setup
         self.enable_callbacks = False
@@ -456,7 +466,7 @@ class DataUploader:
         for variable in self.variables:
 
             if variable.source == VariableSource.monitor:
-                variable.pv = PV(variable.name, callback=partial(self.scalar_pv_callback, variable))
+                variable.pv = PV(variable.name, callback=make_sync_callback(partial(self.scalar_pv_callback, variable), self.event_loop))
                 # disable monitor deadband: make sure monitor is posted even if value doesn't change
                 PV(variable.name + ".MDEL").put(-1)
                 logging.info(f"Monitoring {variable.name} over Channel Access")
@@ -558,7 +568,7 @@ class DataUploader:
                 ('burst_timestamp', []),
             ]:
 
-            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=callbacks, )
+            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=[make_sync_callback(cb, self.event_loop) for cb in callbacks])
             logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
 
         # PV connections without monitoring
@@ -580,7 +590,7 @@ class DataUploader:
             image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
 
             image_device.last_analyzed_shot_id_pv = \
-                PV(image_device.last_analyzed_shot_id_pv_name + '.$', callback=partial(self.image_analysis_complete_callback, image_device))
+                PV(image_device.last_analyzed_shot_id_pv_name + '.$', callback=make_sync_callback(partial(self.image_analysis_complete_callback, image_device), self.event_loop))
             logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
 
 
