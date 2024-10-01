@@ -11,6 +11,7 @@ from warnings import warn
 from threading import Thread
 
 import asyncio
+from async_timeout import timeout
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -35,8 +36,6 @@ if TYPE_CHECKING:
     from p4p.client.asyncio import Subscription as P4PSubscription
     from numpy.typing import NDArray
     from sqlalchemy.ext.asyncio import AsyncEngine
-    
-
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -146,7 +145,7 @@ class ScalarSaver:
         self.measurements_to_save: list[Measurement] = []
 
         super().__init__(**kwargs)
-    
+
     async def commit(self):
         """ Saves measurements to database and updates ScalarsSavedTracker
         """
@@ -169,14 +168,15 @@ class ScalarSaver:
 
             while True:
                 try:
-                    measurement_or_measurements = await asyncio.wait_for(self.queue.get(), self.no_new_measurements_timeout)
-                except TimeoutError:
+                    async with timeout(self.no_new_measurements_timeout):
+                        measurement_or_measurements = await self.queue.get()
+                except asyncio.TimeoutError:
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
                     if len(self.measurements_to_save) > 0:
                         await self.commit()
-                    
+
                     continue
 
                 match measurement_or_measurements:
@@ -219,7 +219,7 @@ class ScalarsSavedStatusUpdater:
             measurements = await self.queue.get()
             await self.update(measurements)
 
-    
+
     async def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
         """ Update ScalarsSavedTrackers associated with the shots and variables 
             in the measurement or measurements
@@ -262,7 +262,7 @@ class ScalarsSavedStatusUpdater:
                                           ('image_backend_scalars_ready', VariableSource.image_backend), 
                                           ('all_scalars_ready', None),  # None in ScalarsSavedTracker.highest_seq_all_scalars_ready defaults to all variable sources
                                          ]:
-            
+
             highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
             if highest_seq_all_scalars_ready > 0:
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
@@ -507,7 +507,7 @@ class DataUploader:
 
     async def subscribe_to_fetch_trigger_pv(self) -> None:
         """ subscribe to a trigger PV
-        
+
         Its callback fetches values from PVs that are not monitored but should 
         be saved
         """
@@ -749,7 +749,7 @@ class DataUploader:
 
         The scan title PV is of waveform type (to accommodate long strings), which 
         appears as an np.ndarray of dtype int representing ascii characters. 
-        
+
         """
         self.scan.title = ''.join(map(chr, value))
         logging.info(f"Scan title set to \"{self.scan.title}\"")
@@ -835,7 +835,7 @@ class DataUploader:
 
     async def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
-        
+
         Parameters
         ----------
         value : str
