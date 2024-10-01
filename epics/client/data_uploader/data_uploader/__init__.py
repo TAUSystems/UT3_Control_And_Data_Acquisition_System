@@ -665,7 +665,7 @@ class DataUploader:
         """ 
         """
         try:
-            pva.put("TakeNShots:BurstInDB", 0)
+            await pva.put("TakeNShots:BurstInDB", 0)
 
             self.burst = Burst(timestamp=self.datetime_from_pv_string(self.burst_pvs['burst_timestamp'].get()),
                                scan=self.scan, 
