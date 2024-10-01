@@ -210,9 +210,6 @@ class ScalarsSavedStatusUpdater:
 
         super().__init__(**kwargs)
 
-    def main(self):
-        asyncio.run(self.run())
-
     async def run(self):
         while True:
             measurements = await self.queue.get()
@@ -329,6 +326,9 @@ class DataUploader:
         self.new_shot_lock = asyncio.Lock()
 
         logging.info(f"DataUploader ready to run.")
+
+    def main(self):
+        asyncio.run(self.run())
 
     async def run(self) -> None:
         """ Start monitors and listen forever.
