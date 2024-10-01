@@ -210,6 +210,9 @@ class ScalarsSavedStatusUpdater:
 
         super().__init__(**kwargs)
 
+    def main(self):
+        asyncio.run(self.run())
+
     async def run(self):
         while True:
             measurements = await self.queue.get()

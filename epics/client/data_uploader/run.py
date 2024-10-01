@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(mess
 
 def main():
     da = DataUploader()
-    da.run()
+    da.main()
 
 if __name__ == "__main__":
     main()
