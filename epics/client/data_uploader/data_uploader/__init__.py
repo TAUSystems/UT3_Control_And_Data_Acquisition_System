@@ -157,7 +157,7 @@ class ScalarSaver:
             logging.error(f"Error inserting {len(self.measurements_to_save)} monitored measurements: {err}")
 
         if self.scalars_saved_tracker_updater is not None:
-            self.scalars_saved_tracker_updater.enqueue(self.measurements_to_save)
+            await self.scalars_saved_tracker_updater.enqueue(self.measurements_to_save)
 
         # Clear measurements_to_save
         self.measurements_to_save = []
@@ -199,10 +199,10 @@ class ScalarSaver:
             logging.info("ScalarSaver closing.")
 
 
-    def enqueue(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
+    async def enqueue(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
         """Convenience function to add measurements to queue
         """
-        self.queue.put(measurement_or_measurements)
+        await self.queue.put(measurement_or_measurements)
 
 class ScalarsSavedStatusUpdater:
     def __init__(self, 
@@ -275,10 +275,10 @@ class ScalarsSavedStatusUpdater:
                 self.data_uploader.burst_pvs[pv_alias].put("")
                 # logging.info(f"No shots have all scalars ready.")
 
-    def enqueue(self, measurement_or_measurements):
+    async def enqueue(self, measurement_or_measurements):
         """ Convenience function to add measurement(s) to queue
         """
-        self.queue.put(measurement_or_measurements)
+        await self.queue.put(measurement_or_measurements)
 
 def make_sync_callback(callback_coroutine: Callable[..., Coroutine], event_loop: asyncio.AbstractEventLoop) -> Callable:
     def sync_callback(**kwargs):
@@ -625,7 +625,7 @@ class DataUploader:
                     logging.warning(f"No value for {variable.name}. Possibly it went offline.")
                     self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
                     continue
-                self.scalar_saver.enqueue(Measurement(variable=variable, shot=shot, value=float(value)))
+                await self.scalar_saver.enqueue(Measurement(variable=variable, shot=shot, value=float(value)))
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
@@ -814,7 +814,7 @@ class DataUploader:
                 await self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
-            self.scalar_saver.enqueue(Measurement(
+            await self.scalar_saver.enqueue(Measurement(
                 variable = variable,
                 shot = shot,
                 value = value,
@@ -864,7 +864,7 @@ class DataUploader:
 
         # update scalars tracker for all image_backend variables associated with 
         # this device 
-        self.scalars_saved_status_updater.enqueue(
+        await self.scalars_saved_status_updater.enqueue(
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 
