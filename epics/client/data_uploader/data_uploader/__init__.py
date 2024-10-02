@@ -292,9 +292,9 @@ class DataUploader:
     def __init__(self):
 
         # Current burst, session, and scan information
-        self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
-        self.burst = Burst(timestamp=datetime.now(tz=UTC), repetition_rate=None, number_of_shots=None, seq=0)
+        self.session = Session(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), title="default", description="This session is used if UI SessionID is not yet set.")
+        self.scan = Scan(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
+        self.burst = Burst(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), repetition_rate=None, number_of_shots=None, seq=0)
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
@@ -888,8 +888,8 @@ class DataUploader:
 
         """
         try:
-            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ").replace(tzinfo=UTC)
+            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ")
         except ValueError:
             logging.warning(f"Unable to parse datetime string {datetime_str}. Returning current time.")
-            return datetime.now(tz=UTC)
+            return datetime.now(tz=UTC).replace(tzinfo=None)
 
