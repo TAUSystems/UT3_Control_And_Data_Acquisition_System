@@ -785,7 +785,7 @@ class DataUploader:
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
 
             # put image data in queue to be uploaded to image endpoint
-            self.image_collector.put(ImageUploadData(
+            await self.image_collector.put(ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
                 image = image_data,

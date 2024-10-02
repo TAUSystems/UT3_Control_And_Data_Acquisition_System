@@ -80,10 +80,10 @@ class ImageUploader:
         else:
             logging.info(f"Posted image data for {image_upload_data.shot_id} / {image_upload_data.device_name}")
 
-    def enqueue(self, image_upload_data: ImageUploadData):
+    async def enqueue(self, image_upload_data: ImageUploadData):
         """Convenience function to put image_upload_data in upload queue
         """
-        self.queue.put(image_upload_data)
+        await self.queue.put(image_upload_data)
 
 class ImageCollector:
     """Collects images by instrument and shot and uploads them
@@ -114,16 +114,16 @@ class ImageCollector:
     def instrument_has_all_device_images_for_shot(self, instrument: InstrumentName, shot_id: ShotId):
         return all(device in self.instrument_shot_image_data[(instrument, shot_id)] for device in self.instrument_device_map[instrument])
 
-    def put_completed_instrument_data_in_upload_queue(self, instrument: InstrumentName, shot_id: ShotId):
+    async def put_completed_instrument_data_in_upload_queue(self, instrument: InstrumentName, shot_id: ShotId):
         instrument_image_data = MultiImageUploadData(instrument, shot_id, 
                                                      [self.instrument_shot_image_data[(instrument, shot_id)][device_name]
                                                       for device_name in self.instrument_device_map[instrument]
                                                      ]
                                                     )
-        self.image_uploader.queue.put(instrument_image_data)
+        await self.image_uploader.queue.put(instrument_image_data)
         del self.instrument_shot_image_data[(instrument, shot_id)]
 
-    def put(self, image_upload_data: ImageUploadData):
+    async def put(self, image_upload_data: ImageUploadData):
         """ Add an image and upload it if all images for the instrument/shot are present
         
         Parameters
@@ -140,4 +140,4 @@ class ImageCollector:
         self.instrument_shot_image_data[(instrument, image_upload_data.shot_id)][image_upload_data.device_name] = image_upload_data
 
         if self.instrument_has_all_device_images_for_shot(instrument, image_upload_data.shot_id):
-            self.put_completed_instrument_data_in_upload_queue(instrument, image_upload_data.shot_id)
+            await self.put_completed_instrument_data_in_upload_queue(instrument, image_upload_data.shot_id)
