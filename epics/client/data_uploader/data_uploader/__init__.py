@@ -28,9 +28,9 @@ pva = P4PContext('pva')
 
 from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 if TYPE_CHECKING:
-    from typing import Coroutine, Callable, Iterable, Type
+    from typing import Coroutine, Callable, Type
     from .utils.types import InstrumentName, DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
     from p4p.client.asyncio import Subscription as P4PSubscription
