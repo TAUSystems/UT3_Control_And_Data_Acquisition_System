@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-import requests
+import aiohttp
 from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass
@@ -54,8 +54,6 @@ class ImageUploader:
         self.upload_tasks = set()
 
     async def run(self):
-        self.requests_session = requests.Session()
-
         try:        
             while True:
                 image_upload_data = await self.queue.get()
@@ -64,15 +62,16 @@ class ImageUploader:
                 image_upload_task.add_done_callback(self.upload_tasks.discard)
 
         finally:
-            self.requests_session.close()
+            pass
 
     async def upload_image(self, image_upload_data: ImageUploadData | MultiImageUploadData):
-        response = self.requests_session.post(self.image_endpoint_url, 
-                                              data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id},
-                                              files={'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.ADOBE_DEFLATE)},
-                                             )
-
-        response_data = response.json()
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(self.image_endpoint_url, 
+                                         data={'device_name': image_upload_data.device_name, 'shot_id': image_upload_data.shot_id,
+                                               'image_data': image_upload_data.tiff_bytes(compression=tifffile.COMPRESSION.ADOBE_DEFLATE)
+                                              },
+                                        ) as response:
+                response_data = await response.json()
 
         if ('message' not in response_data) or (not response_data['message'].startswith("received")):
             logging.error(f"Failed to post image data for {image_upload_data.shot_id} / {image_upload_data.device_name}: {response_data}")
