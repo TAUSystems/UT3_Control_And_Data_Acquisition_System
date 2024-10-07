@@ -727,7 +727,8 @@ class DataUploader:
 
 
     async def session_timestamp_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value))
+        async with sqlalchemy_session_factory.begin() as sa_session:
+            self.session = await sa_session.merge(Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value)))
         logging.info(f"New session {self.session.timestamp} with title \"{self.session.title}\"")
 
     async def session_title_monitor_callback(self, value: str, **kwargs):
