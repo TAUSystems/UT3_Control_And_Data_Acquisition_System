@@ -840,8 +840,9 @@ class DataUploader:
 
         Parameters
         ----------
-        value : str
-            Shot ID string             
+        instrument_name : InstrumentName
+        value : NDArray
+            A byte array representing the shot_id string             
         """
         if (not self.enable_callbacks) or (len(value) == 0):
             return
@@ -851,6 +852,16 @@ class DataUploader:
 
         # derive shot number from shot_id string
         burst_datetime, shot_datetime = parse_shot_id(shot_id_str)
+
+        # check if the burst of the completed image analysis is the current burst
+        # TODO: update past bursts' scalartrackers
+        if abs((burst_datetime - self.burst.timestamp).total_seconds()) > 1e-5:
+            logging.warning(f"Image analysis complete for {instrument_name} for a past burst ({burst_datetime:%Y-%m-%d %H:%M:%S.%f}; "
+                            f"current burst is {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}). Tracking scalars across bursts not yet implemented, "
+                            f"so not updating scalars_saved_tracker for this shot."
+                           )
+            return
+
         shot_seq = ShotSeq((shot_datetime - burst_datetime).total_seconds() * self.burst.repetition_rate + 1)
 
         # create shot if it doesn't exist
@@ -870,6 +881,7 @@ class DataUploader:
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 
+                 # TODO: more robust way to associate variables with instrument
                  and variable.name.startswith(instrument_name)
             ]
         )
