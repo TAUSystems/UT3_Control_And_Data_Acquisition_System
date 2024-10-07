@@ -99,8 +99,8 @@ PV_NAMES: dict[str, PVName] = {
     'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
-LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[DeviceName, PVName] = {
-    "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
+LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[InstrumentName, PVName] = {
+    "E:Spectrometer": "E:Spectrometer:LastAnalyzedShotID",
 }
 
 # list of composite devices and their components
@@ -317,6 +317,9 @@ class DataUploader:
         # in epics._PVmonitors_ )
         self.subscriptions: dict[PVName, P4PSubscription] = {}
 
+        # holds the last analyzed shot id PVs
+        self.last_analyzed_shot_id_pvs: dict[InstrumentName, PV] = {}
+
         # whether to run callbacks. mainly to prevent callbacks from running when 
         # they are called while setting up monitors.
         self.enable_callbacks: bool = False
@@ -419,6 +422,10 @@ class DataUploader:
             if hasattr(image_device, 'last_analyzed_shot_id_pva_monitor') and image_device.last_analyzed_shot_id_pva_monitor is not None:
                 image_device.last_analyzed_shot_id_pva_monitor.close()
                 logging.info(f"Closed PVAccess subscription for {image_device.last_analyzed_shot_id_pv_name}")
+
+        for instrument_name, last_analyzed_shot_id_pv in self.last_analyzed_shot_id_pvs.items():
+            last_analyzed_shot_id_pv.clear_callbacks()
+            logging.info(f"Closed Channel Access subscription for {last_analyzed_shot_id_pv.pvname}")
 
     async def load_image_pv_list(self) -> None:
         """ 
@@ -581,18 +588,12 @@ class DataUploader:
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
     async def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
-        """_summary_
+        """ Monitor PVs that update when image analysis is complete on some instrument
         """
-        for image_device in self.image_devices:
-
-            if image_device.name not in LAST_ANALYZED_SHOT_ID_PV_NAMES:
-                continue
-
-            image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
-
-            image_device.last_analyzed_shot_id_pv = \
-                PV(image_device.last_analyzed_shot_id_pv_name + '.$', callback=make_sync_callback(partial(self.image_analysis_complete_callback, image_device), self.event_loop))
-            logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
+        for instrument_name, last_analyzed_shot_id_pv_name in LAST_ANALYZED_SHOT_ID_PV_NAMES.items():
+            self.last_analyzed_shot_id_pvs[instrument_name] = \
+                PV(last_analyzed_shot_id_pv_name + '.$', callback=make_sync_callback(partial(self.image_analysis_complete_callback, instrument_name), self.event_loop))
+            logging.info(f"Monitoring {last_analyzed_shot_id_pv_name} for instrument {instrument_name} over Channel Access")
 
 
     async def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
@@ -834,7 +835,7 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    async def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
+    async def image_analysis_complete_callback(self, instrument_name: InstrumentName, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
 
         Parameters
@@ -861,7 +862,7 @@ class DataUploader:
 
         # make sure the shot timestamp matches the shot_id_str timestamp
         assert abs((shot.timestamp - shot_datetime).total_seconds()) < 1e-5, \
-            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for device {device.name}"
+            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for instrument {instrument_name}"
 
         # update scalars tracker for all image_backend variables associated with 
         # this device 
@@ -869,7 +870,7 @@ class DataUploader:
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 
-                 and variable.name.startswith(device.name)
+                 and variable.name.startswith(instrument_name)
             ]
         )
 
