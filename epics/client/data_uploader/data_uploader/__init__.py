@@ -8,8 +8,10 @@ from time import sleep
 import re
 from enum import Enum
 from warnings import warn
-from threading import Thread, Lock
-from queue import Queue, Empty
+from threading import Thread
+
+import asyncio
+from async_timeout import timeout
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s", force=True)
@@ -21,17 +23,19 @@ env = get_env(os=True, dotenv=True)
 # EPICS channel access and pvAccess
 from epics import caget_many
 from epics.pv import PV
-from p4p.client.thread import Context as P4PThreadContext
-pva = P4PThreadContext('pva')
+from p4p.client.asyncio import Context as P4PContext
+pva = P4PContext('pva')
 
 from .utils.types import BurstStatus, ScalarSaveStatus, ShotSeq
 
-from typing import TYPE_CHECKING, Iterable, Type
+from typing import TYPE_CHECKING, Iterable
 if TYPE_CHECKING:
+    from typing import Coroutine, Callable, Type
     from .utils.types import InstrumentName, DeviceName, PVName
     from p4p.nt import NTNDArray, NTBase
-    from p4p.client.thread import Subscription as P4PSubscription
+    from p4p.client.asyncio import Subscription as P4PSubscription
     from numpy.typing import NDArray
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 # objects representing images and scalars
 from measurement_db.orm.tables import ImageDevice, Variable
@@ -40,7 +44,7 @@ from measurement_db.orm.tables import Session, Scan, Burst, Shot, Measurement
 from .utils.image_analysis_backend import parse_shot_id
 
 from .scalars_saved_tracker import ScalarsSavedTracker
-from .image_uploader import ImageUploadThread, ImageCollector, ImageUploadData
+from .image_uploader import ImageUploader, ImageCollector, ImageUploadData
 
 # Declare types of attributes that are attached to the ORM objects
 if TYPE_CHECKING:
@@ -65,12 +69,12 @@ if TYPE_CHECKING:
 
 from measurement_db.orm.tables import VariableSource
 from measurement_db.utils import get_sqlalchemy_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy import select
 
-sqlalchemy_engine = get_sqlalchemy_engine()
-sqlalchemy_session_factory = sessionmaker(sqlalchemy_engine, expire_on_commit=False)
-SQLAlchemySession = scoped_session(sqlalchemy_session_factory)
+sqlalchemy_engine: AsyncEngine = get_sqlalchemy_engine(async_=True)
+sqlalchemy_session_factory = async_sessionmaker(sqlalchemy_engine, expire_on_commit=False)
 
 # these are the PVs necessary for operating this DataUploader
 PV_NAMES: dict[str, PVName] = {
@@ -95,8 +99,8 @@ PV_NAMES: dict[str, PVName] = {
     'all_scalars_ready':  "Data:Scalars:AllValuesReady",
 }
 
-LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[DeviceName, PVName] = {
-    "E:Spectrometer:LowEnergy": "E:Spectrometer:LastAnalyzedShotID",
+LAST_ANALYZED_SHOT_ID_PV_NAMES: dict[InstrumentName, PVName] = {
+    "E:Spectrometer": "E:Spectrometer:LastAnalyzedShotID",
 }
 
 # list of composite devices and their components
@@ -108,15 +112,13 @@ INSTRUMENT_DEVICE_MAP: dict[InstrumentName, list[DeviceName]] = {
     ],
 }
 
-
-class ScalarSaveThread(Thread):
-    """ A thread to save measurements to DB and update the ScalarsSavedTracker
+class ScalarSaver:
+    """ A Task to save measurements to DB and update the ScalarsSavedTracker
     """
-    def __init__(self, 
-                 queue: Queue[Measurement | Iterable[Measurement]], 
+    def __init__(self,  
                  num_measurements_per_transaction = 20, 
                  no_new_measurements_timeout = 1.0, 
-                 update_scalars_saved_tracker_queue: Queue = None, 
+                 scalars_saved_tracker_updater: ScalarsSavedStatusUpdater = None, 
                  **kwargs
                 ):
         """ 
@@ -130,88 +132,95 @@ class ScalarSaveThread(Thread):
         no_new_measurements_timeout : float, optional
             Write remaining measurements to db if there are no new measurements 
             in queue for this time in seconds, by default 1.0
-        update_scalars_saved_tracker_queue : Queue, optional
-            The queue to put measurements in that have been saved, so that the 
-            scalar_saved_trackers can be updated, by default None
+        scalars_saved_tracker_updater : ScalarsSavedStatusUpdater, optional
+            The task whose queue to put measurements in that have been saved, 
+            so that the scalar_saved_trackers can be updated, by default None
         """
-        self.queue = queue
+        self.queue: asyncio.Queue[Measurement | Iterable[Measurement]] = asyncio.Queue()
         self.num_measurements_per_transaction = num_measurements_per_transaction
         self.no_new_measurements_timeout = no_new_measurements_timeout
 
-        self.update_scalars_saved_tracker_queue = update_scalars_saved_tracker_queue
+        self.scalars_saved_tracker_updater = scalars_saved_tracker_updater
 
         self.measurements_to_save: list[Measurement] = []
 
         super().__init__(**kwargs)
-    
-    def commit(self):
+
+    async def commit(self):
         """ Saves measurements to database and updates ScalarsSavedTracker
         """
         try:
-            with SQLAlchemySession() as sa_session:
+            async with sqlalchemy_session_factory.begin() as sa_session:
                 sa_session.add_all(self.measurements_to_save)
-                sa_session.commit()
             logging.info(f"Inserted {len(self.measurements_to_save)} monitored measurements.")
         except Exception as err:
             logging.error(f"Error inserting {len(self.measurements_to_save)} monitored measurements: {err}")
 
-        self.update_scalars_saved_tracker_queue.put(self.measurements_to_save)
+        if self.scalars_saved_tracker_updater is not None:
+            await self.scalars_saved_tracker_updater.enqueue(self.measurements_to_save)
 
         # Clear measurements_to_save
         self.measurements_to_save = []
 
-    def run(self):
-
+    async def run(self):
+        logging.info("ScalarSaver running.")
         try:
+
             while True:
                 try:
-                    # raises Empty exception if no scalar data arrives within the 
-                    # timeout period
-                    match measurement_or_measurements := self.queue.get(timeout=self.no_new_measurements_timeout):
-                        case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
-                            self.measurements_to_save.extend(measurements)
-                        case Measurement() as measurement:
-                            self.measurements_to_save.append(measurement)
-                        case _:
-                            raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
-
-                    # If the number of measurements in the session has reached the
-                    # desired transaction size, commit them. 
-                    if len(self.measurements_to_save) >= self.num_measurements_per_transaction:
-                        self.commit()
-
-                except Empty:
+                    async with timeout(self.no_new_measurements_timeout):
+                        measurement_or_measurements = await self.queue.get()
+                except asyncio.TimeoutError:
                     # If queue.get() times out, i.e. no new measurements came in 
                     # during the timeout period, commit what's currently in the 
                     # session
                     if len(self.measurements_to_save) > 0:
-                        self.commit()
+                        await self.commit()
+
+                    continue
+
+                match measurement_or_measurements:
+                    case list(measurements) if all(isinstance(measurement, Measurement) for measurement in measurements):
+                        self.measurements_to_save.extend(measurements)
+                    case Measurement() as measurement:
+                        self.measurements_to_save.append(measurement)
+                    case _:
+                        raise TypeError(f"Object not of type Measurement obtained from ScalarSaveThread queue: {measurement_or_measurements}")
+
+                # If the number of measurements in the session has reached the
+                # desired transaction size, commit them. 
+                if len(self.measurements_to_save) >= self.num_measurements_per_transaction:
+                    await self.commit()
 
         except Exception as err:
-            logging.error(f"Error in ScalarSaveThread: {err}")
+            logging.error(f"Error in ScalarSaver: {err}")
 
         finally:
-            pass # self.sa_session.close()
+            logging.info("ScalarSaver closing.")
 
 
-class UpdateScalarsSavedStatusThread(Thread):
+    async def enqueue(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
+        """Convenience function to add measurements to queue
+        """
+        await self.queue.put(measurement_or_measurements)
+
+class ScalarsSavedStatusUpdater:
     def __init__(self, 
-                 queue: Queue,
                  data_uploader: DataUploader,
                  **kwargs
                 ):
-        self.queue = queue
+        self.queue: asyncio.Queue[Measurement | Iterable[Measurement]] = asyncio.Queue()
         self.data_uploader = data_uploader
 
         super().__init__(**kwargs)
 
-    def run(self):
+    async def run(self):
         while True:
-            measurements = self.queue.get()
-            self.update(measurements)
+            measurements = await self.queue.get()
+            await self.update(measurements)
 
-    
-    def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
+
+    async def update(self, measurement_or_measurements: Measurement | Iterable[Measurement]):
         """ Update ScalarsSavedTrackers associated with the shots and variables 
             in the measurement or measurements
 
@@ -236,9 +245,9 @@ class UpdateScalarsSavedStatusThread(Thread):
         else:  # scalar Measurement
             update_one(measurement_or_measurements)
 
-        self.update_scalars_ready_pvs()
+        await self.update_scalars_ready_pvs()
 
-    def update_scalars_ready_pvs(self):
+    async def update_scalars_ready_pvs(self):
         """ Write timestamp of shot for which all scalars are ready to PVs
 
         Check what the most recent shot is for which all scalars - and all scalars 
@@ -253,7 +262,7 @@ class UpdateScalarsSavedStatusThread(Thread):
                                           ('image_backend_scalars_ready', VariableSource.image_backend), 
                                           ('all_scalars_ready', None),  # None in ScalarsSavedTracker.highest_seq_all_scalars_ready defaults to all variable sources
                                          ]:
-            
+
             highest_seq_all_scalars_ready = self.data_uploader.burst.scalars_saved_tracker.highest_seq_all_scalars_ready(variable_source)
             if highest_seq_all_scalars_ready > 0:
                 shot_timestamp = self.data_uploader.burst.shot_directory[highest_seq_all_scalars_ready].timestamp
@@ -266,6 +275,16 @@ class UpdateScalarsSavedStatusThread(Thread):
                 self.data_uploader.burst_pvs[pv_alias].put("")
                 # logging.info(f"No shots have all scalars ready.")
 
+    async def enqueue(self, measurement_or_measurements):
+        """ Convenience function to add measurement(s) to queue
+        """
+        await self.queue.put(measurement_or_measurements)
+
+def make_sync_callback(callback_coroutine: Callable[..., Coroutine], event_loop: asyncio.AbstractEventLoop) -> Callable:
+    def sync_callback(**kwargs):
+        asyncio.run_coroutine_threadsafe(callback_coroutine(**kwargs), event_loop)
+    return sync_callback
+
 class DataUploader:
     """ An app that monitors image and scalar PVs and handles them
 
@@ -273,9 +292,9 @@ class DataUploader:
     def __init__(self):
 
         # Current burst, session, and scan information
-        self.session = Session(timestamp=datetime.now(tz=UTC), title="default", description="This session is used if UI SessionID is not yet set.")
-        self.scan = Scan(timestamp=datetime.now(tz=UTC), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
-        self.burst = Burst(timestamp=datetime.now(tz=UTC), repetition_rate=None, number_of_shots=None, seq=0)
+        self.session = Session(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), title="default", description="This session is used if UI SessionID is not yet set.")
+        self.scan = Scan(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), session=self.session, title="default", seq=0, notes="This scan is used if no Scan is known.")
+        self.burst = Burst(timestamp=datetime.now(tz=UTC).replace(tzinfo=None), repetition_rate=None, number_of_shots=None, seq=0)
 
         # disconnected, idle, preparing, armed, running
         self.burst_status: BurstStatus = BurstStatus.Disconnected
@@ -298,81 +317,80 @@ class DataUploader:
         # in epics._PVmonitors_ )
         self.subscriptions: dict[PVName, P4PSubscription] = {}
 
+        # holds the last analyzed shot id PVs
+        self.last_analyzed_shot_id_pvs: dict[InstrumentName, PV] = {}
+
         # whether to run callbacks. mainly to prevent callbacks from running when 
         # they are called while setting up monitors.
         self.enable_callbacks: bool = False
 
         # image upload queue
-        self.image_upload_queue: Queue[ImageUploadData] = Queue()
-        self.image_upload_thread = ImageUploadThread(self.image_upload_queue, env['IMAGE_BACKEND_ENDPOINT_URL'])
-        self.image_collector = ImageCollector(self.image_upload_thread, instrument_device_map=INSTRUMENT_DEVICE_MAP)
+        self.image_uploader = ImageUploader(env['IMAGE_BACKEND_ENDPOINT_URL'])
+        self.image_collector = ImageCollector(self.image_uploader, instrument_device_map=INSTRUMENT_DEVICE_MAP)
 
-        # scalars saved tracker queue
-        self.update_scalars_saved_queue: Queue[Measurement | Iterable[Measurement]] = Queue()
-        # and thread that updates the tracker and posts to PVs
-        self.update_scalars_saved_thread = UpdateScalarsSavedStatusThread(self.update_scalars_saved_queue, self)
+        # thread that updates the tracker and posts to PVs
+        self.scalars_saved_status_updater = ScalarsSavedStatusUpdater(self)
 
         # scalar upload queue
-        self.scalar_save_queue: Queue[Measurement | Iterable[Measurement]] = Queue()
-        self.scalar_save_thread = ScalarSaveThread(self.scalar_save_queue, update_scalars_saved_tracker_queue=self.update_scalars_saved_queue)
+        self.scalar_saver = ScalarSaver(scalars_saved_tracker_updater=self.scalars_saved_status_updater)
 
-        # thread lock to prevent multiple threads creating the same shot.
-        self.new_shot_lock = Lock()
+        # asyncio lock to prevent multiple coroutines creating the same shot.
+        self.new_shot_lock = asyncio.Lock()
 
         logging.info(f"DataUploader ready to run.")
 
-    def run(self) -> None:
+    def main(self):
+        asyncio.run(self.run())
+
+    async def run(self) -> None:
         """ Start monitors and listen forever.
         """
+
+        self.event_loop = asyncio.get_running_loop()
 
         # don't run callback code when they are called during monitor setup
         self.enable_callbacks = False
 
         # Load scalars and image devices from measurement database
-        self.load_scalar_pv_list()
-        self.load_image_pv_list()
+        await asyncio.gather(
+            self.load_scalar_pv_list(),
+            self.load_image_pv_list(),
+        )
 
-        self.subscribe_to_burst_pvs()
+        # subscribe to PVs
+        await asyncio.gather(
+            self.subscribe_to_burst_pvs(),
 
-        # subscribe to PVs in IOCs
-        self.subscribe_to_image_pvs()
-        self.subscribe_to_scalar_pvs()
+            # subscribe to PVs in IOCs
+            self.subscribe_to_image_pvs(),
+            self.subscribe_to_scalar_pvs(),
 
-        self.subscribe_to_last_analyzed_shot_id_pvs()
+            # subscribe to fetch trigger PV
+            self.subscribe_to_fetch_trigger_pv(),
+
+            self.subscribe_to_last_analyzed_shot_id_pvs(),
+        )
 
         # start image and scalar uploaders
-        self.image_upload_thread.start()
-        self.scalar_save_thread.start()
-        self.update_scalars_saved_thread.start()
+        asyncio.create_task(self.scalar_saver.run())
+        asyncio.create_task(self.scalars_saved_status_updater.run())
+        asyncio.create_task(self.image_uploader.run())
 
         # make sure our burst status type matches the mbbo PV values
-        self.check_burst_status_enum()
-
-        # subscribe to a trigger PV, whose callback fetches values from PVs that 
-        # are not monitored but should be saved
-        self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
-
-        try:
-            self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
-            self.fetch_trigger_variable.counter = 0
-            # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
-            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over PVAccess")
-
-        except Exception as err:
-            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over PVAccess: {err}")
+        await self.check_burst_status_enum()
 
         # re-enable callback code after the callbacks for monitor creation have 
         # been called.
-        sleep(0.1)
+        await asyncio.sleep(0.1)
         self.enable_callbacks = True
 
         try:
             while True:
-                sleep(1e9)
+                await asyncio.sleep(1)
         finally:
-            self.close()
+            await self.close()
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """ Close subscriptions
         """
 
@@ -405,21 +423,25 @@ class DataUploader:
                 image_device.last_analyzed_shot_id_pva_monitor.close()
                 logging.info(f"Closed PVAccess subscription for {image_device.last_analyzed_shot_id_pv_name}")
 
-    def load_image_pv_list(self) -> None:
+        for instrument_name, last_analyzed_shot_id_pv in self.last_analyzed_shot_id_pvs.items():
+            last_analyzed_shot_id_pv.clear_callbacks()
+            logging.info(f"Closed Channel Access subscription for {last_analyzed_shot_id_pv.pvname}")
+
+    async def load_image_pv_list(self) -> None:
         """ 
         """
-        with SQLAlchemySession() as sa_session:
-             self.image_devices = sa_session.scalars(select(ImageDevice)).all()
+        async with sqlalchemy_session_factory() as sa_session:
+             self.image_devices = (await sa_session.scalars(select(ImageDevice))).all()
 
 
-    def load_scalar_pv_list(self) -> None:
+    async def load_scalar_pv_list(self) -> None:
         """ 
         """
-        with SQLAlchemySession() as sa_session:
-             self.variables = sa_session.scalars(select(Variable)).all()
+        async with sqlalchemy_session_factory() as sa_session:
+             self.variables = (await sa_session.scalars(select(Variable))).all()
 
 
-    def subscribe_to_scalar_pvs(self) -> None:
+    async def subscribe_to_scalar_pvs(self) -> None:
 
         # cainfo is a string that looks like 
 
@@ -452,7 +474,7 @@ class DataUploader:
         for variable in self.variables:
 
             if variable.source == VariableSource.monitor:
-                variable.pv = PV(variable.name, callback=partial(self.scalar_pv_callback, variable))
+                variable.pv = PV(variable.name, callback=make_sync_callback(partial(self.scalar_pv_callback, variable), self.event_loop))
                 # disable monitor deadband: make sure monitor is posted even if value doesn't change
                 PV(variable.name + ".MDEL").put(-1)
                 logging.info(f"Monitoring {variable.name} over Channel Access")
@@ -490,8 +512,25 @@ class DataUploader:
             # Add a counter attribute to the Variable instance
             variable.counter = 0
 
+    async def subscribe_to_fetch_trigger_pv(self) -> None:
+        """ subscribe to a trigger PV
 
-    def check_burst_status_enum(self) -> None:
+        Its callback fetches values from PVs that are not monitored but should 
+        be saved
+        """
+        self.fetch_trigger_variable = Variable(name=PV_NAMES['fetch_trigger_pv'])
+
+        try:
+            self.subscriptions[self.fetch_trigger_variable.name] = pva.monitor(self.fetch_trigger_variable.name, self.fetch_trigger_pv_monitor_callback)
+            self.fetch_trigger_variable.counter = 0
+            # camonitor(self.fetch_trigger_variable.name, callback=self.fetch_trigger_pv_monitor_callback)
+            logging.info(f"Monitoring {self.fetch_trigger_variable.name} over PVAccess")
+
+        except Exception as err:
+            logging.error(f"Failed to monitor {self.fetch_trigger_variable.name} over PVAccess: {err}")
+
+
+    async def check_burst_status_enum(self) -> None:
         """
         """
         mbbo_string_field_names = ['ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST', 'TVST', 'TTST', 'FTST', 'FFST']
@@ -507,7 +546,7 @@ class DataUploader:
                           f"\t{PV_NAMES['burst_status']} = {status_pv_strings}"
                          )
 
-    def subscribe_to_image_pvs(self) -> None:
+    async def subscribe_to_image_pvs(self) -> None:
         """ Add pvAccess monitors for image devices
         """
         for image_device in self.image_devices:
@@ -518,7 +557,7 @@ class DataUploader:
             # Add a counter attribute to the ImageDevice instance
             image_device.counter = 0
 
-    def subscribe_to_burst_pvs(self) -> None:
+    async def subscribe_to_burst_pvs(self) -> None:
         """
         """
 
@@ -537,7 +576,7 @@ class DataUploader:
                 ('burst_timestamp', []),
             ]:
 
-            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=callbacks, )
+            self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], callback=[make_sync_callback(cb, self.event_loop) for cb in callbacks])
             logging.info(f"Montitoring {PV_NAMES[pv_alias]} over Channel Access.")
 
         # PV connections without monitoring
@@ -548,22 +587,16 @@ class DataUploader:
                         ]:
             self.burst_pvs[pv_alias] = PV(PV_NAMES[pv_alias], auto_monitor=False)
 
-    def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
-        """_summary_
+    async def subscribe_to_last_analyzed_shot_id_pvs(self) -> None:
+        """ Monitor PVs that update when image analysis is complete on some instrument
         """
-        for image_device in self.image_devices:
-
-            if image_device.name not in LAST_ANALYZED_SHOT_ID_PV_NAMES:
-                continue
-
-            image_device.last_analyzed_shot_id_pv_name = LAST_ANALYZED_SHOT_ID_PV_NAMES[image_device.name]
-
-            image_device.last_analyzed_shot_id_pv = \
-                PV(image_device.last_analyzed_shot_id_pv_name + '.$', callback=partial(self.image_analysis_complete_callback, image_device))
-            logging.info(f"Monitoring {image_device.last_analyzed_shot_id_pv_name} over Channel Access")
+        for instrument_name, last_analyzed_shot_id_pv_name in LAST_ANALYZED_SHOT_ID_PV_NAMES.items():
+            self.last_analyzed_shot_id_pvs[instrument_name] = \
+                PV(last_analyzed_shot_id_pv_name + '.$', callback=make_sync_callback(partial(self.image_analysis_complete_callback, instrument_name), self.event_loop))
+            logging.info(f"Monitoring {last_analyzed_shot_id_pv_name} for instrument {instrument_name} over Channel Access")
 
 
-    def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
+    async def fetch_trigger_pv_monitor_callback(self, value: NTBase) -> None:
         """
         """
         if not self.enable_callbacks:
@@ -580,7 +613,7 @@ class DataUploader:
 
             # create shot if it doesn't exist
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
 
             # then grab it from directory
             shot = self.burst.shot_directory[shot_seq]
@@ -593,7 +626,7 @@ class DataUploader:
                     logging.warning(f"No value for {variable.name}. Possibly it went offline.")
                     self.burst.scalars_saved_tracker.update(variable, shot, ScalarSaveStatus.Error)
                     continue
-                self.scalar_save_queue.put(Measurement(variable=variable, shot=shot, value=float(value)))
+                await self.scalar_saver.enqueue(Measurement(variable=variable, shot=shot, value=float(value)))
 
         except Exception as err:
             logging.error(f"Error fetching variables: {err}")
@@ -602,7 +635,7 @@ class DataUploader:
             self.fetch_trigger_variable.counter += 1
 
 
-    def burst_status_monitor_callback(self, value: int, **kwargs) -> None:
+    async def burst_status_monitor_callback(self, value: int, **kwargs) -> None:
         """ Callback when status PV changes
 
         camonitor's callback arguments are keyword arguments including pvname, 
@@ -618,7 +651,7 @@ class DataUploader:
 
         if self.burst_status == BurstStatus.Preparing:
             assert previous_status != BurstStatus.Preparing
-            self.prepare_burst()
+            await self.prepare_burst()
 
         # when burst ends, spit out variable counts
         if previous_status == BurstStatus.Running and self.burst_status == BurstStatus.Idle:
@@ -629,11 +662,11 @@ class DataUploader:
             for image_device in self.image_devices:
                 logging.info(f"Handled {image_device.counter:d} updates of image device {image_device.name} during burst.")
 
-    def prepare_burst(self) -> None:
+    async def prepare_burst(self) -> None:
         """ 
         """
         try:
-            pva.put("TakeNShots:BurstInDB", 0)
+            await pva.put("TakeNShots:BurstInDB", 0)
 
             self.burst = Burst(timestamp=self.datetime_from_pv_string(self.burst_pvs['burst_timestamp'].get()),
                                scan=self.scan, 
@@ -644,9 +677,8 @@ class DataUploader:
 
             logging.info(f"New Burst {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}, number {self.burst.seq:d}, with frequency = {self.burst.repetition_rate:.3f} Hz and NumShots = {self.burst.number_of_shots:d}")
 
-            with SQLAlchemySession() as sa_session:
+            async with sqlalchemy_session_factory.begin() as sa_session:
                 sa_session.add(self.burst)
-                sa_session.commit()
 
             self.reset_counters()
             self.scan.current_burst_seq += 1
@@ -666,13 +698,13 @@ class DataUploader:
             self.burst.scalars_saved_tracker = ScalarsSavedTracker(variables_to_track)
 
             # Finally, notify system that scalar database is ready for this Burst
-            pva.put("TakeNShots:BurstInDB", 1)
+            await pva.put("TakeNShots:BurstInDB", 1)
 
         except Exception as err:
             logging.error(f"Unable to create burst: {err}")
 
 
-    def create_new_shot(self, shot_seq: ShotSeq):
+    async def create_new_shot(self, shot_seq: ShotSeq):
         """ Thread-safe creation of new Shot in Burst
 
         Using a lock is necessary because several callbacks - i.e. threads - 
@@ -684,7 +716,7 @@ class DataUploader:
         seq : ShotSeq
 
         """
-        with self.new_shot_lock:
+        async with self.new_shot_lock:
             if shot_seq in self.burst.shot_directory:
                 return
 
@@ -695,30 +727,31 @@ class DataUploader:
             )
 
 
-    def session_timestamp_monitor_callback(self, value: str, **kwargs):
-        self.session = Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value))
+    async def session_timestamp_monitor_callback(self, value: str, **kwargs):
+        async with sqlalchemy_session_factory.begin() as sa_session:
+            self.session = await sa_session.merge(Session(title=self.session.title, timestamp=self.datetime_from_pv_string(value)))
         logging.info(f"New session {self.session.timestamp} with title \"{self.session.title}\"")
 
-    def session_title_monitor_callback(self, value: str, **kwargs):
+    async def session_title_monitor_callback(self, value: str, **kwargs):
         self.session.title = value
         logging.info(f"Set session title to \"{self.session.title}\"")
 
 
-    def scan_timestamp_monitor_callback(self, value: str, **kwargs):
+    async def scan_timestamp_monitor_callback(self, value: str, **kwargs):
         self.scan = Scan(timestamp=self.datetime_from_pv_string(value), title=self.scan.title, seq=self.scan.seq, session=self.session)
         logging.info(f"New scan {self.scan.timestamp}, number {self.scan.seq} with title \"{self.scan.title}\"")
         self.scan.current_burst_seq = 1
 
-    def scan_number_monitor_callback(self, value: int, **kwargs):
+    async def scan_number_monitor_callback(self, value: int, **kwargs):
         self.scan.seq = value
         logging.info(f"Scan number set to \"{self.scan.seq}\"")
 
-    def scan_title_monitor_callback(self, value: NDArray, **kwargs):
+    async def scan_title_monitor_callback(self, value: NDArray, **kwargs):
         """ Decode byte array and set scan.title
 
         The scan title PV is of waveform type (to accommodate long strings), which 
         appears as an np.ndarray of dtype int representing ascii characters. 
-        
+
         """
         self.scan.title = ''.join(map(chr, value))
         logging.info(f"Scan title set to \"{self.scan.title}\"")
@@ -736,7 +769,7 @@ class DataUploader:
         logging.info("Counters reset.")
 
 
-    def image_pv_callback(self, image_device: ImageDevice, image_data: NTNDArray) -> None:
+    async def image_pv_callback(self, image_device: ImageDevice, image_data: NTNDArray) -> None:
         """ Upload tiff-formatted image data to image backend.
         """
 
@@ -747,14 +780,14 @@ class DataUploader:
             shot_seq = ShotSeq(image_device.counter + 1)
 
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
             # determine shot id
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
 
             # put image data in queue to be uploaded to image endpoint
-            self.image_collector.put(ImageUploadData(
+            await self.image_collector.put(ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
                 image = image_data,
@@ -769,7 +802,7 @@ class DataUploader:
             image_device.counter += 1
 
 
-    def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
+    async def scalar_pv_callback(self, variable: Variable, value: float, **kwargs) -> None:
         """ TODO
         """
         if not self.enable_callbacks:
@@ -780,10 +813,10 @@ class DataUploader:
 
             # create new Shot if this shot_seq is new
             if shot_seq not in self.burst.shot_directory:
-                self.create_new_shot(shot_seq)
+                await self.create_new_shot(shot_seq)
             shot = self.burst.shot_directory[shot_seq]
 
-            self.scalar_save_queue.put(Measurement(
+            await self.scalar_saver.enqueue(Measurement(
                 variable = variable,
                 shot = shot,
                 value = value,
@@ -802,13 +835,14 @@ class DataUploader:
             # increase shot counter
             variable.counter += 1
 
-    def image_analysis_complete_callback(self, device: ImageDevice, value: NDArray, **kwargs) -> None:
+    async def image_analysis_complete_callback(self, instrument_name: InstrumentName, value: NDArray, **kwargs) -> None:
         """ Callback for last_analyzed_shot_id PV 
-        
+
         Parameters
         ----------
-        value : str
-            Shot ID string             
+        instrument_name : InstrumentName
+        value : NDArray
+            A byte array representing the shot_id string             
         """
         if (not self.enable_callbacks) or (len(value) == 0):
             return
@@ -818,26 +852,37 @@ class DataUploader:
 
         # derive shot number from shot_id string
         burst_datetime, shot_datetime = parse_shot_id(shot_id_str)
+
+        # check if the burst of the completed image analysis is the current burst
+        # TODO: update past bursts' scalartrackers
+        if abs((burst_datetime - self.burst.timestamp).total_seconds()) > 1e-5:
+            logging.warning(f"Image analysis complete for {instrument_name} for a past burst ({burst_datetime:%Y-%m-%d %H:%M:%S.%f}; "
+                            f"current burst is {self.burst.timestamp:%Y-%m-%d %H:%M:%S.%f}). Tracking scalars across bursts not yet implemented, "
+                            f"so not updating scalars_saved_tracker for this shot."
+                           )
+            return
+
         shot_seq = ShotSeq((shot_datetime - burst_datetime).total_seconds() * self.burst.repetition_rate + 1)
 
         # create shot if it doesn't exist
         if shot_seq not in self.burst.shot_directory:
-            self.create_new_shot(shot_seq)
+            await self.create_new_shot(shot_seq)
 
         # then grab it from directory
         shot = self.burst.shot_directory[shot_seq]
 
         # make sure the shot timestamp matches the shot_id_str timestamp
         assert abs((shot.timestamp - shot_datetime).total_seconds()) < 1e-5, \
-            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for device {device.name}"
+            f"Shot timestamp in burst's shot directory for shot {shot_seq} ({shot.timestamp}) does not match shot_id_str timestamp {shot_id_str} for instrument {instrument_name}"
 
         # update scalars tracker for all image_backend variables associated with 
         # this device 
-        self.update_scalars_saved_queue.put(
+        await self.scalars_saved_status_updater.enqueue(
             [Measurement(variable=variable, shot=shot) 
              for variable in self.variables 
              if variable.source == VariableSource.image_backend 
-                 and variable.name.startswith(device.name)
+                 # TODO: more robust way to associate variables with instrument
+                 and variable.name.startswith(instrument_name)
             ]
         )
 
@@ -857,8 +902,8 @@ class DataUploader:
 
         """
         try:
-            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ").replace(tzinfo=UTC)
+            return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%fZ")
         except ValueError:
             logging.warning(f"Unable to parse datetime string {datetime_str}. Returning current time.")
-            return datetime.now(tz=UTC)
+            return datetime.now(tz=UTC).replace(tzinfo=None)
 

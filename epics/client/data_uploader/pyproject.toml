@@ -9,19 +9,24 @@ packages = [{include = "data_uploader"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 
+# Generally useful packages
+async-timeout = "^4.0.3"
+python-dotenv = "^1.0.1"
+
 # For EPICS pvAccess and Channel Access
 p4p = "^4.1.12"
 numpy = "<2.0"  # p4p isn't compatible with numpy 2.0 but doesn't specify that in its pyproject.toml
 nose2 = "^0.14.1"
 pyepics = { git = "https://github.com/pyepics/pyepics.git", rev = "0b33db782dde77d89ee847bee4e6fc314bc3c30b" }
 
-# For loading image devices and scalar variables
+# For interacting with the measurement db, and for classes such as Burst, Measurement, Variable
 measurement_db = { path = "../../../measurement_db", develop = true }
+sqlalchemy = { version = "^2.0.25", extras = ["asyncio"] }
+asyncpg = "^0.29.0"
 
 # For uploading to image backend
-requests = "^2.31.0"
+aiohttp = "^3.10.8"
 tifffile = "^2024.2.12"
-python-dotenv = "^1.0.1"
 imagecodecs = "^2024.6.1"
 
 [tool.poetry.group.dev.dependencies]
