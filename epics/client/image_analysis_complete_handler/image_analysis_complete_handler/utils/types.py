@@ -8,6 +8,7 @@ class ImageAnalysisCompleteData(TypedDict):
     num_images: int
     num_arrays: int
     num_scalars: int
+    worker_version: str
     errors: list[str]
 
 class ImageDeviceDirectoryEntry(NamedTuple):
