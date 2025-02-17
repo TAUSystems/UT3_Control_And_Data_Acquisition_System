@@ -1,0 +1,3 @@
+# dbd file that links DTYP="random" to devAiRnd
+include "base.dbd"
+device(ai,CONSTANT,devAiRnd,"random")
