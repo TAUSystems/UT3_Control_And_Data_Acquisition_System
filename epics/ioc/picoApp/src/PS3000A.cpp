@@ -592,32 +592,32 @@ asynStatus PS3000A::writeInt32(asynUser *pasynUser, epicsInt32 value) {
 	|| function == P_ch_enabled[0]
 	|| function == P_ch_range[0]) {
 	    set_channel(0);
-	    set_time_base();
+	    SetTimeBase();
 	    setup_trigger();
     }
     else if (function == P_ch_coupling[1]
 	|| function == P_ch_enabled[1]
 	|| function == P_ch_range[1]) {
 	    set_channel(1);
-	    set_time_base();
+	    SetTimeBase();
 	    setup_trigger();
     }
     else if (function == P_ch_coupling[2]
 	|| function == P_ch_enabled[2]
 	|| function == P_ch_range[2]) {
 	    set_channel(2);
-	    set_time_base();
+	    SetTimeBase();
 	    setup_trigger();
     }
     else if (function == P_ch_coupling[3]
 	|| function == P_ch_enabled[3]
 	|| function == P_ch_range[3]) {
 	    set_channel(3);
-	    set_time_base();
+	    SetTimeBase();
 	    setup_trigger();
     }
     else if (function == P_sample_frequency) {
-	    set_time_base();
+	    SetTimeBase();
     }
     else if (function == P_ch_direction[0]
 	  || function == P_ch_direction[1]
@@ -1352,7 +1352,7 @@ void PS3000A::setTimePerDiv() {
 	printf("nsPerDiv = %d\n", nsPerDiv);
 	printf("time_per_div = %f\n", time_per_div);
 
-	set_time_base();
+	SetTimeBase();
 	setup_trigger();
 };
 
