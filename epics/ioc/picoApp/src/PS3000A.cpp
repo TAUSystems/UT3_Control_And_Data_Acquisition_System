@@ -172,85 +172,85 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
     pTimeBase_ = (epicsFloat64 *)calloc(maxPoints, sizeof(epicsFloat64));
     eventId_ = epicsEventCreate(epicsEventEmpty);
 
-    createParam(P_RunString                   , asynParamInt32       , &P_Run                     );
-    createParam(P_MaxPointsString             , asynParamInt32       , &P_MaxPoints               );
-    createParam(P_TimePerDivString            , asynParamFloat64     , &P_TimePerDiv              );
-    createParam(P_FullTimeString              , asynParamFloat64     , &P_FullTime                );
-    createParam(P_TimePerDivSelectString      , asynParamInt32       , &P_TimePerDivSelect        );
-    createParam(P_VoltsPerDivStringA          , asynParamFloat64     , &P_VoltsPerDiv          [0]);
-    createParam(P_VoltsPerDivStringB          , asynParamFloat64     , &P_VoltsPerDiv          [1]);
-    createParam(P_VoltsPerDivStringC          , asynParamFloat64     , &P_VoltsPerDiv          [2]);
-    createParam(P_VoltsPerDivStringD          , asynParamFloat64     , &P_VoltsPerDiv          [3]);
-    createParam(P_VoltsPerDivSelectStringA    , asynParamInt32       , &P_VoltsPerDivSelect    [0]);
-    createParam(P_VoltsPerDivSelectStringB    , asynParamInt32       , &P_VoltsPerDivSelect    [1]);
-    createParam(P_VoltsPerDivSelectStringC    , asynParamInt32       , &P_VoltsPerDivSelect    [2]);
-    createParam(P_VoltsPerDivSelectStringD    , asynParamInt32       , &P_VoltsPerDivSelect    [3]);
-    createParam(P_VoltOffsetStringA           , asynParamFloat64     , &P_VoltOffset           [0]);
-    createParam(P_VoltOffsetStringB           , asynParamFloat64     , &P_VoltOffset           [1]);
-    createParam(P_VoltOffsetStringC           , asynParamFloat64     , &P_VoltOffset           [2]);
-    createParam(P_VoltOffsetStringD           , asynParamFloat64     , &P_VoltOffset           [3]);
-    createParam(P_TriggerDelayString          , asynParamFloat64     , &P_TriggerDelay            );
-    createParam(P_NoiseAmplitudeString        , asynParamFloat64     , &P_NoiseAmplitude          );
-    createParam(P_UpdateTimeString            , asynParamFloat64     , &P_UpdateTime              );
-    createParam(P_Waveform_StringA            , asynParamFloat64Array, &P_Waveform             [0]);
-    createParam(P_Waveform_StringB            , asynParamFloat64Array, &P_Waveform             [1]);
-    createParam(P_Waveform_StringC            , asynParamFloat64Array, &P_Waveform             [2]);
-    createParam(P_Waveform_StringD            , asynParamFloat64Array, &P_Waveform             [3]);
-    createParam(P_TimeBaseString              , asynParamFloat64Array, &P_TimeBase                );
-    createParam(P_MinValueString              , asynParamFloat64     , &P_MinValue                );
-    createParam(P_MaxValueString              , asynParamFloat64     , &P_MaxValue                );
-    createParam(P_MeanValueString             , asynParamFloat64     , &P_MeanValue               );
-    createParam(P_PicoStatusString            , asynParamInt32       , &P_PicoStatus              );
-    createParam(P_PicoConnectString           , asynParamInt32       , &P_PicoConnect             );
-    createParam(P_PicoConnectedString         , asynParamInt32       , &P_PicoConnected           );
-    createParam(P_max_samples_string          , asynParamInt32       , &P_max_samples             );
-    createParam(P_segment_index_string        , asynParamInt32       , &P_segment_index           );
-    createParam(P_downsampled_frequency_string, asynParamInt32       , &P_downsampled_frequency   );
-    createParam(P_sample_frequency_string     , asynParamInt32       , &P_sample_frequency        );
-    createParam(P_sample_length_string        , asynParamInt32       , &P_sample_length           );
-    createParam(P_time_interval_ns_string     , asynParamFloat64     , &P_time_interval_ns        );
-    createParam(P_down_sample_ratio_string    , asynParamInt32       , &P_down_sample_ratio       );
-    createParam(P_ch_A_coupling_string        , asynParamInt32       , &P_ch_coupling          [0]);
-    createParam(P_ch_A_enabled_string         , asynParamInt32       , &P_ch_enabled           [0]);
-    createParam(P_ch_A_offset_string          , asynParamFloat64     , &P_ch_offset            [0]);
-    createParam(P_ch_A_range_string           , asynParamInt32       , &P_ch_range             [0]);
-    createParam(P_ch_A_direction_string       , asynParamInt32       , &P_ch_direction         [0]);
-    createParam(P_ch_A_condition_string       , asynParamInt32       , &P_ch_condition         [0]);
-    createParam(P_ch_A_threshold_string       , asynParamFloat64     , &P_ch_threshold         [0]);
-    createParam(P_ch_A_overflow_string        , asynParamInt32       , &P_ch_overflow          [0]);
-    createParam(P_ch_B_coupling_string        , asynParamInt32       , &P_ch_coupling          [1]);
-    createParam(P_ch_B_enabled_string         , asynParamInt32       , &P_ch_enabled           [1]);
-    createParam(P_ch_B_offset_string          , asynParamFloat64     , &P_ch_offset            [1]);
-    createParam(P_ch_B_range_string           , asynParamInt32       , &P_ch_range             [1]);
-    createParam(P_ch_B_direction_string       , asynParamInt32       , &P_ch_direction         [1]);
-    createParam(P_ch_B_condition_string       , asynParamInt32       , &P_ch_condition         [1]);
-    createParam(P_ch_B_threshold_string       , asynParamFloat64     , &P_ch_threshold         [1]);
-    createParam(P_ch_B_overflow_string        , asynParamInt32       , &P_ch_overflow          [1]);
-    createParam(P_ch_C_coupling_string        , asynParamInt32       , &P_ch_coupling          [2]);
-    createParam(P_ch_C_enabled_string         , asynParamInt32       , &P_ch_enabled           [2]);
-    createParam(P_ch_C_offset_string          , asynParamFloat64     , &P_ch_offset            [2]);
-    createParam(P_ch_C_range_string           , asynParamInt32       , &P_ch_range             [2]);
-    createParam(P_ch_C_direction_string       , asynParamInt32       , &P_ch_direction         [2]);
-    createParam(P_ch_C_condition_string       , asynParamInt32       , &P_ch_condition         [2]);
-    createParam(P_ch_C_threshold_string       , asynParamFloat64     , &P_ch_threshold         [2]);
-    createParam(P_ch_C_overflow_string        , asynParamInt32       , &P_ch_overflow          [2]);
-    createParam(P_ch_D_coupling_string        , asynParamInt32       , &P_ch_coupling          [3]);
-    createParam(P_ch_D_enabled_string         , asynParamInt32       , &P_ch_enabled           [3]);
-    createParam(P_ch_D_offset_string          , asynParamFloat64     , &P_ch_offset            [3]);
-    createParam(P_ch_D_range_string           , asynParamInt32       , &P_ch_range             [3]);
-    createParam(P_ch_D_direction_string       , asynParamInt32       , &P_ch_direction         [3]);
-    createParam(P_ch_D_condition_string       , asynParamInt32       , &P_ch_condition         [3]);
-    createParam(P_ch_D_threshold_string       , asynParamFloat64     , &P_ch_threshold         [3]);
-    createParam(P_ch_D_overflow_string        , asynParamInt32       , &P_ch_overflow          [3]);
-    createParam(P_sig_offset_string           , asynParamInt32       , &P_sig_offset              );
-    createParam(P_sig_pktopk_string           , asynParamFloat64     , &P_sig_pktopk              );
-    createParam(P_sig_wavetype_string         , asynParamInt32       , &P_sig_wavetype            );
-    createParam(P_sig_frequency_string        , asynParamFloat64     , &P_sig_frequency           );
-    createParam(P_sig_trigger_source_string   , asynParamInt32       , &P_sig_trigger_source      );
-    createParam(P_time_base_lopr_string       , asynParamInt32       , &P_time_base_lopr          );
-    createParam(P_time_base_hopr_string       , asynParamInt32       , &P_time_base_hopr          );
-    createParam(P_time_base_nelm_string       , asynParamInt32       , &P_time_base_nelm          );
-    createParam(P_trigger_source_string       , asynParamInt32       , &P_trigger_source          );
+    createParam(P_RunString                   , asynParamInt32       , &P_Run                     ); // 0
+    createParam(P_MaxPointsString             , asynParamInt32       , &P_MaxPoints               ); // 1
+    createParam(P_TimePerDivString            , asynParamFloat64     , &P_TimePerDiv              ); // 2
+    createParam(P_FullTimeString              , asynParamFloat64     , &P_FullTime                ); // 3
+    createParam(P_TimePerDivSelectString      , asynParamInt32       , &P_TimePerDivSelect        ); // 4
+    createParam(P_VoltsPerDivStringA          , asynParamFloat64     , &P_VoltsPerDiv          [0]); // 5
+    createParam(P_VoltsPerDivStringB          , asynParamFloat64     , &P_VoltsPerDiv          [1]); // 6
+    createParam(P_VoltsPerDivStringC          , asynParamFloat64     , &P_VoltsPerDiv          [2]); // 7
+    createParam(P_VoltsPerDivStringD          , asynParamFloat64     , &P_VoltsPerDiv          [3]); // 8
+    createParam(P_VoltsPerDivSelectStringA    , asynParamInt32       , &P_VoltsPerDivSelect    [0]); // 9
+    createParam(P_VoltsPerDivSelectStringB    , asynParamInt32       , &P_VoltsPerDivSelect    [1]); // 10
+    createParam(P_VoltsPerDivSelectStringC    , asynParamInt32       , &P_VoltsPerDivSelect    [2]); // 11
+    createParam(P_VoltsPerDivSelectStringD    , asynParamInt32       , &P_VoltsPerDivSelect    [3]); // 12
+    createParam(P_VoltOffsetStringA           , asynParamFloat64     , &P_VoltOffset           [0]); // 13
+    createParam(P_VoltOffsetStringB           , asynParamFloat64     , &P_VoltOffset           [1]); // 14
+    createParam(P_VoltOffsetStringC           , asynParamFloat64     , &P_VoltOffset           [2]); // 15
+    createParam(P_VoltOffsetStringD           , asynParamFloat64     , &P_VoltOffset           [3]); // 16
+    createParam(P_TriggerDelayString          , asynParamFloat64     , &P_TriggerDelay            ); // 17
+    createParam(P_NoiseAmplitudeString        , asynParamFloat64     , &P_NoiseAmplitude          ); // 18
+    createParam(P_UpdateTimeString            , asynParamFloat64     , &P_UpdateTime              ); // 19
+    createParam(P_Waveform_StringA            , asynParamFloat64Array, &P_Waveform             [0]); // 20
+    createParam(P_Waveform_StringB            , asynParamFloat64Array, &P_Waveform             [1]); // 21
+    createParam(P_Waveform_StringC            , asynParamFloat64Array, &P_Waveform             [2]); // 22
+    createParam(P_Waveform_StringD            , asynParamFloat64Array, &P_Waveform             [3]); // 23
+    createParam(P_TimeBaseString              , asynParamFloat64Array, &P_TimeBase                ); // 24
+    createParam(P_MinValueString              , asynParamFloat64     , &P_MinValue                ); // 25
+    createParam(P_MaxValueString              , asynParamFloat64     , &P_MaxValue                ); // 26
+    createParam(P_MeanValueString             , asynParamFloat64     , &P_MeanValue               ); // 27
+    createParam(P_PicoStatusString            , asynParamInt32       , &P_PicoStatus              ); // 28
+    createParam(P_PicoConnectString           , asynParamInt32       , &P_PicoConnect             ); // 29
+    createParam(P_PicoConnectedString         , asynParamInt32       , &P_PicoConnected           ); // 30
+    createParam(P_max_samples_string          , asynParamInt32       , &P_max_samples             ); // 31
+    createParam(P_segment_index_string        , asynParamInt32       , &P_segment_index           ); // 32
+    createParam(P_downsampled_frequency_string, asynParamInt32       , &P_downsampled_frequency   ); // 33
+    createParam(P_sample_frequency_string     , asynParamInt32       , &P_sample_frequency        ); // 34
+    createParam(P_sample_length_string        , asynParamInt32       , &P_sample_length           ); // 35
+    createParam(P_time_interval_ns_string     , asynParamFloat64     , &P_time_interval_ns        ); // 36
+    createParam(P_down_sample_ratio_string    , asynParamInt32       , &P_down_sample_ratio       ); // 37
+    createParam(P_ch_A_coupling_string        , asynParamInt32       , &P_ch_coupling          [0]); // 38
+    createParam(P_ch_A_enabled_string         , asynParamInt32       , &P_ch_enabled           [0]); // 39
+    createParam(P_ch_A_offset_string          , asynParamFloat64     , &P_ch_offset            [0]); // 40
+    createParam(P_ch_A_range_string           , asynParamInt32       , &P_ch_range             [0]); // 41
+    createParam(P_ch_A_direction_string       , asynParamInt32       , &P_ch_direction         [0]); // 42
+    createParam(P_ch_A_condition_string       , asynParamInt32       , &P_ch_condition         [0]); // 43
+    createParam(P_ch_A_threshold_string       , asynParamFloat64     , &P_ch_threshold         [0]); // 44
+    createParam(P_ch_A_overflow_string        , asynParamInt32       , &P_ch_overflow          [0]); // 45
+    createParam(P_ch_B_coupling_string        , asynParamInt32       , &P_ch_coupling          [1]); // 46
+    createParam(P_ch_B_enabled_string         , asynParamInt32       , &P_ch_enabled           [1]); // 47
+    createParam(P_ch_B_offset_string          , asynParamFloat64     , &P_ch_offset            [1]); // 48
+    createParam(P_ch_B_range_string           , asynParamInt32       , &P_ch_range             [1]); // 49
+    createParam(P_ch_B_direction_string       , asynParamInt32       , &P_ch_direction         [1]); // 50
+    createParam(P_ch_B_condition_string       , asynParamInt32       , &P_ch_condition         [1]); // 51
+    createParam(P_ch_B_threshold_string       , asynParamFloat64     , &P_ch_threshold         [1]); // 52
+    createParam(P_ch_B_overflow_string        , asynParamInt32       , &P_ch_overflow          [1]); // 53
+    createParam(P_ch_C_coupling_string        , asynParamInt32       , &P_ch_coupling          [2]); // 54
+    createParam(P_ch_C_enabled_string         , asynParamInt32       , &P_ch_enabled           [2]); // 55
+    createParam(P_ch_C_offset_string          , asynParamFloat64     , &P_ch_offset            [2]); // 56   	
+    createParam(P_ch_C_range_string           , asynParamInt32       , &P_ch_range             [2]); // 57
+    createParam(P_ch_C_direction_string       , asynParamInt32       , &P_ch_direction         [2]); // 58
+    createParam(P_ch_C_condition_string       , asynParamInt32       , &P_ch_condition         [2]); // 59
+    createParam(P_ch_C_threshold_string       , asynParamFloat64     , &P_ch_threshold         [2]); // 60  
+    createParam(P_ch_C_overflow_string        , asynParamInt32       , &P_ch_overflow          [2]); // 61
+    createParam(P_ch_D_coupling_string        , asynParamInt32       , &P_ch_coupling          [3]); // 62
+    createParam(P_ch_D_enabled_string         , asynParamInt32       , &P_ch_enabled           [3]); // 63
+    createParam(P_ch_D_offset_string          , asynParamFloat64     , &P_ch_offset            [3]); // 64
+    createParam(P_ch_D_range_string           , asynParamInt32       , &P_ch_range             [3]); // 65
+    createParam(P_ch_D_direction_string       , asynParamInt32       , &P_ch_direction         [3]); // 66
+    createParam(P_ch_D_condition_string       , asynParamInt32       , &P_ch_condition         [3]); // 67  
+    createParam(P_ch_D_threshold_string       , asynParamFloat64     , &P_ch_threshold         [3]); // 68
+    createParam(P_ch_D_overflow_string        , asynParamInt32       , &P_ch_overflow          [3]); // 69
+    createParam(P_sig_offset_string           , asynParamInt32       , &P_sig_offset              ); // 70
+    createParam(P_sig_pktopk_string           , asynParamFloat64     , &P_sig_pktopk              ); // 71
+    createParam(P_sig_wavetype_string         , asynParamInt32       , &P_sig_wavetype            ); // 72
+    createParam(P_sig_frequency_string        , asynParamFloat64     , &P_sig_frequency           ); // 73
+    createParam(P_sig_trigger_source_string   , asynParamInt32       , &P_sig_trigger_source      ); // 74
+    createParam(P_time_base_lopr_string       , asynParamInt32       , &P_time_base_lopr          ); // 75
+    createParam(P_time_base_hopr_string       , asynParamInt32       , &P_time_base_hopr          ); // 76
+    createParam(P_time_base_nelm_string       , asynParamInt32       , &P_time_base_nelm          ); // 77
+    createParam(P_trigger_source_string       , asynParamInt32       , &P_trigger_source          ); // 78
 
     /* init volts per div values */
     for (i = 0; i < NUM_VERT_SELECTIONS; i++) {
