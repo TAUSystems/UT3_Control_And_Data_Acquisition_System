@@ -1,5 +1,5 @@
 /* 
-** Device support for PicoScope 3000 Series is written based on 
+** Device Driver for PicoScope 3000 Series is written based on 
 ** the example of "testAsynPortDriver" from asyn module,
 ** the C/C++ example of "ps3000a" from Pico Technology
 ** (https://github.com/picotech/picosdk-c-examples/tree/master/ps3000a),
@@ -13,7 +13,6 @@
 #include "asynPortDriver.h"
 
 #define NUM_VERT_SELECTIONS 12
-
 
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
@@ -117,6 +116,8 @@ struct BlockInfo {
 	int16_t ready;
 };
 
+/* This struct represents the PicoScope 3000A module. 
+*/
 struct PS3000AModule {
 	int16_t  handle;
 	struct   PS3000AConfig config;
@@ -134,17 +135,17 @@ class PS3000A : public asynPortDriver {
 public:
     PS3000A(const char *portName, int maxArraySize);
                  
-    /* These are the methods that we override from asynPortDriver */
+    /* When users send caPut() or caGet() requests, the following methods are called in the backend. */
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus writeFloat64(asynUser *pasynUser, epicsFloat64 value);
     virtual asynStatus readFloat64Array(asynUser *pasynUser, epicsFloat64 *value, size_t nElements, size_t *nIn);
     virtual asynStatus readEnum(asynUser *pasynUser, char *strings[], int values[], int severities[], size_t nElements, size_t *nIn);
 
     /* These are the methods that are new to this class */
-    void run_task(void);
+    void RunTask(void);
 
 protected:
-    /** Values used for pasynUser->reason, and indexes into the parameter library. */
+    /** These P_XXX int variables are indexes in the parameter library. Values used for pasynUser->reason. */
     int P_Run = 0;
     int P_MaxPoints = 0;
     int P_FullTime = 0;
@@ -169,7 +170,6 @@ protected:
     int P_PicoConnect = 0;
     int P_PicoConnected = 0;
 
-    /* Pico 3000a scope parameters */
     int P_max_samples = 0;
     int P_segment_index = 0;
     int P_downsampled_frequency = 0;
@@ -187,7 +187,6 @@ protected:
     int P_ch_condition[4] = {0};
     int P_ch_direction[4] = {0};
 
-    /* Standard signal generator */
     int P_sig_offset = 0;
     int P_sig_pktopk = 0;
     int P_sig_wavetype = 0;
@@ -197,31 +196,33 @@ protected:
     int P_trigger_source = 0; 
  
 private:
-    /* Our data */
     epicsEventId eventId_;
     epicsFloat64 *pData_[4];
     epicsFloat64 *pTimeBase_;
-    // Actual volts per division are these values divided by vertical gain
+
+    /* Actual volts per division are these values divided by vertical gain.
+    ** We are not using any active probes, so vertical gain is ALWAYS 1.
+    */
     char *voltsPerDivStrings_[NUM_VERT_SELECTIONS];
     int voltsPerDivValues_[NUM_VERT_SELECTIONS];
     int voltsPerDivSeverities_[NUM_VERT_SELECTIONS];
-    void setVoltsPerDiv(int);
-    void setTimePerDiv();
+    void SetVoltsPerDiv(int);
+    void SetTimePerDiv();
 
     void ConnectPicoScope(void);
     int ClosePS3000A(void);
     int SetTimeBase(void);
-    void set_time_base_array(void);
-    int set_channel(int);
-    int setup_trigger(void);
-    int set_trigger(int);
-    int set_trigger_directions(void);
-    int set_trigger_conditions(void);
-    int set_signal_generator(void);
-    int set_data_buffer(void);
-    int set_trigger_source();
-    int set_sig_trigger_source();
-    int pico_run_block(void);
+    void SetTimeBaseArray(void);
+    int SetChannel(int);
+    int SetupTrigger(void);
+    int SetTrigger(int);
+    int SetTriggerDirections(void);
+    int SetTriggerConditions(void);
+    int SetSignalGenerator(void);
+    int SetDataBuffer(void);
+    int SetTriggerSource();
+    int SetSigTriggerSource();
+    int PicoRunBlock(void);
     int OpenPS3000A(void);
     void PrintUnitInfo(void);
 

@@ -309,6 +309,8 @@ record(mbbo, "$(P)$(R)TriggerSource")
 	field(TWVL, "2")
 	field(THST, "Channel D")
 	field(THVL, "3")
+   field(FRST, "External")
+	field(FRVL, "4")
 }
 
 record(mbbi, "$(P)$(R)TriggerSource_RBV")
@@ -324,6 +326,8 @@ record(mbbi, "$(P)$(R)TriggerSource_RBV")
 	field(TWVL, "2")
 	field(THST, "Channel D")
 	field(THVL, "3")
+   field(FRST, "External")
+	field(FRVL, "4")
 	field(SCAN, "I/O Intr")
 }
 
