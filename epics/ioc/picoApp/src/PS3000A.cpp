@@ -19,6 +19,7 @@
 #define NUM_DIVISIONS 10     /* Number of scope divisions in X and Y */
 #define MIN_UPDATE_TIME 0.02 /* Minimum update time, to prevent CPU saturation */
 #define PS3000A_FREQUENCY 1000000000
+#define N_CH_ACTIVE 2
 
 #define MAX_ENUM_STRING_SIZE 20
 static int AllMilliVoltsPerDivSelections[NUM_VERT_SELECTIONS]={5,10,20,50,100,200,500,1000,2000,5000,10000,20000};
@@ -251,6 +252,9 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
     createParam(P_time_base_hopr_string       , asynParamInt32       , &P_time_base_hopr          ); // 76
     createParam(P_time_base_nelm_string       , asynParamInt32       , &P_time_base_nelm          ); // 77
     createParam(P_trigger_source_string       , asynParamInt32       , &P_trigger_source          ); // 78
+	createParam(P_ch_Ext_threshold_string     , asynParamFloat64     , &P_ch_Ext_threshold        ); // 79
+	createParam(P_ch_Ext_condition_string     , asynParamInt32       , &P_ch_Ext_condition        ); // 80
+	createParam(P_ch_Ext_direction_string     , asynParamInt32       , &P_ch_Ext_direction        ); // 81
 
     /* init volts per div values */
     for (i = 0; i < NUM_VERT_SELECTIONS; i++) {
@@ -272,7 +276,7 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
 	*/
     ps.max_value = 32512;
 
-    for (ch = 2; ch < 4; ++ch) {
+    for (ch = 0; ch < 4; ++ch) {
 	    setDoubleParam (P_VoltsPerDiv[ch],       1.0);
 	    setIntegerParam(P_VoltsPerDivSelect[ch], 100);
 	    setDoubleParam (P_VoltOffset[ch],        0.0);
@@ -283,41 +287,23 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
 	    ps.config.ch[ch].range = PS3000A_500MV;
 	    ps.config.ch[ch].range_v = input_ranges[ps.config.ch[ch].range];
 	    setDoubleParam (P_ch_threshold[ch],	mv_to_adc(-10, ch));
-	    setIntegerParam(P_ch_condition[ch],	PS3000A_CONDITION_DONT_CARE);
-	    setIntegerParam(P_ch_direction[ch],	PS3000A_FALLING);
+	    setIntegerParam(P_ch_condition[ch],	(int) PS3000A_CONDITION_DONT_CARE);
+	    setIntegerParam(P_ch_direction[ch],	PS3000A_NONE); /* No trigger set, same as PS3000A_RISING */
     }
 
-    /* Enable and setup channel A:
-	** Channel A records the current monitoring from PS300 Power Supply Module.
-	*/
-	setDoubleParam (P_VoltsPerDiv[0],       1.0);
-	setIntegerParam(P_VoltsPerDivSelect[0], 100);
-	setDoubleParam (P_VoltOffset[0],        0.0);
-	setIntegerParam(P_ch_coupling[0],	PS3000A_DC);
+    /* Channel A records the current monitoring from PS300 Power Supply Module. */
 	setIntegerParam(P_ch_enabled[0],	1);
-	setDoubleParam (P_ch_offset[0],	0);
 	setIntegerParam(P_ch_range[0],	PS3000A_10V);
 	ps.config.ch[0].range = PS3000A_10V;
 	ps.config.ch[0].range_v = input_ranges[ps.config.ch[0].range];
-	setDoubleParam (P_ch_threshold[0],	mv_to_adc(-10, 0));
-	setIntegerParam(P_ch_condition[0],	PS3000A_CONDITION_DONT_CARE);
-	setIntegerParam(P_ch_direction[0],	PS3000A_FALLING);
+	setDoubleParam (P_ch_threshold[0], mv_to_adc(-10, 0));
 
-	/* Enable and setup channel B:
-	** Channel B records signal from the ICT, tee-ed and terminated with 50 Ohm.
-	*/
-	setDoubleParam (P_VoltsPerDiv[1],       1.0);
-	setIntegerParam(P_VoltsPerDivSelect[1], 100);
-	setDoubleParam (P_VoltOffset[1],        0.0);
-	setIntegerParam(P_ch_coupling[1],	PS3000A_DC);
+	/* Channel B records signal from the ICT, tee-ed and terminated with 50 Ohm. */
 	setIntegerParam(P_ch_enabled[1],	1);
-	setDoubleParam (P_ch_offset[1],	0);
 	setIntegerParam(P_ch_range[1],	PS3000A_50MV);
 	ps.config.ch[1].range = PS3000A_50MV;
 	ps.config.ch[1].range_v = input_ranges[ps.config.ch[1].range];
-	setDoubleParam (P_ch_threshold[1],	mv_to_adc(-10, 1));
-	setIntegerParam(P_ch_condition[1],	PS3000A_CONDITION_DONT_CARE);
-	setIntegerParam(P_ch_direction[1],	PS3000A_FALLING);
+	setDoubleParam (P_ch_threshold[1], mv_to_adc(-10, 1));
 
 	/* Set timebase and trigger source */
     setIntegerParam(P_down_sample_ratio, 1);					 /* No down sampling */
@@ -342,6 +328,9 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
     setDoubleParam (P_time_interval_ns,	2.0);					/* Sampling interval in nanoseconds */
 
     setIntegerParam(P_trigger_source,	PS3000A_EXTERNAL);      /* Trigger Source on External Input */
+	setDoubleParam (P_ch_Ext_threshold,	1500.0);                /* Trigger at 1.5V */
+	setIntegerParam(P_ch_Ext_direction,	PS3000A_RISING);        /* Trigger on rising edge */
+	setIntegerParam(P_ch_Ext_condition,	PS3000A_CONDITION_TRUE);
 
     setIntegerParam(P_sig_offset,	0);
     setDoubleParam (P_sig_pktopk,	1.0); /* Volt */
@@ -355,7 +344,6 @@ asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Inter
         printf("%s:%s: epicsThreadCreate failure\n", driverName, functionName);
         return;
     }
-
 }
 
 void PS3000A::SetTimeBaseArray() {
@@ -447,7 +435,7 @@ int PS3000A::PicoRunBlock() {
 	block_info.ready = 0;
 	void *p_parameter = (void *)&block_info;
 	int cnt = 0;
-	const int trigger_timeout = 1000; /* ms */
+	const int trigger_timeout = 0; /* ms */
 	PS3000A_RATIO_MODE down_sample_ratio_mode = PS3000A_RATIO_MODE_NONE;
 	uint32_t n_samples = sample_length;
 	uint32_t start_index = 0;
@@ -575,6 +563,8 @@ asynStatus PS3000A::writeInt32(asynUser *pasynUser, epicsInt32 value) {
 	    SetupTrigger();
     } else if (function == P_ch_condition[0] || function == P_ch_condition[1] || function == P_ch_condition[2] || function == P_ch_condition[3]) {
 	    SetupTrigger();
+    } else if (function == P_ch_Ext_condition || function == P_ch_Ext_direction) {
+	    SetupTrigger();
     } else if (function == P_sig_offset || function == P_sig_wavetype || function == P_sig_trigger_source) {
 	    SetSignalGenerator();
     } else {
@@ -618,14 +608,16 @@ asynStatus PS3000A::writeFloat64(asynUser *pasynUser, epicsFloat64 value) {
         /* If the update time has changed and we are running then wake up the simulation task */
         getIntegerParam(P_Run, &run);
         if (run) epicsEventSignal(eventId_);
-    } else if (function == P_ch_threshold[0]) {
-	    SetTrigger(0);
-    } else if (function == P_ch_threshold[1]) {
-	    SetTrigger(1);
-    } else if (function == P_ch_threshold[2]) {
-	    SetTrigger(2);
-    } else if (function == P_ch_threshold[3]) {
-	    SetTrigger(3);
+    } else if (function == P_ch_threshold[PS3000A_CHANNEL_A]) {
+	    SetTrigger(PS3000A_CHANNEL_A);
+    } else if (function == P_ch_threshold[PS3000A_CHANNEL_B]) {
+	    SetTrigger(PS3000A_CHANNEL_B);
+    } else if (function == P_ch_threshold[PS3000A_CHANNEL_C]) {
+	    SetTrigger(PS3000A_CHANNEL_C);
+    } else if (function == P_ch_threshold[PS3000A_CHANNEL_D]) {
+	    SetTrigger(PS3000A_CHANNEL_D);
+    } else if (function == P_ch_Ext_threshold) {
+	    SetTrigger(PS3000A_EXTERNAL);
     } else if (function == P_sig_frequency || function == P_sig_pktopk) {
 	    SetSignalGenerator();
     } else {
@@ -801,29 +793,28 @@ int32_t PS3000A::adc_to_uv(int32_t adc, int ch) {
 }
 
 int16_t PS3000A::mv_to_adc(int16_t mv, int ch) {
-	return (mv * ps.max_value) / ps.config.ch[ch].range_v;
+	if (ch != PS3000A_EXTERNAL) {
+		return (mv * ps.max_value) / ps.config.ch[ch].range_v;
+	} else {
+		// External trigger input is scaled to a full 16-bit range: [-32767, 32767].
+		return (mv * 32767) / 5000;
+	}
 }
 
 int PS3000A::SetTrigger(int ch) {
 	PICO_STATUS ok;
-
-	PS3000A_TRIGGER_CHANNEL_PROPERTIES channelProperties[4];
+	PS3000A_TRIGGER_CHANNEL_PROPERTIES channelProperties[1];
 	int16_t nChannelProperties = 1;
-
-	int32_t autoTriggerMilliseconds = 30000;
-
+	int32_t autoTriggerMilliseconds = 0;
 	epicsFloat64 ch_thr;
 	epicsInt32 connected;
 	epicsInt32 enabled;
 	epicsInt32 source;
-
 	getIntegerParam(P_PicoConnected, &connected);
-	getIntegerParam(P_ch_enabled[ch], &enabled);
 	getIntegerParam(P_trigger_source, &source);
 	getDoubleParam(P_ch_threshold[ch], &ch_thr);
-
 	int16_t thr = mv_to_adc(ch_thr, ch);
-
+	ch != PS3000A_EXTERNAL ? getIntegerParam(P_ch_enabled[ch], &enabled) : enabled = 1;
 	channelProperties[0].thresholdUpper = thr;
 	channelProperties[0].thresholdUpperHysteresis = 2 * 256;
 	channelProperties[0].thresholdLower = thr;
@@ -848,15 +839,29 @@ int PS3000A::SetSigTriggerSource() {
 	epicsInt32 source;
 	getIntegerParam(P_trigger_source, &source);
 
-	for (ch = 0; ch < 4; ++ch) {
-		PS3000A_TRIGGER_STATE cond;
-		if (ch == source) {
-			cond = PS3000A_CONDITION_TRUE;
-		} else {
-			cond = PS3000A_CONDITION_DONT_CARE;
+	// If trigger on external trigger input
+	if (source == PS3000A_EXTERNAL) {
+		setIntegerParam(P_ch_Ext_condition, PS3000A_CONDITION_TRUE);
+		// If trigger on input channels
+		for (ch = 0; ch < 4; ++ch) {
+			PS3000A_TRIGGER_STATE cond = PS3000A_CONDITION_DONT_CARE;
+			setIntegerParam(P_ch_condition[ch], (int) cond);
 		}
-		setIntegerParam(P_ch_condition[ch], cond);
+	} else {
+		setIntegerParam(P_ch_Ext_condition, PS3000A_CONDITION_DONT_CARE);
+		// If trigger on input channels
+		for (ch = 0; ch < 4; ++ch) {
+			PS3000A_TRIGGER_STATE cond;
+			if (ch == source) {
+				cond = PS3000A_CONDITION_TRUE;
+			} else {
+				cond = PS3000A_CONDITION_DONT_CARE;
+			}
+			setIntegerParam(P_ch_condition[ch], (int) cond);
+		}
 	}
+
+	return SetupTrigger();
 	return SetupTrigger();
 }
 
@@ -865,15 +870,28 @@ int PS3000A::SetTriggerSource() {
 	epicsInt32 source;
 	getIntegerParam(P_trigger_source, &source);
 
-	for (ch = 0; ch < 4; ++ch) {
-		PS3000A_TRIGGER_STATE cond;
-		if (ch == source) {
-			cond = PS3000A_CONDITION_TRUE;
-		} else {
-			cond = PS3000A_CONDITION_DONT_CARE;
+	// If trigger on external trigger input
+	if (source == PS3000A_EXTERNAL) {
+		setIntegerParam(P_ch_Ext_condition, PS3000A_CONDITION_TRUE);
+		// If trigger on input channels
+		for (ch = 0; ch < 4; ++ch) {
+			PS3000A_TRIGGER_STATE cond = PS3000A_CONDITION_DONT_CARE;
+			setIntegerParam(P_ch_condition[ch], (int) cond);
 		}
-		setIntegerParam(P_ch_condition[ch], cond);
+	} else {
+		setIntegerParam(P_ch_Ext_condition, PS3000A_CONDITION_DONT_CARE);
+		// If trigger on input channels
+		for (ch = 0; ch < 4; ++ch) {
+			PS3000A_TRIGGER_STATE cond;
+			if (ch == source) {
+				cond = PS3000A_CONDITION_TRUE;
+			} else {
+				cond = PS3000A_CONDITION_DONT_CARE;
+			}
+			setIntegerParam(P_ch_condition[ch], (int) cond);
+		}
 	}
+
 	return SetupTrigger();
 }
 
@@ -885,18 +903,17 @@ int PS3000A::SetTriggerConditions() {
 	int ch;
 	epicsInt32 connected;
 
-
 	epicsInt32 ch_cond[4];
-	for (ch = 0; ch < 4; ++ch) {
-		getIntegerParam(P_ch_condition[ch], &ch_cond[ch]);
-	}
+	for (ch = 0; ch < 4; ++ch) getIntegerParam(P_ch_condition[ch], &ch_cond[ch]);
+	epicsInt32 ext_cond;
+	getIntegerParam(P_ch_Ext_condition, &ext_cond);
 	getIntegerParam(P_PicoConnected, &connected);
 
 	conditions[0].channelA = (PS3000A_TRIGGER_STATE)ch_cond[0];
 	conditions[0].channelB = (PS3000A_TRIGGER_STATE)ch_cond[1];
 	conditions[0].channelC = (PS3000A_TRIGGER_STATE)ch_cond[2];
 	conditions[0].channelD = (PS3000A_TRIGGER_STATE)ch_cond[3];
-	conditions[0].external = PS3000A_CONDITION_DONT_CARE;
+	conditions[0].external = (PS3000A_TRIGGER_STATE)ext_cond;
 	conditions[0].aux = PS3000A_CONDITION_DONT_CARE;
 	conditions[0].pulseWidthQualifier = PS3000A_CONDITION_DONT_CARE;
 
@@ -923,7 +940,9 @@ int PS3000A::SetTriggerDirections() {
 		dir[ch] = (PS3000A_THRESHOLD_DIRECTION)direction;
 	}
 
-	PS3000A_THRESHOLD_DIRECTION ext = PS3000A_FALLING;
+	epicsInt32 direction;
+	getIntegerParam(P_ch_Ext_direction, &direction);
+	PS3000A_THRESHOLD_DIRECTION ext = (PS3000A_THRESHOLD_DIRECTION)direction;
 	PS3000A_THRESHOLD_DIRECTION aux = PS3000A_FALLING;
 
 	ok = ps3000aSetTriggerChannelDirections(ps.handle, dir[0], dir[1], dir[2], dir[3], ext, aux);
@@ -1124,7 +1143,7 @@ int PS3000A::SetDataBuffer() {
 	getIntegerParam(P_segment_index, &segment_index);
     getIntegerParam(P_MaxPoints, &max_points);
 
-	for (ch = 0; ch < 4; ++ch) {
+	for (ch = 0; ch < N_CH_ACTIVE; ++ch) {
 		ok = ps3000aSetDataBuffer(ps.handle, (PS3000A_CHANNEL) ch, data_buffer[ch], max_points, segment_index, mode);
 	}
 
@@ -1161,9 +1180,7 @@ void PS3000A::SetVoltsPerDiv(int ch) {
 int PS3000A::SetupTrigger() {
 	int ch;
 	int ok;
-	for (ch = 0; ch < 4; ch++) {
-		ok = SetTrigger(ch);
-	}
+	for (ch = 0; ch < 5; ch++) ok = SetTrigger(ch);
 	ok = SetTriggerDirections();
 	ok = SetTriggerConditions();
 	return ok;
@@ -1181,7 +1198,6 @@ void PS3000A::ConnectPicoScope() {
 		ClosePS3000A();
 		setIntegerParam(P_PicoConnected, 0);
 	} else if (connected == 0 && connect == 1) {
-		int ch;
 		printf("PICO Connecting...\n");
 		if(OpenPS3000A() != 0) return;
 		SetChannel(0);   // Channel A

@@ -48,10 +48,9 @@
 #define P_MaxValueString           "SCOPE_MAX_VALUE"              /* asynFloat64,  r/o */
 #define P_MeanValueString          "SCOPE_MEAN_VALUE"             /* asynFloat64,  r/o */
 
-#define P_PicoStatusString    "PICO_STATUS"
-#define P_PicoConnectString   "PICO_CONNECT"
-#define P_PicoConnectedString "PICO_CONNECTED"
-
+#define P_PicoStatusString             "PICO_STATUS"
+#define P_PicoConnectString            "PICO_CONNECT"
+#define P_PicoConnectedString          "PICO_CONNECTED"
 #define P_max_samples_string           "max_samples"
 #define P_time_interval_ns_string      "time_interval_ns"
 #define P_sample_length_string         "sample_length"
@@ -91,14 +90,15 @@
 #define P_ch_D_threshold_string        "ch_D_threshold"
 #define P_ch_D_condition_string        "ch_D_condition"
 #define P_ch_D_direction_string        "ch_D_direction"
-
-#define P_sig_offset_string         "sig_offset"
-#define P_sig_pktopk_string         "sig_pktopk"
-#define P_sig_wavetype_string       "sig_wavetype"
-#define P_sig_frequency_string      "sig_frequency"
-#define P_sig_trigger_source_string	"sig_trigger_source"
-
-#define P_trigger_source_string     "trigger_source"
+#define P_sig_offset_string            "sig_offset"
+#define P_sig_pktopk_string            "sig_pktopk"
+#define P_sig_wavetype_string          "sig_wavetype"
+#define P_sig_frequency_string         "sig_frequency"
+#define P_sig_trigger_source_string    "sig_trigger_source"
+#define P_trigger_source_string        "trigger_source"
+#define P_ch_Ext_threshold_string      "ch_Ext_threshold"
+#define P_ch_Ext_condition_string      "ch_Ext_condition"
+#define P_ch_Ext_direction_string      "ch_Ext_direction"
 
 #include <ps3000aApi.h>
 
@@ -129,7 +129,6 @@ struct PS3000AModule {
 	int32_t  max_points;
 	uint32_t max_down_sample_ratio;
 };
-
 
 class PS3000A : public asynPortDriver {
 public:
@@ -194,15 +193,16 @@ protected:
     int P_sig_trigger_source = 0; 
    
     int P_trigger_source = 0; 
+
+    int P_ch_Ext_threshold = 0;
+    int P_ch_Ext_condition = 0;
+    int P_ch_Ext_direction = 0;
  
 private:
     epicsEventId eventId_;
     epicsFloat64 *pData_[4];
     epicsFloat64 *pTimeBase_;
 
-    /* Actual volts per division are these values divided by vertical gain.
-    ** We are not using any active probes, so vertical gain is ALWAYS 1.
-    */
     char *voltsPerDivStrings_[NUM_VERT_SELECTIONS];
     int voltsPerDivValues_[NUM_VERT_SELECTIONS];
     int voltsPerDivSeverities_[NUM_VERT_SELECTIONS];
