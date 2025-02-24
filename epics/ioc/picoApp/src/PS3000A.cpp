@@ -475,7 +475,7 @@ int PS3000A::PicoRunBlock() {
 		ok = ps3000aGetTriggerTimeOffset64(ps.handle, &time, &time_units, segment_index);
 		CHKOK("GetTriggerTimeOffset");
 
-		for (ch = 0; ch < 4; ++ch) {
+		for (ch = 0; ch < N_CH_ACTIVE; ++ch) {
 			epicsInt32 enabled;
 			double offset = volt_offset[ch] + volts_per_div[ch] * NUM_DIVISIONS / 2;
 
@@ -493,8 +493,7 @@ int PS3000A::PicoRunBlock() {
 			setDoubleParam(P_MaxValue, max_value);
 			setDoubleParam(P_MeanValue, mean_value);
 			mean_value = mean_value / n_samples;
-        	doCallbacksFloat64Array(pData_[ch], max_points,
-			P_Waveform[ch], 0);
+        	doCallbacksFloat64Array(pData_[ch], max_points, P_Waveform[ch], 0);
 			setIntegerParam(P_ch_overflow[ch], (overflow >> ch) & 1);
 		}
 

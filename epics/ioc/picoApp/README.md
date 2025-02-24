@@ -35,19 +35,16 @@ ASYN=$(SUPPORT)/asyn-R4-44-2
 
 Most common used
 ```
-TEST:scope1:PicoConnect    -- 0 to disconnect, 1 to connect
-TEST:scope1:PicoConnected  -- check connection to PicoScope
-TEST:scope1:Enabled_A      -- 0 to disable, 1 to enable channel A
-TEST:scope1:Enabled_B      -- 0 to disable, 1 to enable channel A
-TEST:scope1:TriggerSource  -- set trigger source, 0 to channel A, 1 to channel B
-TEST:scope1:SampleLength   -- number of sampling points
-TEST:scope1:VoltOffset_A   -- voltage offset channel A, in mV
-TEST:scope1:VoltOffset_B   -- voltage offset channel A, in mV
-TEST:scope1:ChannelARange  -- range enum, 0 [-20mV, 20mV], 1 [-50mV, 50mV], please see ps3000aApi.h for more
-TEST:scope1:ChannelBRange  -- range enum, 0 [-20mV, 20mV], 1 [-50mV, 50mV], please see ps3000aApi.h for more
-TEST:scope1:Run            -- run task command
-TEST:scope1:Waveform_A_RBV -- channel A waveform array
-TEST:scope1:Waveform_B_RBV -- channel B waveform array
+TEST:scope1:PicoConnect 1      <-- Connect to HW
+TEST:scope1:Enabled_A 1        <-- Enable A
+TEST:scope1:Enabled_B 1        <-- Enable B
+TEST:scope1:TriggerSource 4    <-- Set trigger on External Input
+TEST:scope1:SampleLength 1000  <-- Set SampleLength to 1000 points
+TEST:scope1:ChannelARange 8    <-- Set A range to [-10 V, 10 V]
+TEST:scope1:ChannelBRange 1    <-- Set B range to [-50mV, 50mV]
+TEST:scope1:Run 1              <-- Run data acquisition
+TEST:scope1:Waveform_A_RBV     <-- Obtain waveform A
+TEST:scope1:Waveform_B_RBV     <-- Obtain waveform B
 ```
 
 
@@ -69,6 +66,7 @@ TEST:scope1:MinValue_RBV
 TEST:scope1:ScopeClear
 TEST:scope1:MaxValue_RBV
 TEST:scope1:MeanValue_RBV
+TEST:scope1:ChannelExtThreshold_RBV
 TEST:scope1:VoltsPerDiv_A_RBV
 TEST:scope1:VoltOffset_A_RBV
 TEST:scope1:ChannelAThreshold_RBV
@@ -91,6 +89,7 @@ TEST:scope1:SigGenFrequency
 TEST:scope1:TriggerDelay
 TEST:scope1:NoiseAmplitude
 TEST:scope1:UpdateTime
+TEST:scope1:ChannelExtThreshold
 TEST:scope1:VoltOffset_A
 TEST:scope1:ChannelAThreshold
 TEST:scope1:VoltOffset_B
