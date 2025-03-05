@@ -6,7 +6,7 @@ PS3000A_registerRecordDeviceDriver(pdbbase)
 # Turn on asynTraceFlow and asynTraceError for global trace, i.e. no connected asynUser.
 #asynSetTraceMask("", 0, 17)
 
-PS3000AConfigure("ps3000a_port", 1000)
+PS3000AConfigure("ps3000a_port", 4000)
 
 dbLoadRecords("../../db/PS3000A.db","P=TEST:,R=scope1:,PORT=ps3000a_port,ADDR=0,TIMEOUT=1,NPOINTS=1000")
 dbLoadRecords("../../db/PS3000A_ch.db","P=TEST:,R=scope1:,PORT=ps3000a_port,ADDR=0,TIMEOUT=1,NPOINTS=1000")

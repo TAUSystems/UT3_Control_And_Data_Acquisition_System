@@ -25,11 +25,42 @@ My `.local` looks like this:
 ```
 EPICS_BASE=/home/dphan/Applications/EPICS/epics-base
 SUPPORT=/home/dphan/Applications/EPICS/support
-ASYN=$(SUPPORT)/asyn-R4-44-2
+
+AUTOSAVE = $(SUPPORT)/autosave-R5-11
+ASYN = $(SUPPORT)/asyn-R4-44-2
+BUSY = $(SUPPORT)/busy-R1-7-4
+CALC = $(SUPPORT)/calc-R3-7-5
+SSCAN = $(SUPPORT)/sscan-R2-11-6
+STD = $(SUPPORT)/std-R3-6-4
+STREAMDEVICE = $(SUPPORT)/StreamDevice-2-8-24
+
+AREA_DETECTOR = $(SUPPORT)/areaDetector-R3-13 <-- This might need to change depending on which version of AD installed
+ADCORE = $(AREA_DETECTOR)/ADCore
+ADAPP = $(ADCORE)/ADApp
+ADSUPPORT = $(AREA_DETECTOR)/ADSupport
+ADSIMDETECTOR = $(AREA_DETECTOR)/ADSimDetector
+ADSIMDETECTOR_APP = $(ADSIMDETECTOR)/simDetectorApp
+ADGENICAM = $(AREA_DETECTOR)/ADGenICam
+ADSPINNAKER = $(AREA_DETECTOR)/ADSpinnaker
+ADSPINNAKER_APP = $(ADSPINNAKER)/spinnakerApp
+ADSPINNAKER_SUPPORT = $(ADSPINNAKER)/spinnakerSupport
 ```
 
 - Define `PICO_SDK` path. On Linux, use `export PICO_SDK=/opt/picoscope`
 - Rebuild
+
+## To setup the PS3000A IOC:
+- Connect the HW on an USB3.2 port on the IOC's host.
+- Build the IOC.
+- Run `st.cmd`.
+- Most of the setting has been correctly set within `ConnectPicoScope()` function call. Users just need to set the following PVs:
+```
+TEST:scope1:PicoConnect 1
+TEST:scope1:SampleLength 1000
+TEST:scope1:Run 1
+```
+- Return waveforms are voltages values in unit of microVolts.
+
 
 # List of PVs
 
