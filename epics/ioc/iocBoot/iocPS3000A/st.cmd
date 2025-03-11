@@ -22,4 +22,4 @@ dbLoadRecords("../../db/asynRecord.db","P=$(P),R=ps3000a_asyn,PORT=$(PORT),ADDR=
 asynSetTraceIOMask("$(PORT)",0,0x2)
 iocInit()
 
-dbpf $(P)$(R)Sensitivity 0.5
+dbpf $(P)$(R)PicoConnect 1
