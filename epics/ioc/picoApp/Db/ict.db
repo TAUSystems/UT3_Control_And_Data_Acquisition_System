@@ -21,7 +21,7 @@ record(ai, "$(P)$(R)Sensitivity") {
 #   A: voltage per division, in V
 #   B: time between samples, in ns
 #   C: voltage per charge/time, in V*s/C
-record(aCalcout, "$(P)$(R)Charge") {
+record(acalcout, "$(P)$(R)Charge") {
     field(DESC, "Charge")
     field(CALC, "A * B*1e-9 / C * SUM(AA) / 1e-12")
     field(INAA, "$(P)$(R)Trace CP")

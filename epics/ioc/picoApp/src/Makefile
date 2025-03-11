@@ -23,9 +23,10 @@ PS3000A_SRCS_DEFAULT += PS3000A_registerRecordDeviceDriver.cpp PS3000AMain.cpp
 PS3000AVx_SRCS_vxWorks  += PS3000A_registerRecordDeviceDriver.cpp
 PS3000A_INCLUDES += -I$(PICO_SDK)/include/libps3000a
 PS3000A_LDFLAGS += -L$(PICO_SDK)/lib
+PS3000A_DBD  += calc.dbd
+PS3000A_LIBS += calc
 PS3000A_LIBS += PS3000ASupport asyn
 PS3000A_LIBS += ps3000a
-PS3000A_LIBS += calc
 PS3000A_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 ifeq ($(PICO_SDK),)
