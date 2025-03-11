@@ -27,6 +27,7 @@ PROD_LIBS += ADGenICam
 
 # We use PROD_SYS_LIBS even though libflycapture.so is in the ADSpinnaker tree 
 # because we are doing static build but the file is a .so file, not a .a file.
+# Modify this to match the version of the Spinnaker SDK packaged with ADSpinnaker.
 PROD_SYS_LIBS_Linux += Spinnaker
 PROD_SYS_LIBS_Linux += GCBase_gcc11_v3_0
 PROD_SYS_LIBS_Linux += GenApi_gcc11_v3_0

@@ -1,0 +1,8 @@
+# vxWorks startup file
+< cdCommands
+
+cd topbin
+ld < PS3000A.munch
+cd startup
+< st.cmd
+

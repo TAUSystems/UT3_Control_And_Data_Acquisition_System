@@ -1,0 +1,242 @@
+###################################################################
+#  These records control run/stop                                 # 
+###################################################################
+record(bo, "$(P)$(R)Run")
+{
+    field(PINI,  "1")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_RUN")
+    field(ZNAM, "Stop")
+    field(ONAM, "Run")
+}
+
+record(bi, "$(P)$(R)Run_RBV")
+{
+    field(PINI, "1")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_RUN")
+    field(ZNAM, "Done")
+    field(ZSV,  "NO_ALARM")
+    field(ONAM, "Running")
+    field(OSV,  "MINOR")
+    field(SCAN, "I/O Intr")
+}
+
+###################################################################
+#  This record is the number of points                            # 
+###################################################################
+
+record(longin, "$(P)$(R)MaxPoints_RBV")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_MAX_POINTS")
+   field(SCAN, "I/O Intr")
+}
+
+###################################################################
+# Connected / status records                                      # 
+###################################################################
+record(bi, "$(P)$(R)PicoConnected_RBV")
+{
+    field(PINI,  "1")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CONNECTED")
+    field(SCAN, "I/O Intr")
+}
+
+record(bi, "$(P)$(R)PicoConnect_RBV")
+{
+    field(PINI,  "1")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CONNECT")
+    field(SCAN, "I/O Intr")
+}
+
+record(bo, "$(P)$(R)PicoConnect")
+{
+    field(PINI,  "1")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CONNECT")
+}
+
+record(ai, "$(P)$(R)SampleFrequency_RBV")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_SAMPLE_FREQUENCY")
+   field(EGU,  "Hz")
+   field(SCAN, "I/O Intr")
+}
+
+record(ai, "$(P)$(R)SampleLength_RBV")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_SAMPLE_LENGTH")
+   field(SCAN, "I/O Intr")
+}
+
+record(mbbi, "$(P)$(R)TriggerSource_RBV")
+{
+	field(PINI, "1")
+	field(DTYP, "asynInt32")
+	field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_TRIGGER_SOURCE")
+	field(ZRST, "Channel A")
+	field(ZRVL, "0")
+	field(ONST, "Channel B")
+	field(ONVL, "1")
+	field(TWST, "External")
+	field(TWVL, "2")
+	field(SCAN, "I/O Intr")
+}
+
+
+###################################################################
+#  This record is the time base                                   #
+###################################################################
+record(waveform, "$(P)$(R)TimeBase_RBV")
+{
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_TIME_BASE")
+    field(FTVL, "DOUBLE")
+    field(NELM, "$(NPOINTS)")
+    field(LOPR, "0")
+    field(HOPR, "10")
+    field(SCAN, "I/O Intr")
+}
+
+###################################################################
+#  This record is the channel settings                            #
+###################################################################
+record(waveform, "$(P)$(R)Waveform_A_RBV")
+{
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_WAVEFORM_A")
+    field(FTVL, "DOUBLE")
+    field(NELM, "$(NPOINTS)")
+    field(LOPR, "0")
+    field(HOPR, "10")
+    field(SCAN, "I/O Intr")
+}
+
+record(waveform, "$(P)$(R)Waveform_B_RBV")
+{
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_WAVEFORM_B")
+    field(FTVL, "DOUBLE")
+    field(NELM, "$(NPOINTS)")
+    field(LOPR, "0")
+    field(HOPR, "10")
+    field(SCAN, "I/O Intr")
+}
+
+record(mbbi, "$(P)$(R)ChannelARange_RBV")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CHA_RANGE")
+   field(ZRST, "20 mV")
+   field(ZRVL, "1")
+   field(ONST, "50 mV")
+   field(ONVL, "2")
+   field(TWST, "100 mV")
+   field(TWVL, "3")
+   field(THST, "200 mV")
+   field(THVL, "4")
+   field(FRST, "500 mV")
+   field(FRVL, "5")
+   field(FVST, "1 V")
+   field(FVVL, "6")
+   field(SXST, "2 V")
+   field(SXVL, "7")
+   field(SVST, "5 V")
+   field(SVVL, "8")
+   field(EIST, "10 V")
+   field(EIVL, "9")
+   field(NIST, "20 V")
+   field(NIVL, "10")
+   field(SCAN, "I/O Intr")
+}
+
+record(mbbo, "$(P)$(R)ChannelARange")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CHA_RANGE")
+   field(ZRST, "20 mV")
+   field(ZRVL, "1")
+   field(ONST, "50 mV")
+   field(ONVL, "2")
+   field(TWST, "100 mV")
+   field(TWVL, "3")
+   field(THST, "200 mV")
+   field(THVL, "4")
+   field(FRST, "500 mV")
+   field(FRVL, "5")
+   field(FVST, "1 V")
+   field(FVVL, "6")
+   field(SXST, "2 V")
+   field(SXVL, "7")
+   field(SVST, "5 V")
+   field(SVVL, "8")
+   field(EIST, "10 V")
+   field(EIVL, "9")
+   field(NIST, "20 V")
+   field(NIVL, "10")
+}
+
+record(mbbo, "$(P)$(R)ChannelBRange")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CHB_RANGE")
+   field(ZRST, "20 mV")
+   field(ZRVL, "1")
+   field(ONST, "50 mV")
+   field(ONVL, "2")
+   field(TWST, "100 mV")
+   field(TWVL, "3")
+   field(THST, "200 mV")
+   field(THVL, "4")
+   field(FRST, "500 mV")
+   field(FRVL, "5")
+   field(FVST, "1 V")
+   field(FVVL, "6")
+   field(SXST, "2 V")
+   field(SXVL, "7")
+   field(SVST, "5 V")
+   field(SVVL, "8")
+   field(EIST, "10 V")
+   field(EIVL, "9")
+   field(NIST, "20 V")
+   field(NIVL, "10")
+}
+
+record(mbbi, "$(P)$(R)ChannelBRange_RBV")
+{
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PICOSCOPE_CHB_RANGE")
+   field(ZRST, "20 mV")
+   field(ZRVL, "1")
+   field(ONST, "50 mV")
+   field(ONVL, "2")
+   field(TWST, "100 mV")
+   field(TWVL, "3")
+   field(THST, "200 mV")
+   field(THVL, "4")
+   field(FRST, "500 mV")
+   field(FRVL, "5")
+   field(FVST, "1 V")
+   field(FVVL, "6")
+   field(SXST, "2 V")
+   field(SXVL, "7")
+   field(SVST, "5 V")
+   field(SVVL, "8")
+   field(EIST, "10 V")
+   field(EIVL, "9")
+   field(NIST, "20 V")
+   field(NIVL, "10")
+   field(SCAN, "I/O Intr")
+}
