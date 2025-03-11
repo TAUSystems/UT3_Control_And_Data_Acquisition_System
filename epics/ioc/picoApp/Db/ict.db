@@ -22,7 +22,7 @@ record(ai, "$(P)$(R)Sensitivity") {
 #   C: voltage per charge/time, in V*s/C
 record(acalcout, "$(P)$(R)Charge") {
     field(DESC, "Charge")
-    field(CALC, "A*1e-9 / B / C * (SUM(AA) - DBL(AA))*1e-6 / 1e-12")
+    field(CALC, "A*1e-9 / B / C * (SUM(AA) - AVG(AA[0, 199]))*1e-6 / 1e-12")
     field(INAA, "$(P)$(R)Trace CP")
     field(INPA, "$(P)$(R)SampleLength_RBV")
     field(INPB, "$(P)$(R)MaxPoints_RBV")
