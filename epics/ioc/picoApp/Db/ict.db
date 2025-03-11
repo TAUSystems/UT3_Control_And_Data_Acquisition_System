@@ -6,10 +6,12 @@ record(waveform, "$(P)$(R)Trace") {
     field(INP, "$(P)$(R)Waveform_$(C)_RBV CP")
 }
 
+# ICT-122-070-05:1
+# 5 V*s/C
 record(ai, "$(P)$(R)Sensitivity") {
     field(DESC, "Voltage response per charge/time")
     field(EGU, "V*s/C")
-    field(VAL, 0.0)
+    field(VAL, 5.0)
 }
 
 # TimePerDiv is given in ns
