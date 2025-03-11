@@ -14,7 +14,8 @@ epicsEnvSet(PORT, "ps3000a_port")
 
 dbLoadRecords("../../db/PS3000A.db","P=$(P),R=$(R),PORT=$(PORT),ADDR=0,TIMEOUT=1,NPOINTS=1000")
 dbLoadRecords("../../db/PS3000A_ch.db","P=$(P),R=$(R),PORT=$(PORT),ADDR=0,TIMEOUT=1,NPOINTS=1000")
-dbLoadRecords("../../db/ict.db","P=$(P),R=$(R),C=B,NPOINTS=1000")
+
+dbLoadRecords("../../db/ict.db","P=$(P),R=$(R),C=A,NPOINTS=1000")
 
 dbLoadRecords("../../db/asynRecord.db","P=$(P),R=ps3000a_asyn,PORT=$(PORT),ADDR=0,OMAX=80,IMAX=80")
 

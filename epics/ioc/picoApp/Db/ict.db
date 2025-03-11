@@ -1,9 +1,10 @@
 # Contains records for the ICT device read out through the PicoScope
 record(waveform, "$(P)$(R)Trace") {
-    field(DESC, "")
+    field(DESC, "ICT waveform trace")
     field(NELM, "$(NPOINTS)")
     field(FTVL, "FLOAT")
     field(INP, "$(P)$(R)Waveform_$(C)_RBV CP")
+    field(EGU, "uV")
 }
 
 # ICT-122-070-05:1
@@ -14,20 +15,16 @@ record(ai, "$(P)$(R)Sensitivity") {
     field(VAL, 5.0)
 }
 
-# TimePerDiv is given in ns
-# VoltsPerDiv is given in V
 # inputs:
-#   AA: waveform, in counts
-#   A: voltage per division, in V
-#   B: time between samples, in ns
-#   C: voltage per charge/time, in V*s/C
+#   AA: waveform, in microvolts
+#   A: time between samples, in picoseconds
+#   B: voltage per charge/time, in V*s/C
 record(aCalcout, "$(P)$(R)Charge") {
     field(DESC, "Charge")
-    field(CALC, "A * B*1e-9 / C * SUM(AA) / 1e-12")
+    field(CALC, "A*1e-12 / B * SUM(AA)*1e-6 / 1e-12")
     field(INAA, "$(P)$(R)Trace CP")
-    field(INPA, "$(P)$(R)VoltsPerDiv_$(C)_RBV")
-    field(INPB, "$(P)$(R)TimePerDiv_RBV")
-    field(INPC, "$(P)$(R)Sensitivity")
+    field(INPA, "$(P)$(R)SampleLength_RBV")
+    field(INPB, "$(P)$(R)Sensitivity")
     field(EGU, "pC")
     field(PREC, "6")
 }
