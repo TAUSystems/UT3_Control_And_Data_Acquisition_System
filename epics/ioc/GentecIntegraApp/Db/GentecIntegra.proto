@@ -1,0 +1,17 @@
+OutTerminator = SKIP;
+InTerminator = CR LF;
+
+queryCurrentValueASCII {
+    out "*CVU";
+    in "%e";
+}
+
+queryCurrentValueBinary {
+    out "*CVU";
+    in "xxx";
+}
+
+queryNewValueReady {
+    out "*NVU";
+    in "{New data available|New data not available}"
+}

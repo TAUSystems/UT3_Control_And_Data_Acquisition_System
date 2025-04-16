@@ -1,0 +1,7 @@
+record(ai, "$(P)$(R)Energy") {
+    field(DESC, "Energy value")
+    field(DTYP, "stream")
+    field(INP,  "@GentecIntegra.proto queryCurrentValueASCII $(PORT)")
+    field(EGU, "Joule")
+    field(SCAN, "Passive")
+}
