@@ -13,12 +13,6 @@ GentecIntegra_registerRecordDeviceDriver pdbbase
 epicsEnvSet ("STREAM_PROTOCOL_PATH", "../../db")
 
 drvAsynSerialPortConfigure ("EnergyMeter1","/dev/ttyS1")
-asynSetOption ("EnergyMeter1", 0, "baud", "9600")
-asynSetOption ("EnergyMeter1", 0, "bits", "8")
-asynSetOption ("EnergyMeter1", 0, "parity", "none")
-asynSetOption ("EnergyMeter1", 0, "stop", "1")
-asynSetOption ("EnergyMeter1", 0, "clocal", "Y")
-asynSetOption ("EnergyMeter1", 0, "crtscts", "N")
 
 ## Load record instances
 dbLoadRecords("../../db/GentecIntegra.db","P=Laser,R=Energy,PORT=EnergyMeter1")
