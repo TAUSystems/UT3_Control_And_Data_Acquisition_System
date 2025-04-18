@@ -15,3 +15,8 @@ queryNewValueReady {
     out "*NVU";
     in "{New data available|New data not available}"
 }
+
+queryVersion {
+    out "*VER";
+    in "%#s";
+}
