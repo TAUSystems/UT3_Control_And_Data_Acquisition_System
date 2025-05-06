@@ -6,7 +6,7 @@ record(ai, "$(P)$(R)Energy") {
     field(SCAN, "Passive")
 }
 
-record(stringout, "$(P)$(R)Version") {
+record(stringin, "$(P)$(R)Version") {
     field(DESC, "Device type and firmware version")
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto queryVersion $(PORT)")
