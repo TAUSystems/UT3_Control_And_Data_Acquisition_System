@@ -16,9 +16,13 @@ DBD += GentecIntegra.dbd
 GentecIntegra_DBD += base.dbd
 
 # Include dbd files from all support applications:
+GentecIntegra_DBD += asyn.dbd
 GentecIntegra_DBD += drvAsynSerialPort.dbd
+GentecIntegra_DBD += calcSupport.dbd # stream.dbd needs scalcout
+GentecIntegra_DBD += stream.dbd
 
 # Add all the support libraries needed by this IOC
+GentecIntegra_LIBS += calc
 GentecIntegra_LIBS += stream
 GentecIntegra_LIBS += asyn
 
