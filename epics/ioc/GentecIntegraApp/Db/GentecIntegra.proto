@@ -1,4 +1,4 @@
-OutTerminator = SKIP;
+OutTerminator = "";
 InTerminator = CR LF;
 
 queryCurrentValueASCII {
