@@ -12,7 +12,7 @@ GentecIntegra_registerRecordDeviceDriver pdbbase
 # Configure Energy Meter port
 epicsEnvSet ("STREAM_PROTOCOL_PATH", "../../db")
 
-drvAsynSerialPortConfigure ("EnergyMeter1","/dev/ttyS1")
+drvAsynSerialPortConfigure ("EnergyMeter1","/dev/ttyACM0")
 
 ## Load record instances
 dbLoadRecords("../../db/GentecIntegra.db","P=Laser,R=Energy,PORT=EnergyMeter1")
