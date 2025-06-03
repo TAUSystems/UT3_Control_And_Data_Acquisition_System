@@ -1,6 +1,143 @@
 OutTerminator = "";
 InTerminator = CR LF;
 
+# Command list, from Gentec Integra manual
+#
+# # # Display
+# 01 - Set scale ​ | Command: SCS ​ | Description: Manually sets the scale ​
+# 02 - Set scale up ​ | Command: SSU ​ | Description: Changes scale to the next higher scale ​
+# 03 - Set scale down ​ | Command: SSD ​ | Description: Changes scale to the next lower scale ​
+# 04 - Get current scale index ​ | Command: GCR ​ | Description: Returns scale index between 0 and 41 ​
+# 05 - Set autoscale ​ | Command: SAS ​ | Description: Sets the autoscale ​
+# 06 - Get autoscale ​ | Command: GAS ​ | Description: Returns autoscale status ​
+# 07 - Display valid scale ​ | Command: DVS ​ | Description: Displays the valid scales for the connected head ​
+# 08 - Set trigger level ​ | Command: STL | Description: Sets the internal trigger level for pulse energy ​
+# 09 - Get trigger level ​ | Command: GTL ​ | Description: Returns trigger level value ​
+# 10 - Get measure mode display ​ | Command: GMD | Description: Returns the current measure mode on INTEGRA ​
+# # # Measurement
+# # Data acquisition ​
+# 11 - Query current value ​ | Command: CVU ​ | Description: Gets the value currently in ASCII or binary ​
+# 12 - Send continuous transmission of data ​ | Command: CAU ​ | Description: Sends the values in ASCII or binary to the serial port with the data sampling setting ​
+# 13 - Send continuous value with frequency ​ | Command: CEU ​ | Description: Sends continuous value with period in ASCII or binary ​
+# 14 - Send current value with frequency ​ | Command: CTU ​ | Description: Sends current value with frequency in ASCII or binary ​
+# 15 - Stop the CAU command ​ | Command: CSU | Description: Stops the *CAU and *CEU commands ​
+# 16 - Query new value ready | Command: NVU ​ | Description: Determines if new reading is available or not ​
+# 17 - Get laser frequency ​ | Command: GRR | Description: Sends the laser rep rate frequency in ASCII ​
+# 18 - Set binary joulemeter mode ​ | Command: SS1 | Description: Sets the binary joulemeter mode or ASCII mode ​
+# 19 - Get binary joulemeter mode ​ | Command: GBM ​ | Description: Returns the binary joulemeter mode or ASCII mode ​
+# # Setup
+# 20 - Set personal wavelength correction in nm ​ | Command: PWC ​ | Description: Specifies the wavelength in nm ​
+# 21 - Set personal wavelength correction in microns ​ | Command: PWM ​ | Description: Specifies the wavelength in microns (for THZ heads only) ​
+# 22 - Get wavelength ​ | Command: GWL ​ | Description: Returns the wavelength in nm ​
+# # Control
+# 23 - Set anticipation ​ | Command: ANT ​ | Description: Turns the anticipation on or off ​
+# 24 - Get anticipation status ​ | Command: GAN ​ | Description: Returns the anticipation status ​
+# 25 - Noise suppression ​ | Command: AVG | Description: Applies the noise suppression algorithm ​
+# 26 - Set zero offset ​ | Command: SOU ​ | Description: Zeroes the reading for a power detector ​
+# 27 - Clear zero offset ​ | Command: COU | Description: Undoes the zeroing of the reading for a power detector ​
+# 28 - Get zero offset | Command: GZO ​ | Description: Returns the zero offset status ​
+# 29 - Set diode zero offset | Command: SDZ ​ | Description: Zeroes the reading for all the scales for a photo detector ​
+# 30 - Set user multiplier | Command: MUL ​ | Description: Sets the multiplier value ​
+# 31 - Get user multiplier ​ | Command: GUM ​ | Description: Returns the current multiplier value ​
+# 32 - Set user offset ​ | Command: OFF | Description: Sets the offset value ​
+# 33 - Get user offset ​ | Command: GUO ​ | Description: Returns the current offset value ​
+# 34 - Set single shot energy mode ​ | Command: SSE ​ | Description: Sets the single shot energy mode ​
+# 35 - Set attenuator ​ | Command: ATT ​ | Description: Sets the attenuator ​
+# 36 - Get attenuator ​ | Command: GAT ​ | Description: Returns the attenuator status ​
+# 37 - External trigger ​ | Command: ET | Description: Activates or deactivates the external trigger ​
+# # # Instrument and detector information ​
+# 38 - Change baud rate ​ | Command: BPS ​ | Description: Sets the baud rate for RS-232 ​
+# 39 - Query version ​ | Command: VER ​ | Description: Gets firmware version of the monitor ​
+# 40 - Query status ​ | Command: STS | Description: Retrieves the detector information and monitor settings ​
+# 41 - Query extended status ​ | Command: ST2 | Description: Returns the extended status ​
+
+# # # Display
+# 01 Manually sets the scale
+# This command is used to force the display of the current data into a specific scale.
+# The lower scale is always zero, the higher scales can be found below.
+# The autoscale mode applies the best scale for the current values in real time.
+# The parameter must be one of the identifiers in the table below and have two digits.
+# 
+# The index-to-scale mapping is:
+#   0  1 picowatt or picojoule
+#   1  3 picowatts of picojoules
+#   2  10 picowatts or picojoules
+#   3  30 picowatts or picojoules
+#   ...
+#   40 100 megawatts or megajoules
+#   41 300 megawatts or megajoules
+# or roughly: scale = 10^(index/2 - 12) watts or joules
+setScale {
+    out "*SCS%02d";
+}
+
+# 02 Changes scale to the next higher scale
+setScaleUp {
+    out "*SSU";
+}
+
+# 03 Changes scale to the next lower scale
+setScaleDown {
+    out "*SSD";
+}
+
+# 04 Returns scale index between 0 and 41
+# See the 01 setScale command for the index-to-scale mapping.
+getCurrentScaleIndex {
+    out "*GCR";
+    in "Range: %d";
+}
+
+# 05 Sets the autoscale
+# 0: Off, 1: On
+setAutoscale {
+    out "*SAS%d";
+}
+
+# 06 Returns autoscale status
+# 0: Off, 1: On
+getAutoscale {
+    out "*GAS";
+    in "Autoscale: %d";
+}
+
+# # 07 Displays the valid scales for the connected head
+# This command is used to display all of the valid scales the connected head supports. The scales are 
+# displayed in the scale index.
+# displayValidScales {
+#     out "*DVS";
+#     in "%s";
+# }
+
+# 08 Sets the internal trigger level for pulse energy
+# This command sets the internal trigger level when using the device in energy mode.
+# Trigger level is in percentage from 0.1 to 99.9 and must be 4 numerical values
+# including the decimal point.
+setTriggerLevel {
+    out "*STL%#4f";
+}
+
+# 09 Returns trigger level value, in percent
+# This is for joulemeters and wattmeters in energy mode only.
+getTriggerLevel {
+    out "*GTL";
+    in "Trigger level: %f";
+}
+
+# 10 Returns the current measure mode on INTEGRA
+# POWER = 0, ENERGY = 1, SSE = 2
+# This command returns the INTEGRA’s measurement mode. Depending on the head, it can be power mode in W, 
+# energy mode in J or single shot energy mode in J (SSE).
+getMeasureModeDisplay {
+    out "*GMD";
+    in "Mode: %d";
+}
+
+# # # Measurement
+# # Data acquisition
+# 11 Gets the value currently in ASCII or binary
+# This command is used to query the value that is currently being displayed by the monitor. The value is 
+# displayed in watts or in joules. For joulemeters, the data can also be in binary format
 queryCurrentValueASCII {
     out "*CVU";
     in "%e";
@@ -11,12 +148,299 @@ queryCurrentValueBinary {
     in "xxx";
 }
 
+# # 12 Sends the values in ASCII or binary to the serial port with the data sampling setting
+# This command is used to send data to the serial port, according to the data sampling setting. 
+# For joulemeters, the data can also be in binary format
+# sendContinuousTransmissionASCII {
+#     out "*CAU";
+#     in "OK";
+# }
+
+# sendContinuousTransmissionBinary {
+#     out "*CAU";
+#     in "xxx";
+# }
+
+# # 13 Sends continuous value with period in ASCII or binary
+# INTEGRA will send continuous energy data and the pulse repetition rate in Hz. They are comma-separated.
+# This is for joulemeters only. For joulemeters, the data can also be in binary format
+# sendContinuousValueWithPeriodASCII {
+#     out "*CEU %d";
+#     in "OK";
+# }
+
+# sendContinuousValueWithPeriodBinary {
+#     out "*CEU %d";
+#     in "xxx";
+# }
+
+# # 14 Sends current value with frequency in ASCII or binary
+# INTEGRA will send the current measurement and the pulse repetition rate in Hz. They are comma-separated. 
+# This is for joulemeters only. For joulemeters, the data can also be in binary format
+# sendCurrentValueWithFrequencyASCII {
+#     out "*CTU %d";
+#     in "OK";
+# }
+
+# sendCurrentValueWithFrequencyBinary {
+#     out "*CTU %d";
+#     in "xxx";
+# }
+
+# 15 Stops the *CAU and *CEU commands
+# This command is used to stop the real-time transfer enabled by the CAU and CEU commands
+stopContinuousCommands {
+    out "*CSU";
+}
+
+# 16 Determines if new reading is available or not
+# This command is used to check whether a new value is available from the device. Though optional, 
+# its use is recommended when used with a single pulse operation.
+# This is for joulemeters only.
 queryNewValueReady {
     out "*NVU";
     in "{New data available|New data not available}"
 }
 
+# 17 Sends the laser rep rate frequency in ASCII
+# This is for joulemeters only.
+getLaserFrequency {
+    out "*GRR";
+    in "%f";
+}
+
+# 18 Sets the binary joulemeter mode or ASCII mode
+# 0 = ASCII mode, 1 = Binary mode
+# This is for joulemeters only.
+setBinaryJoulemeterMode {
+    out "*SS1%d";
+}
+
+# 19 Returns the binary joulemeter mode or ASCII mode
+# This is for joulemeters only.
+getBinaryJoulemeterMode {
+    out "*GBM";
+    in "Binary joulemeter mode: %d";
+}
+
+# # Setup
+# 20 Specifies the wavelength in nm
+# This command is used to specify the wavelength in nm being used on the detector. The EEPROM in the 
+# detector contains measured spectral data for a wide range of wavelengths. A valid value is set between 
+# the lowest and highest wavelengths supported by the device, and it should not be a floating point value. 
+# The input parameter must have five digits. If the desired wavelength does not have five digits, you must 
+# enter a zero-padded number. For example, to set the wavelength at 514 nm, you must enter 00514.
+# In the new series, specifying zero as a wavelength or providing an out-of-bound value as a parameter cancels 
+# the command. 
+setPersonalWavelengthCorrectionNM {
+    out "*PWC%05d";
+}
+
+# 21 Specifies the wavelength in microns (for THZ heads only)
+# This command is used to specify the wavelength in microns for THZ detectors only. The EEPROM in the detector 
+# contains measured spectral data for a wide range of wavelengths. A valid value is set between the lowest and 
+# highest wavelengths supported by the device. The input parameter must have five digits and can be a floating 
+# point value. If the desired wavelength does not have five digits, you must enter a zero-padded number. For 
+# example, to set the wavelength at 10.6 microns, you must enter 010.6. Please note that the resolution is 
+# limited as follows: 
+#   Wavelength range; Resolution limit 
+#   Less than 100 μm; # 10 nm 
+#   Greater than 99.99 μm or less than 1000 μm; 100 nm 
+#   Greater than 999.9um; 1 μm
+# In the new series, specifying zero as a wavelength or providing an out-of-bound value as a parameter cancels 
+# the command.
+setPersonalWavelengthCorrectionMicrons {
+    out "*PWM%05f";
+}
+
+# 22 Returns the wavelength in nm
+getWavelength {
+    out "*GWL";
+    in "PWC: %d";
+}
+
+# # Control
+# 23 Turns the anticipation on or off
+# 0: Off, 1: On
+# This command is used to enable or disable the anticipation processing when the device is reading from a 
+# wattmeter. The anticipation is a software-based acceleration algorithm that provides faster readings 
+# using the detector’s calibration.
+setAnticipation {
+    out "*ANT%d";
+}
+
+# 24 Returns the anticipation status
+# 0: Off, 1: On
+getAnticipationStatus {
+    out "*GAN";
+    in "Anticipation: %d";
+}
+
+# 25 Applies the noise suppression algorithm
+# Sets or queries the sampling size of the noise suppression. For pyroelectric detectors and UM detectors only.
+# The INTEGRA joulemeter instrument has a special proprietary algorithm that can lower the noise-induced error
+# when reading low energy levels or energy readings of any level with noise present. This feature greatly reduces
+# the effect of noise on the peak-to-peak measurement in joulemeter mode. INTEGRA will need to measure the number
+# of pulses selected in the sampling size before the algorithm will settle to the noise-suppressed value. Once the
+# readings have stabilized, any subsequent reading will be stable until the sampling size is changed. The system
+# will then stabilize to the new value. Larger sampling sizes will result in more noise suppression. Noise suppression
+# works best with the external trigger. This function will greatly improve the accuracy of the lowest scale, or any
+# scale, when used in a noisy environment.
+setNoiseSuppression {
+    out "*AVG%03d";
+}
+
+# # 26 Zeroes the reading for a power detector
+# This command subtracts the current value from all future measurements the moment the command is issued to set a new 
+# zero point. This command does not work with photodiodes. Please refer to *SDZ.
+# Returns "Please Wait..." and "Done!" if in autoscale, nothing when in fixed scale.
+# setZeroOffset {
+#     out "*SOU";
+# }
+
+# 27 Undoes the zeroing of the reading for a power detector
+# This command undoes the zero offset command to set the zero point at zero.
+clearZeroOffset {
+    out "*COU";
+}
+
+# 28 Returns the zero offset status
+# This command returns whether the zero offset has been activated or not. 
+# 0: Off, 1: On
+getZeroOffset {
+    out "*GZO";
+    in "Zero: %1d";
+}
+
+# 29 Zeroes the reading for all the scales for a photo detector
+# This command subtracts the current value for all available scales from all future measurements the moment the command 
+# is issued to set a new zero point.
+# This is for photodiodes only. Please refer to *SOU for other detectors.
+# Returns "Please Wait..." and "Done!" if in autoscale, nothing when in fixed scale.
+# setDiodeZeroOffset {
+#     out "*SDZ";
+# }
+
+# 30 Sets the multiplier value
+# This command is used to set the value of the multipliers.
+setUserMultiplier {
+    out "*MUL%08g";
+}
+
+# 31 Returns the current multiplier value
+getUserMultiplier {
+    out "*GUM";
+    in "User Multiplier: %f";
+}
+
+# 32 Sets the offset value, a eight-character numerical value
+setUserOffset {
+    out "*OFF%08g";
+}
+
+# 33 Returns the current offset value
+getUserOffset {
+    out "*GUO";
+    in "User Offset: %f";
+}
+
+# 34 Sets the single shot energy mode
+# 0: Off, 1: On
+setSingleShotEnergyMode {
+    out "*SSE%1d";
+}
+
+# 35 Sets the attenuator
+# 0: Off, 1: On
+setAttenuator {
+    out "*ATT%1d";
+}
+
+# 36 Returns the attenuator status
+# If the attenuator is not available, it will always be off.
+getAttenuator {
+    out "*GAT";
+    in "Attenuator %1d";
+}
+
+# 37 Activates or deactivates the external trigger
+# for INTEGRAs which have an external trigger option.
+# 0: Off, 1: On
+setExternalTrigger {
+    out "*ET%1d";
+    in "OK";
+}
+
+# # # Instrument and detector information
+# 38 Sets the baud rate for RS-232
+# This command is used to default baud rate of the INTEGRA for RS-232 only.
+# This will permanently change the baud rate and save it in the INTEGRA flash memory.
+# If you want to change it back, you will have to send the command again at the new baud rate.
+# If you want to update the INTEGRA firmware, you will have to change the baud rate to 115200.
+#   0: 9600
+#   1: 19200
+#   2: 38400
+#   3: 57600
+#   4: 115200
+# Returns new baud rate
+setBaudRate {
+    out "*BPS%1d";
+    in "ACK: %d";
+}
+
+# 39 Gets firmware version of the monitor
 queryVersion {
     out "*VER";
     in "%#s";
 }
+
+# 40 Retrieves the detector information and monitor settings
+# This command is used to query the device to get information about the following characteristics:
+#   Measure mode
+#   Maximum, minimum and current scale
+#   Maximum, minimum and current wavelength with and without attenuation
+#   Attenuator availability and status
+#   Detector model
+#   Detector serial number
+# Returns a hexadecimal structure with the following fields: 
+# The first byte represents the validity of the structure: 0 represents a valid line while 1 is the end of the structure.
+# The next 4 bytes represent the address line, and the last 4 bytes are the actual value.
+# The values are written on 32 bits, which means that all the values are written on two lines.
+# The first line represents the LSB, and the second line represents the MSB.
+# Note that text data values such as detector name and serial number are in ASCII-encoded little-endian 16-bit chunks.
+# The byte order must be reversed to be converted into a readable format.
+# See table in the manual for the address line and value mapping.
+queryStatus {
+    out "*STS";
+    in "%s";
+}
+
+# 41 Returns the extended status
+# This command is used to query the device to get information about the following characteristics:
+#   Measure mode
+#   Maximum, minimum and current scale
+#   Maximum, minimum and current wavelength with and without attenuation
+#   Attenuator availability and status
+#   Detector model
+#   Detector serial number
+#   Trigger level (0.1 to 99.9)
+#   Autoscale mode
+#   Anticipation mode
+#   Zero offset mode
+#   User multiplier
+#   User offset
+# The first byte represents the validity of the structure:
+#   0 = valid line
+#   1 = end of the structure.
+# The next 4 bytes represent the address line,
+# and the last 4 bytes are the actual value.
+# The values are written on 32 bits, which means that all the values are written on two lines.
+# The first line represents the LSB, and the second line represents the MSB.
+# Note: Text data values such as detector name and serial number are in ASCII-encoded
+# little-endian 16-bit chunks. The byte order must be reversed to be converted into a readable format.
+# See table in the manual for the address line and value mapping.
+queryExtendedStatus {
+    out "*ST2";
+    in "%s";
+}
+
