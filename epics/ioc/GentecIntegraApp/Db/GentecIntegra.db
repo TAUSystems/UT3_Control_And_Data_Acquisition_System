@@ -172,10 +172,6 @@ record(ai, "$(P)$(R)Energy") {
 
 # 15 Stops the *CAU and *CEU commands
 # This command is used to stop the real-time transfer enabled by the CAU and CEU commands
-stopContinuousCommands {
-    out "*CSU";
-}
-
 record(bo, "$(P)$(R)StopContinuousCommands") {
     field(DESC, "Stop continuous commands")
     field(DTYP, "stream")
@@ -239,10 +235,6 @@ record(bi, "$(P)$(R)BinaryJoulemeterMode_RBV") {
 # enter a zero-padded number. For example, to set the wavelength at 514 nm, you must enter 00514.
 # In the new series, specifying zero as a wavelength or providing an out-of-bound value as a parameter cancels 
 # the command. 
-setPersonalWavelengthCorrectionNM {
-    out "*PWC%05d";
-}
-
 record(longout, "$(P)$(R)Wavelength") {
     field(DESC, "Set personal wavelength correction in nm")
     field(DTYP, "stream")
@@ -272,11 +264,6 @@ record(longout, "$(P)$(R)Wavelength") {
 
 
 # 22 Returns the wavelength in nm
-getWavelength {
-    out "*GWL";
-    in "PWC: %d";
-}
-
 record(longin, "$(P)$(R)Wavelength_RBV") {
     field(DESC, "Get personal wavelength correction in nm")
     field(DTYP, "stream")
@@ -442,11 +429,6 @@ record(bi, "$(P)$(R)Attenuator_RBV") {
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.
 # 0: Off, 1: On
-setExternalTrigger {
-    out "*ET%1d";
-    in "OK";
-}
-
 record(bo, "$(P)$(R)ExternalTrigger") {
     field(DESC, "Set external trigger on/off")
     field(DTYP, "stream")
