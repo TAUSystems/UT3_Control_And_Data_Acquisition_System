@@ -188,8 +188,8 @@ record(bi, "$(P)$(R)NewValueReady") {
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto queryNewValueReady $(PORT)")
     field(SCAN, "Passive")
-    field(ZNAM, "Ready")
-    field(ONAM, "NotReady")
+    field(ZNAM, "NotReady")
+    field(ONAM, "Ready")
 }
 
 # 17 Sends the laser rep rate frequency in ASCII
