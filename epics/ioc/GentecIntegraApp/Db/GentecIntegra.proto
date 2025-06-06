@@ -362,19 +362,21 @@ setSingleShotEnergyMode {
     out "*SSE%1d";
 }
 
-# 36 Returns the attenuator status
-# If the attenuator is not available, it will always be off.
-getAttenuator {
-    out "*GAT";
-    in "Attenuator: %1d";
-}
+# Attenuator commands appear not to be implemented. 
 
-# 35 Sets the attenuator
-# 0: Off, 1: On
-setAttenuator {
-    out "*ATT%1d";
-    @init { getAttenuator; }
-}
+# # 36 Returns the attenuator status
+# # If the attenuator is not available, it will always be off.
+# getAttenuator {
+#     out "*GAT";
+#     in "Attenuator: %1d";
+# }
+
+# # 35 Sets the attenuator
+# # 0: Off, 1: On
+# setAttenuator {
+#     out "*ATT%1d";
+#     @init { getAttenuator; }
+# }
 
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.

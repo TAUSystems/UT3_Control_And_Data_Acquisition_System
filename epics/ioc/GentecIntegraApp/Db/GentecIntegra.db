@@ -418,29 +418,31 @@ record(bo, "$(P)$(R)SingleShotEnergyMode") {
     field(FLNK, "$(P)$(R)MeasureMode.PROC")
 }
 
-# 35 Sets the attenuator
-# 0: Off, 1: On
-record(bo, "$(P)$(R)Attenuator") {
-    field(DESC, "Set attenuator on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setAttenuator $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(FLNK, "$(P)$(R)Attenuator_RBV.PROC")
-}
+# Attenuator commands appear not to be implemented.
 
-# 36 Returns the attenuator status
-# If the attenuator is not available, it will always be off.
-record(bi, "$(P)$(R)Attenuator_RBV") {
-    field(DESC, "Get attenuator status")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getAttenuator $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(PINI, "YES")
-}
+# # 35 Sets the attenuator
+# # 0: Off, 1: On
+# record(bo, "$(P)$(R)Attenuator") {
+#     field(DESC, "Set attenuator on/off")
+#     field(DTYP, "stream")
+#     field(OUT,  "@GentecIntegra.proto setAttenuator $(PORT)")
+#     field(SCAN, "Passive")
+#     field(ZNAM, "Off")
+#     field(ONAM, "On")
+#     field(FLNK, "$(P)$(R)Attenuator_RBV.PROC")
+# }
+
+# # 36 Returns the attenuator status
+# # If the attenuator is not available, it will always be off.
+# record(bi, "$(P)$(R)Attenuator_RBV") {
+#     field(DESC, "Get attenuator status")
+#     field(DTYP, "stream")
+#     field(INP,  "@GentecIntegra.proto getAttenuator $(PORT)")
+#     field(SCAN, "Passive")
+#     field(ZNAM, "Off")
+#     field(ONAM, "On")
+#     field(PINI, "YES")
+# }
 
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.
