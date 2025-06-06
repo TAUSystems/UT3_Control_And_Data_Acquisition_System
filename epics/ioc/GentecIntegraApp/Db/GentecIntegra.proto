@@ -51,7 +51,18 @@ InTerminator = CR LF;
 # 40 - Query status ​ | Command: STS | Description: Retrieves the detector information and monitor settings ​
 # 41 - Query extended status ​ | Command: ST2 | Description: Returns the extended status ​
 
+# Note: Get commands are defined before the corresponding set commands, so that 
+# the set commands can use them in the @init handler, hence the numerically 
+# out-of-order definitions.
+
 # # # Display
+# 04 Returns scale index between 0 and 41
+# See the 01 setScale command for the index-to-scale mapping.
+getCurrentScaleIndex {
+    out "*GCR";
+    in "Range: %d";
+}
+
 # 01 Manually sets the scale
 # This command is used to force the display of the current data into a specific scale.
 # The lower scale is always zero, the higher scales can be found below.
@@ -69,6 +80,7 @@ InTerminator = CR LF;
 # or roughly: scale = 10^(index/2 - 12) watts or joules
 setScale {
     out "*SCS%02d";
+    @init { getCurrentScaleIndex; }
 }
 
 # 02 Changes scale to the next higher scale
@@ -81,24 +93,18 @@ setScaleDown {
     out "*SSD";
 }
 
-# 04 Returns scale index between 0 and 41
-# See the 01 setScale command for the index-to-scale mapping.
-getCurrentScaleIndex {
-    out "*GCR";
-    in "Range: %d";
+# 06 Returns autoscale status
+# 0: Off, 1: On
+getAutoscale {
+    out "*GAS";
+    in "Autoscale: %d";
 }
 
 # 05 Sets the autoscale
 # 0: Off, 1: On
 setAutoscale {
     out "*SAS%d";
-}
-
-# 06 Returns autoscale status
-# 0: Off, 1: On
-getAutoscale {
-    out "*GAS";
-    in "Autoscale: %d";
+    @init { getAutoscale; }
 }
 
 # # 07 Displays the valid scales for the connected head
@@ -109,19 +115,20 @@ getAutoscale {
 #     in "%s";
 # }
 
+# 09 Returns trigger level value, in percent
+# This is for joulemeters and wattmeters in energy mode only.
+getTriggerLevel {
+    out "*GTL";
+    in "Trigger level: %f";
+}
+
 # 08 Sets the internal trigger level for pulse energy
 # This command sets the internal trigger level when using the device in energy mode.
 # Trigger level is in percentage from 0.1 to 99.9 and must be 4 numerical values
 # including the decimal point.
 setTriggerLevel {
     out "*STL%#4f";
-}
-
-# 09 Returns trigger level value, in percent
-# This is for joulemeters and wattmeters in energy mode only.
-getTriggerLevel {
-    out "*GTL";
-    in "Trigger level: %f";
+    @init { getTriggerLevel; }
 }
 
 # 10 Returns the current measure mode on INTEGRA
@@ -143,10 +150,10 @@ queryCurrentValueASCII {
     in "%e";
 }
 
-queryCurrentValueBinary {
-    out "*CVU";
-    in "xxx";
-}
+# queryCurrentValueBinary {
+#     out "*CVU";
+#     in "xxx";
+# }
 
 # # 12 Sends the values in ASCII or binary to the serial port with the data sampling setting
 # This command is used to send data to the serial port, according to the data sampling setting. 
@@ -209,13 +216,6 @@ getLaserFrequency {
     in "%f";
 }
 
-# 18 Sets the binary joulemeter mode or ASCII mode
-# 0 = ASCII mode, 1 = Binary mode
-# This is for joulemeters only.
-setBinaryJoulemeterMode {
-    out "*SS1%d";
-}
-
 # 19 Returns the binary joulemeter mode or ASCII mode
 # This is for joulemeters only.
 getBinaryJoulemeterMode {
@@ -223,7 +223,21 @@ getBinaryJoulemeterMode {
     in "Binary joulemeter mode: %d";
 }
 
+# 18 Sets the binary joulemeter mode or ASCII mode
+# 0 = ASCII mode, 1 = Binary mode
+# This is for joulemeters only.
+setBinaryJoulemeterMode {
+    out "*SS1%d";
+    @init { getBinaryJoulemeterMode; }
+}
+
 # # Setup
+# 22 Returns the wavelength in nm
+getWavelength {
+    out "*GWL";
+    in "PWC: %d";
+}
+
 # 20 Specifies the wavelength in nm
 # This command is used to specify the wavelength in nm being used on the detector. The EEPROM in the 
 # detector contains measured spectral data for a wide range of wavelengths. A valid value is set between 
@@ -234,6 +248,7 @@ getBinaryJoulemeterMode {
 # the command. 
 setPersonalWavelengthCorrectionNM {
     out "*PWC%05d";
+    @init { getWavelength; }
 }
 
 # 21 Specifies the wavelength in microns (for THZ heads only)
@@ -253,13 +268,14 @@ setPersonalWavelengthCorrectionMicrons {
     out "*PWM%05f";
 }
 
-# 22 Returns the wavelength in nm
-getWavelength {
-    out "*GWL";
-    in "PWC: %d";
+# # Control
+# 24 Returns the anticipation status
+# 0: Off, 1: On
+getAnticipationStatus {
+    out "*GAN";
+    in "Anticipation: %d";
 }
 
-# # Control
 # 23 Turns the anticipation on or off
 # 0: Off, 1: On
 # This command is used to enable or disable the anticipation processing when the device is reading from a 
@@ -267,13 +283,7 @@ getWavelength {
 # using the detector’s calibration.
 setAnticipation {
     out "*ANT%d";
-}
-
-# 24 Returns the anticipation status
-# 0: Off, 1: On
-getAnticipationStatus {
-    out "*GAN";
-    in "Anticipation: %d";
+    @init { getAnticipationStatus; }
 }
 
 # 25 Applies the noise suppression algorithm
@@ -321,21 +331,17 @@ getZeroOffset {
 #     out "*SDZ";
 # }
 
-# 30 Sets the multiplier value
-# This command is used to set the value of the multipliers.
-setUserMultiplier {
-    out "*MUL%08g";
-}
-
 # 31 Returns the current multiplier value
 getUserMultiplier {
     out "*GUM";
     in "User Multiplier: %f";
 }
 
-# 32 Sets the offset value, a eight-character numerical value
-setUserOffset {
-    out "*OFF%08g";
+# 30 Sets the multiplier value
+# This command is used to set the value of the multipliers.
+setUserMultiplier {
+    out "*MUL%08g";
+    @init { getUserMultiplier; }
 }
 
 # 33 Returns the current offset value
@@ -344,16 +350,16 @@ getUserOffset {
     in "User Offset: %f";
 }
 
+# 32 Sets the offset value, a eight-character numerical value
+setUserOffset {
+    out "*OFF%08g";
+    @init { getUserOffset; }
+}
+
 # 34 Sets the single shot energy mode
 # 0: Off, 1: On
 setSingleShotEnergyMode {
     out "*SSE%1d";
-}
-
-# 35 Sets the attenuator
-# 0: Off, 1: On
-setAttenuator {
-    out "*ATT%1d";
 }
 
 # 36 Returns the attenuator status
@@ -361,6 +367,13 @@ setAttenuator {
 getAttenuator {
     out "*GAT";
     in "Attenuator %1d";
+}
+
+# 35 Sets the attenuator
+# 0: Off, 1: On
+setAttenuator {
+    out "*ATT%1d";
+    @init { getAttenuator; }
 }
 
 # 37 Activates or deactivates the external trigger

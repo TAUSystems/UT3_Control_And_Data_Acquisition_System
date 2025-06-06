@@ -30,6 +30,7 @@ record(bo, "$(P)$(R)ScaleUp") {
     field(DTYP, "stream")
     field(OUT,  "@GentecIntegra.proto setScaleUp $(PORT)")
     field(SCAN, "Passive")
+    field(FLNK, "$(P)$(R)ScaleIndex_RBV.PROC")
 }
 
 # 03 Changes scale to the next lower scale
@@ -38,6 +39,7 @@ record(bo, "$(P)$(R)ScaleDown") {
     field(DTYP, "stream")
     field(OUT,  "@GentecIntegra.proto setScaleDown $(PORT)")
     field(SCAN, "Passive")
+    field(FLNK, "$(P)$(R)ScaleIndex_RBV.PROC")
 }
 
 # 04 Returns scale index between 0 and 41
@@ -47,6 +49,7 @@ record(longin, "$(P)$(R)ScaleIndex_RBV") {
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto getCurrentScaleIndex $(PORT)")
     field(SCAN, "Passive")
+    field(PINI, "YES")
 }
 
 # 05 Sets the autoscale
@@ -68,6 +71,7 @@ record(bi, "$(P)$(R)Autoscale_RBV") {
     field(SCAN, "Passive")
     field(ZNAM, "Off")
     field(ONAM, "On")
+    field(PINI, "YES")
 }
 
 # # 07 Displays the valid scales for the connected head
@@ -102,6 +106,7 @@ record(ai, "$(P)$(R)TriggerLevel_RBV") {
     field(INP,  "@GentecIntegra.proto getTriggerLevel $(PORT)")
     field(SCAN, "Passive")
     field(EGU, "%")
+    field(PINI, "YES")
 }
 
 # 10 Returns the current measure mode on INTEGRA
@@ -116,6 +121,7 @@ record(mbbi, "$(P)$(R)MeasureMode") {
     field(ZRST, "POWER")
     field(ONST, "ENERGY")
     field(TWST, "SSE")
+    field(PINI, "YES")
 }
 
 # # # Measurement
@@ -129,6 +135,7 @@ record(ai, "$(P)$(R)Energy") {
     field(INP,  "@GentecIntegra.proto queryCurrentValueASCII $(PORT)")
     field(EGU, "Joule")
     field(SCAN, "Passive")
+    field(PINI, "YES")
 }
 
 # # 12 Sends the values in ASCII or binary to the serial port with the data sampling setting
@@ -190,6 +197,7 @@ record(bi, "$(P)$(R)NewValueReady") {
     field(SCAN, "Passive")
     field(ZNAM, "NotReady")
     field(ONAM, "Ready")
+    field(PINI, "YES")
 }
 
 # 17 Sends the laser rep rate frequency in ASCII
@@ -200,6 +208,7 @@ record(ai, "$(P)$(R)LaserFrequency") {
     field(INP,  "@GentecIntegra.proto getLaserFrequency $(PORT)")
     field(SCAN, "Passive")
     field(EGU, "Hz")
+    field(PINI, "YES")
 }
 
 # 18 Sets the binary joulemeter mode or ASCII mode
@@ -224,6 +233,7 @@ record(bi, "$(P)$(R)BinaryJoulemeterMode_RBV") {
     field(SCAN, "Passive")
     field(ZNAM, "ASCII")
     field(ONAM, "Binary")
+    field(PINI, "YES")
 }
 
 # # Setup
@@ -270,6 +280,7 @@ record(longin, "$(P)$(R)Wavelength_RBV") {
     field(INP,  "@GentecIntegra.proto getWavelength $(PORT)")
     field(SCAN, "Passive")
     field(EGU, "nm")
+    field(PINI, "YES")
 }
 
 # # Control
@@ -297,6 +308,7 @@ record(bi, "$(P)$(R)Anticipation_RBV") {
     field(SCAN, "Passive")
     field(ZNAM, "Off")
     field(ONAM, "On")
+    field(PINI, "YES")
 }
 
 # 25 Applies the noise suppression algorithm
@@ -345,6 +357,7 @@ record(bi, "$(P)$(R)ZeroOffset_RBV") {
     field(SCAN, "Passive")
     field(ZNAM, "Off")
     field(ONAM, "On")
+    field(PINI, "YES")
 }
 
 # 29 Zeroes the reading for all the scales for a photo detector
@@ -372,6 +385,7 @@ record(ai, "$(P)$(R)UserMultiplier_RBV") {
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto getUserMultiplier $(PORT)")
     field(SCAN, "Passive")
+    field(PINI, "YES")
 }
 
 # 32 Sets the offset value, a eight-character numerical value
@@ -389,6 +403,7 @@ record(ai, "$(P)$(R)UserOffset_RBV") {
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto getUserOffset $(PORT)")
     field(SCAN, "Passive")
+    field(PINI, "YES")
 }
 
 # 34 Sets the single shot energy mode
@@ -424,6 +439,7 @@ record(bi, "$(P)$(R)Attenuator_RBV") {
     field(SCAN, "Passive")
     field(ZNAM, "Off")
     field(ONAM, "On")
+    field(PINI, "YES")
 }
 
 # 37 Activates or deactivates the external trigger
@@ -463,6 +479,7 @@ record(stringin, "$(P)$(R)Version") {
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto queryVersion $(PORT)")
     field(SCAN, "Passive")
+    field(PINI, "YES")
 }
 
 # 40 Retrieves the detector information and monitor settings
