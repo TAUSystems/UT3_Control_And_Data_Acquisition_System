@@ -316,13 +316,13 @@ clearZeroOffset {
     out "*COU";
 }
 
-# 28 Returns the zero offset status
-# This command returns whether the zero offset has been activated or not. 
-# 0: Off, 1: On
-getZeroOffset {
-    out "*GZO";
-    in "Zero: %1d";
-}
+# # 28 Returns the zero offset status
+# # This command returns whether the zero offset has been activated or not. 
+# # 0: Off, 1: On
+# getZeroOffset {
+#     out "*GZO";
+#     in "Zero: %1d";
+# }
 
 # 29 Zeroes the reading for all the scales for a photo detector
 # This command subtracts the current value for all available scales from all future measurements the moment the command 

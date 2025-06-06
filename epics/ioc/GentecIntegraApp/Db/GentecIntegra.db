@@ -350,18 +350,18 @@ record(bo, "$(P)$(R)ClearZeroOffset") {
     field(SCAN, "Passive")
 }
 
-# 28 Returns the zero offset status
-# This command returns whether the zero offset has been activated or not. 
-# 0: Off, 1: On
-record(bi, "$(P)$(R)ZeroOffset_RBV") {
-    field(DESC, "Get zero offset status")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getZeroOffset $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(PINI, "YES")
-}
+# # 28 Returns the zero offset status
+# # This command returns whether the zero offset has been activated or not. 
+# # 0: Off, 1: On
+# record(bi, "$(P)$(R)ZeroOffset_RBV") {
+#     field(DESC, "Get zero offset status")
+#     field(DTYP, "stream")
+#     field(INP,  "@GentecIntegra.proto getZeroOffset $(PORT)")
+#     field(SCAN, "Passive")
+#     field(ZNAM, "Off")
+#     field(ONAM, "On")
+#     field(PINI, "YES")
+# }
 
 # 29 Zeroes the reading for all the scales for a photo detector
 # This command subtracts the current value for all available scales from all future measurements the moment the command 
