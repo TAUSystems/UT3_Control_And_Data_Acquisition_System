@@ -97,7 +97,7 @@ setScaleDown {
 # 0: Off, 1: On
 getAutoscale {
     out "*GAS";
-    in "Autoscale: %d";
+    in "AutoScale: %d";
 }
 
 # 05 Sets the autoscale
@@ -119,7 +119,7 @@ setAutoscale {
 # This is for joulemeters and wattmeters in energy mode only.
 getTriggerLevel {
     out "*GTL";
-    in "Trigger level: %f";
+    in "%f";
 }
 
 # 08 Sets the internal trigger level for pulse energy
@@ -220,7 +220,7 @@ getLaserFrequency {
 # This is for joulemeters only.
 getBinaryJoulemeterMode {
     out "*GBM";
-    in "Binary joulemeter mode: %d";
+    in "Binary Joulemeter Mode: %d";
 }
 
 # 18 Sets the binary joulemeter mode or ASCII mode
@@ -366,7 +366,7 @@ setSingleShotEnergyMode {
 # If the attenuator is not available, it will always be off.
 getAttenuator {
     out "*GAT";
-    in "Attenuator %1d";
+    in "Attenuator: %1d";
 }
 
 # 35 Sets the attenuator
