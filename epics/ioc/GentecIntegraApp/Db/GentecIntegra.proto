@@ -199,7 +199,7 @@ stopContinuousCommands {
 # This is for joulemeters only.
 queryNewValueReady {
     out "*NVU";
-    in "%{New Data Available|New Data Not Available}"
+    in "%{New Data Not Available|New Data Available}"
 }
 
 # 17 Sends the laser rep rate frequency in ASCII
