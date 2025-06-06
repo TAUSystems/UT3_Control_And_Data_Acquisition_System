@@ -1,0 +1,8 @@
+# from https://paulscherrerinstitute.github.io/StreamDevice/setup.html#lib
+
+include "base.dbd"
+include "stream.dbd"
+include "asyn.dbd"
+#registrar(drvAsynIPPortRegisterCommands)
+registrar(drvAsynSerialPortRegisterCommands)
+#registrar(vxi11RegisterCommands)
