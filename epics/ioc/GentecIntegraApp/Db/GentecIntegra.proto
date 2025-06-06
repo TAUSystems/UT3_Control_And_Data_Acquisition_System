@@ -268,23 +268,25 @@ setPersonalWavelengthCorrectionMicrons {
     out "*PWM%05f";
 }
 
-# # Control
-# 24 Returns the anticipation status
-# 0: Off, 1: On
-getAnticipationStatus {
-    out "*GAN";
-    in "Anticipation: %d";
-}
+# Anticipation commands appear not to be implemented.
 
-# 23 Turns the anticipation on or off
-# 0: Off, 1: On
-# This command is used to enable or disable the anticipation processing when the device is reading from a 
-# wattmeter. The anticipation is a software-based acceleration algorithm that provides faster readings 
-# using the detector’s calibration.
-setAnticipation {
-    out "*ANT%d";
-    @init { getAnticipationStatus; }
-}
+# # # Control
+# # 24 Returns the anticipation status
+# # 0: Off, 1: On
+# getAnticipationStatus {
+#     out "*GAN";
+#     in "Anticipation: %d";
+# }
+
+# # 23 Turns the anticipation on or off
+# # 0: Off, 1: On
+# # This command is used to enable or disable the anticipation processing when the device is reading from a 
+# # wattmeter. The anticipation is a software-based acceleration algorithm that provides faster readings 
+# # using the detector’s calibration.
+# setAnticipation {
+#     out "*ANT%d";
+#     @init { getAnticipationStatus; }
+# }
 
 # 25 Applies the noise suppression algorithm
 # Sets or queries the sampling size of the noise suppression. For pyroelectric detectors and UM detectors only.
@@ -362,21 +364,19 @@ setSingleShotEnergyMode {
     out "*SSE%1d";
 }
 
-# Attenuator commands appear not to be implemented. 
+# 36 Returns the attenuator status
+# If the attenuator is not available, it will always be off.
+getAttenuator {
+    out "*GAT";
+    in "Attenuator: %1d";
+}
 
-# # 36 Returns the attenuator status
-# # If the attenuator is not available, it will always be off.
-# getAttenuator {
-#     out "*GAT";
-#     in "Attenuator: %1d";
-# }
-
-# # 35 Sets the attenuator
-# # 0: Off, 1: On
-# setAttenuator {
-#     out "*ATT%1d";
-#     @init { getAttenuator; }
-# }
+# 35 Sets the attenuator
+# 0: Off, 1: On
+setAttenuator {
+    out "*ATT%1d";
+    @init { getAttenuator; }
+}
 
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.

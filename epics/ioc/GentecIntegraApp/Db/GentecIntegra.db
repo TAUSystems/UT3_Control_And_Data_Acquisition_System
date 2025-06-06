@@ -284,32 +284,35 @@ record(longin, "$(P)$(R)Wavelength_RBV") {
 }
 
 # # Control
-# 23 Turns the anticipation on or off
-# 0: Off, 1: On
-# This command is used to enable or disable the anticipation processing when the device is reading from a 
-# wattmeter. The anticipation is a software-based acceleration algorithm that provides faster readings 
-# using the detector’s calibration.
-record(bo, "$(P)$(R)Anticipation") {
-    field(DESC, "Set anticipation on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setAnticipation $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(FLNK, "$(P)$(R)Anticipation_RBV.PROC")
-}
 
-# 24 Returns the anticipation status
-# 0: Off, 1: On
-record(bi, "$(P)$(R)Anticipation_RBV") {
-    field(DESC, "Get anticipation status")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getAnticipationStatus $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(PINI, "YES")
-}
+# Anticipation appears not to be implemented.
+
+# # 23 Turns the anticipation on or off
+# # 0: Off, 1: On
+# # This command is used to enable or disable the anticipation processing when the device is reading from a 
+# # wattmeter. The anticipation is a software-based acceleration algorithm that provides faster readings 
+# # using the detector’s calibration.
+# record(bo, "$(P)$(R)Anticipation") {
+#     field(DESC, "Set anticipation on/off")
+#     field(DTYP, "stream")
+#     field(OUT,  "@GentecIntegra.proto setAnticipation $(PORT)")
+#     field(SCAN, "Passive")
+#     field(ZNAM, "Off")
+#     field(ONAM, "On")
+#     field(FLNK, "$(P)$(R)Anticipation_RBV.PROC")
+# }
+
+# # 24 Returns the anticipation status
+# # 0: Off, 1: On
+# record(bi, "$(P)$(R)Anticipation_RBV") {
+#     field(DESC, "Get anticipation status")
+#     field(DTYP, "stream")
+#     field(INP,  "@GentecIntegra.proto getAnticipationStatus $(PORT)")
+#     field(SCAN, "Passive")
+#     field(ZNAM, "Off")
+#     field(ONAM, "On")
+#     field(PINI, "YES")
+# }
 
 # 25 Applies the noise suppression algorithm
 # Sets or queries the sampling size of the noise suppression. For pyroelectric detectors and UM detectors only.
@@ -418,31 +421,29 @@ record(bo, "$(P)$(R)SingleShotEnergyMode") {
     field(FLNK, "$(P)$(R)MeasureMode.PROC")
 }
 
-# Attenuator commands appear not to be implemented.
+# 35 Sets the attenuator
+# 0: Off, 1: On
+record(bo, "$(P)$(R)Attenuator") {
+    field(DESC, "Set attenuator on/off")
+    field(DTYP, "stream")
+    field(OUT,  "@GentecIntegra.proto setAttenuator $(PORT)")
+    field(SCAN, "Passive")
+    field(ZNAM, "Off")
+    field(ONAM, "On")
+    field(FLNK, "$(P)$(R)Attenuator_RBV.PROC")
+}
 
-# # 35 Sets the attenuator
-# # 0: Off, 1: On
-# record(bo, "$(P)$(R)Attenuator") {
-#     field(DESC, "Set attenuator on/off")
-#     field(DTYP, "stream")
-#     field(OUT,  "@GentecIntegra.proto setAttenuator $(PORT)")
-#     field(SCAN, "Passive")
-#     field(ZNAM, "Off")
-#     field(ONAM, "On")
-#     field(FLNK, "$(P)$(R)Attenuator_RBV.PROC")
-# }
-
-# # 36 Returns the attenuator status
-# # If the attenuator is not available, it will always be off.
-# record(bi, "$(P)$(R)Attenuator_RBV") {
-#     field(DESC, "Get attenuator status")
-#     field(DTYP, "stream")
-#     field(INP,  "@GentecIntegra.proto getAttenuator $(PORT)")
-#     field(SCAN, "Passive")
-#     field(ZNAM, "Off")
-#     field(ONAM, "On")
-#     field(PINI, "YES")
-# }
+# 36 Returns the attenuator status
+# If the attenuator is not available, it will always be off.
+record(bi, "$(P)$(R)Attenuator_RBV") {
+    field(DESC, "Get attenuator status")
+    field(DTYP, "stream")
+    field(INP,  "@GentecIntegra.proto getAttenuator $(PORT)")
+    field(SCAN, "Passive")
+    field(ZNAM, "Off")
+    field(ONAM, "On")
+    field(PINI, "YES")
+}
 
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.
