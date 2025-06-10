@@ -538,3 +538,21 @@ record(stringin, "$(P)$(R)Version") {
 # }
 
 # TODO.
+
+
+# Record that checks for new data from Gentec Integra and acquires it
+#
+# The Gentec Integra does not have a hardware interrupt to notify of new data, 
+# so this app polls the device at a regular interval to check if new data is 
+# available and acquires it if so.
+#
+# To use this record, set the SCAN field to the desired polling interval.
+record(calcout, "$(P)$(R)GetValueIfNewData") {
+    field(DESC, "Process Energy rec if NewValueReady")
+    field(SCAN, "Passive")
+    field(CALC, "A")
+    field(OOPT, "When Non-zero")
+    field(DOPT, "Use OCAL")
+    field(INPA, "$(P)$(R)NewValueReady PP")
+    field(OUT, "$(P)$(R)Energy.PROC")
+}
