@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2025-06-17 10:49:00 by ReiniervanMourik-->
+<!--Saved on 2025-06-17 13:40:09 by ut3da-->
 <display version="2.0.0">
   <name>Display</name>
-  <width>550</width>
+  <width>340</width>
+  <height>610</height>
   <widget type="label" version="2.0.0">
     <name>Title</name>
     <class>TITLE</class>
@@ -35,7 +36,8 @@
       <color red="10" green="0" blue="184">
       </color>
     </foreground_color>
-    <format>1</format>
+    <format>3</format>
+    <precision>3</precision>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
   <widget type="rectangle" version="2.0.0">
