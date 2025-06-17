@@ -84,10 +84,10 @@
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>ScaleValue</name>
-    <pv_name>=10**(`$(P)$(R)ScaleIndex_RBV` / 2) - 12</pv_name>
+    <pv_name>=10^(`$(P)$(R)ScaleIndex_RBV` / 2 - 12)</pv_name>
     <x>130</x>
     <y>121</y>
-    <width>120</width>
+    <width>70</width>
     <height>30</height>
     <font>
       <font family="Liberation Sans" style="REGULAR" size="18.0">
@@ -96,6 +96,18 @@
     <format>3</format>
     <precision>0</precision>
     <show_units>false</show_units>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ScaleValueUnit</name>
+    <text>Joule</text>
+    <x>210</x>
+    <y>121</y>
+    <width>70</width>
+    <height>31</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="18.0">
+      </font>
+    </font>
   </widget>
   <widget type="spinner" version="2.0.0">
     <name>ScaleIndex</name>
