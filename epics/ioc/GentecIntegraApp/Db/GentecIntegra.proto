@@ -80,17 +80,20 @@ getCurrentScaleIndex {
 # or roughly: scale = 10^(index/2 - 12) watts or joules
 setScale {
     out "*SCS%02d";
+    wait 2;
     @init { getCurrentScaleIndex; }
 }
 
 # 02 Changes scale to the next higher scale
 setScaleUp {
     out "*SSU";
+    wait 2;
 }
 
 # 03 Changes scale to the next lower scale
 setScaleDown {
     out "*SSD";
+    wait 2;    
 }
 
 # 06 Returns autoscale status
@@ -104,6 +107,7 @@ getAutoscale {
 # 0: Off, 1: On
 setAutoscale {
     out "*SAS%d";
+    wait 2;
     @init { getAutoscale; }
 }
 
@@ -128,6 +132,7 @@ getTriggerLevel {
 # including the decimal point.
 setTriggerLevel {
     out "*STL%#4f";
+    wait 2;
     @init { getTriggerLevel; }
 }
 
@@ -198,6 +203,7 @@ queryCurrentValueASCII {
 # This command is used to stop the real-time transfer enabled by the CAU and CEU commands
 stopContinuousCommands {
     out "*CSU";
+    wait 2;
 }
 
 # 16 Determines if new reading is available or not
@@ -228,6 +234,7 @@ getBinaryJoulemeterMode {
 # This is for joulemeters only.
 setBinaryJoulemeterMode {
     out "*SS1%d";
+    wait 2;
     @init { getBinaryJoulemeterMode; }
 }
 
@@ -248,6 +255,7 @@ getWavelength {
 # the command. 
 setPersonalWavelengthCorrectionNM {
     out "*PWC%05d";
+    wait 2;
     @init { getWavelength; }
 }
 
@@ -266,6 +274,7 @@ setPersonalWavelengthCorrectionNM {
 # the command.
 setPersonalWavelengthCorrectionMicrons {
     out "*PWM%05f";
+    wait 2;
 }
 
 # Anticipation commands appear not to be implemented.
@@ -300,6 +309,7 @@ setPersonalWavelengthCorrectionMicrons {
 # scale, when used in a noisy environment.
 setNoiseSuppression {
     out "*AVG%03d";
+    wait 2;
 }
 
 # # 26 Zeroes the reading for a power detector
@@ -314,6 +324,7 @@ setNoiseSuppression {
 # This command undoes the zero offset command to set the zero point at zero.
 clearZeroOffset {
     out "*COU";
+    wait 2;
 }
 
 # # 28 Returns the zero offset status
@@ -343,6 +354,7 @@ getUserMultiplier {
 # This command is used to set the value of the multipliers.
 setUserMultiplier {
     out "*MUL%08g";
+    wait 2;
     @init { getUserMultiplier; }
 }
 
@@ -355,6 +367,7 @@ getUserOffset {
 # 32 Sets the offset value, a eight-character numerical value
 setUserOffset {
     out "*OFF%08g";
+    wait 2;
     @init { getUserOffset; }
 }
 
@@ -362,6 +375,7 @@ setUserOffset {
 # 0: Off, 1: On
 setSingleShotEnergyMode {
     out "*SSE%1d";
+    wait 2;
 }
 
 # 36 Returns the attenuator status
@@ -375,6 +389,7 @@ getAttenuator {
 # 0: Off, 1: On
 setAttenuator {
     out "*ATT%1d";
+    wait 2;
     @init { getAttenuator; }
 }
 
@@ -384,6 +399,7 @@ setAttenuator {
 setExternalTrigger {
     out "*ET%1d";
     in "OK";
+    wait 2;
 }
 
 # # # Instrument and detector information
@@ -401,6 +417,7 @@ setExternalTrigger {
 setBaudRate {
     out "*BPS%1d";
     in "ACK: %d";
+    wait 2;
 }
 
 # 39 Gets firmware version of the monitor
