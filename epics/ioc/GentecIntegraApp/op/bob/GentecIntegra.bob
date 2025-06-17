@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2025-06-17 09:16:31 by ReiniervanMourik-->
+<!--Saved on 2025-06-17 10:49:00 by ReiniervanMourik-->
 <display version="2.0.0">
   <name>Display</name>
   <width>550</width>
@@ -159,7 +159,6 @@
     <x>130</x>
     <y>195</y>
     <width>20</width>
-    <enabled>false</enabled>
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>AutoScaleRBV</name>
@@ -176,7 +175,7 @@
       <color red="10" green="0" blue="184">
       </color>
     </foreground_color>
-    <format>1</format>
+    <format>6</format>
     <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
@@ -234,7 +233,6 @@
       </font>
     </font>
     <format>1</format>
-    <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
   <widget type="textupdate" version="2.0.0">
@@ -253,7 +251,6 @@
       </color>
     </foreground_color>
     <format>1</format>
-    <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
   <widget type="label" version="2.0.0">
@@ -278,7 +275,6 @@
       </font>
     </font>
     <format>1</format>
-    <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
   <widget type="textupdate" version="2.0.0">
@@ -297,7 +293,6 @@
       </color>
     </foreground_color>
     <format>1</format>
-    <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
   <widget type="label" version="2.0.0">
@@ -334,7 +329,7 @@
       <color red="10" green="0" blue="184">
       </color>
     </foreground_color>
-    <format>1</format>
+    <format>6</format>
     <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
@@ -472,7 +467,7 @@
       <color red="10" green="0" blue="184">
       </color>
     </foreground_color>
-    <format>1</format>
+    <format>6</format>
     <show_units>false</show_units>
     <border_alarm_sensitive>false</border_alarm_sensitive>
   </widget>
@@ -520,7 +515,7 @@
   </widget>
   <widget type="checkbox" version="2.0.0">
     <name>ExternalTrigger</name>
-    <pv_name>$(P)$(R)Anticipation</pv_name>
+    <pv_name>$(P)$(R)ExternalTrigger</pv_name>
     <label></label>
     <x>130</x>
     <y>541</y>
