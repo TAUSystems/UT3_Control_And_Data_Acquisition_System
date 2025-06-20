@@ -58,7 +58,7 @@ record(dfanout, "$(P)$(R)SetCommandDelay1") {
     field(DESC, "Set command delay for 8 instr")
     field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
     field(OUTB, "$(P)$(R)PollAndRetrieve.DLY1")
-    field(OUTB, "$(P)$(R)PollAndRetrieve.DLY2")
+    field(OUTC, "$(P)$(R)PollAndRetrieve.DLY2")
 }
 
 
