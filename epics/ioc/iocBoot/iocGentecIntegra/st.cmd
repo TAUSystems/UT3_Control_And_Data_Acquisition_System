@@ -23,4 +23,4 @@ iocInit
 #seq sncxxx,"user=reinier"
 
 # Set the scan period for polling the NewValueReady record
-dbpf Laser:Energy:GetValueIfNewData.SCAN ".2 second"
+dbpf Laser:Energy:PollAndRetrieve.SCAN ".2 second"
