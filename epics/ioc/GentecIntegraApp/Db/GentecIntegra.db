@@ -1,3 +1,67 @@
+# # # # # Gentec Integra EPICS IOC process database
+
+# Record that checks for new data from Gentec Integra and acquires it
+#
+# The Gentec Integra does not have a hardware interrupt to notify of new data, 
+# so this app polls the device at a regular interval to check if new data is 
+# available and acquires it if so.
+#
+# To use this record, set PollAndRetrieve.SCAN field to the desired polling 
+# interval.
+record(seq, "$(P)$(R)PollAndRetrieve") {
+    field(DESC, "description")
+    field(SELM, "All")
+    field(DOL0, 1)
+    field(LNK0, "$(P)$(R)NewValueReady.PROC")
+    field(DLY1, 0.010)
+    field(DOL1, 1)
+    field(LNK1, "$(P)$(R)RetrieveValueIfReady.PROC")
+    field(DLY2, 0.010)
+    field(DOL2, 1)
+    field(LNK2, "$(P)$(R)NewValueReady.PROC")
+    field(SCAN, "Passive")
+}
+
+record(calcout, "$(P)$(R)RetrieveValueIfReady") {
+    field(DESC, "Process Value rec if NewValueReady")
+    field(SCAN, "Passive")
+    field(CALC, "A")
+    field(OOPT, "When Non-zero")
+    field(DOPT, "Use OCAL")
+    field(INPA, "$(P)$(R)NewValueReady NPP")
+    field(OUT, "$(P)$(R)Value.PROC")
+}
+
+# Set delay between set and read commands of the associated RBV records.
+# This is to prevent concurrent commands
+record(dfanout, "$(P)$(R)SetCommandDelay") {
+    field(DESC, "Set command delay")
+    field(DOL,  0.010)
+    field(OUTA, "$(P)$(R)SetCommandDelay0 PP")
+    field(OUTB, "$(P)$(R)SetCommandDelay1 PP")
+    field(EGU, "s")
+}
+
+record(dfanout, "$(P)$(R)SetCommandDelay0") {
+    field(DESC, "Set command delay for 8 instr")
+    field(OUTA, "$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
+    field(OUTB, "$(P)$(R)Delay_Autoscale_RBV.DLY0")
+    field(OUTC, "$(P)$(R)Delay_TriggerLevel_RBV.DLY0")
+    field(OUTD, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0")
+    field(OUTE, "$(P)$(R)Delay_Wavelength_RBV.DLY0")
+    field(OUTF, "$(P)$(R)Delay_UserMultiplier_RBV.DLY0")
+    field(OUTG, "$(P)$(R)Delay_UserOffset_RBV.DLY0")
+    field(OUTH, "$(P)$(R)Delay_MeasureMode.DLY0")
+}
+
+record(dfanout, "$(P)$(R)SetCommandDelay1") {
+    field(DESC, "Set command delay for 8 instr")
+    field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
+    field(OUTB, "$(P)$(R)PollAndRetrieve.DLY1")
+    field(OUTB, "$(P)$(R)PollAndRetrieve.DLY2")
+}
+
+
 # # # Display
 # 01 Manually sets the scale
 # This command is used to force the display of the current data into a specific scale.
@@ -152,7 +216,7 @@ record(mbbi, "$(P)$(R)MeasureMode") {
 # 11 Gets the value currently in ASCII or binary
 # This command is used to query the value that is currently being displayed by the monitor. The value is 
 # displayed in watts or in joules. For joulemeters, the data can also be in binary format
-record(ai, "$(P)$(R)Energy") {
+record(ai, "$(P)$(R)Value") {
     field(DESC, "Get energy value")
     field(DTYP, "stream")
     field(INP,  "@GentecIntegra.proto queryCurrentValueASCII $(PORT)")
@@ -609,61 +673,3 @@ record(stringin, "$(P)$(R)Version") {
 
 # TODO.
 
-
-# Record that checks for new data from Gentec Integra and acquires it
-#
-# The Gentec Integra does not have a hardware interrupt to notify of new data, 
-# so this app polls the device at a regular interval to check if new data is 
-# available and acquires it if so.
-#
-# To use this record, set the SCAN field to the desired polling interval.
-record(calcout, "$(P)$(R)GetValueIfNewData") {
-    field(DESC, "Process Energy rec if NewValueReady")
-    field(SCAN, "Passive")
-    field(CALC, "A")
-    field(OOPT, "When Non-zero")
-    field(DOPT, "Use OCAL")
-    field(INPA, "$(P)$(R)NewValueReady NPP")
-    field(OUT, "$(P)$(R)Energy.PROC")
-}
-
-record(seq, "$(P)$(R)Run") {
-    field(DESC, "description")
-    field(SELM, "All")
-    field(DLY0, "0.000")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)NewValueReady.PROC")
-    field(DLY1, "0.010")
-    field(DOL1, "1")
-    field(LNK1, "$(P)$(R)GetValueIfNewData.PROC")
-    field(DLY2, "0.020")
-    field(DOL2, "1")
-    field(LNK2, "$(P)$(R)NewValueReady.PROC")
-    field(SCAN, "Passive")
-}
-
-
-# Set delay between set and read commands of the associated RBV records.
-# This is to prevent concurrent commands
-record(dfanout, "$(P)$(R)SetCommandDelay") {
-    field(DESC, "Set command delay")
-    field(DOL,  "0.010")
-    field(OUTA, "$(P)$(R)SetCommandDelay0.PROC")
-}
-
-record(dfanout, "$(P)$(R)SetCommandDelay0") {
-    field(DESC, "Set command delay for 8 instr")
-    field(OUTA, "$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
-    field(OUTB, "$(P)$(R)Delay_Autoscale_RBV.DLY0")
-    field(OUTC, "$(P)$(R)Delay_TriggerLevel_RBV.DLY0")
-    field(OUTD, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0")
-    field(OUTE, "$(P)$(R)Delay_Wavelength_RBV.DLY0")
-    field(OUTF, "$(P)$(R)Delay_UserMultiplier_RBV.DLY0")
-    field(OUTG, "$(P)$(R)Delay_UserOffset_RBV.DLY0")
-    field(OUTH, "$(P)$(R)Delay_MeasureMode.DLY0")
-}
-
-record(dfanout, "$(P)$(R)SetCommandDelay1") {
-    field(DESC, "Set command delay for 8 instr")
-    field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
-}
