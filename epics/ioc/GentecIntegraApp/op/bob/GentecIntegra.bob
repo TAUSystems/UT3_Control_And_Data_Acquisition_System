@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Saved on 2025-06-17 13:40:09 by ut3da-->
+<display version="2.0.0">
+  <name>Display</name>
+  <width>340</width>
+  <height>610</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <class>TITLE</class>
+    <text>Gentec Integra</text>
+    <x use_class="true">0</x>
+    <y use_class="true">0</y>
+    <width>550</width>
+    <height>31</height>
+    <font use_class="true">
+      <font name="Header 1" family="Liberation Sans" style="BOLD" size="22.0">
+      </font>
+    </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Energy</name>
+    <pv_name>$(P)$(R)Value</pv_name>
+    <y>31</y>
+    <width>180</width>
+    <height>29</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="20.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>3</format>
+    <precision>3</precision>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>ScaleRectangle</name>
+    <y>80</y>
+    <width>330</width>
+    <height>160</height>
+    <line_width>1</line_width>
+    <line_color>
+      <color red="0" green="0" blue="0">
+      </color>
+    </line_color>
+    <background_color>
+      <color red="250" green="250" blue="250">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ScaleSectionLabel</name>
+    <class>SECTION</class>
+    <text>Scale</text>
+    <y>90</y>
+    <width>330</width>
+    <font use_class="true">
+      <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+      </font>
+    </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+    <horizontal_alignment>1</horizontal_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ScaleIndexLabel</name>
+    <text>Index</text>
+    <x>70</x>
+    <y>160</y>
+    <width>50</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>ScaleValue</name>
+    <pv_name>=10^(`$(P)$(R)ScaleIndex_RBV` / 2 - 12)</pv_name>
+    <x>130</x>
+    <y>121</y>
+    <width>70</width>
+    <height>30</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="18.0">
+      </font>
+    </font>
+    <format>3</format>
+    <precision>0</precision>
+    <show_units>false</show_units>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ScaleValueUnit</name>
+    <text>Joule</text>
+    <x>210</x>
+    <y>121</y>
+    <width>70</width>
+    <height>31</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="18.0">
+      </font>
+    </font>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>ScaleIndex</name>
+    <pv_name>$(P)$(R)ScaleIndex</pv_name>
+    <x>130</x>
+    <y>160</y>
+    <width>70</width>
+    <height>30</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>ScaleIndexRBV</name>
+    <pv_name>$(P)$(R)ScaleIndex_RBV</pv_name>
+    <x>210</x>
+    <y>160</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>AutoscaleLabel</name>
+    <text>Autoscale</text>
+    <x>30</x>
+    <y>195</y>
+    <width>90</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="checkbox" version="2.0.0">
+    <name>Autoscale</name>
+    <pv_name>$(P)$(R)Autoscale</pv_name>
+    <label></label>
+    <x>130</x>
+    <y>195</y>
+    <width>20</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>AutoScaleRBV</name>
+    <pv_name>$(P)$(R)Autoscale_RBV</pv_name>
+    <x>210</x>
+    <y>195</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>6</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>SettingsRectangle</name>
+    <y>250</y>
+    <width>330</width>
+    <height>321</height>
+    <line_width>1</line_width>
+    <line_color>
+      <color red="0" green="0" blue="0">
+      </color>
+    </line_color>
+    <background_color>
+      <color red="250" green="250" blue="250">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>SettingsSectionLabel</name>
+    <class>SECTION</class>
+    <text>Settings</text>
+    <y>260</y>
+    <width>330</width>
+    <font use_class="true">
+      <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+      </font>
+    </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+    <horizontal_alignment>1</horizontal_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>TriggerLevelLabel</name>
+    <text>Trigger Level</text>
+    <y>300</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>TriggerLevel</name>
+    <pv_name>$(P)$(R)TriggerLevel</pv_name>
+    <x>130</x>
+    <y>300</y>
+    <width>70</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <format>1</format>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>TriggerLevelRBV</name>
+    <pv_name>$(P)$(R)TriggerLevel_RBV</pv_name>
+    <x>210</x>
+    <y>300</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>WavelengthLabel</name>
+    <text>Wavelength</text>
+    <y>331</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>Wavelength</name>
+    <pv_name>$(P)$(R)Wavelength</pv_name>
+    <x>130</x>
+    <y>331</y>
+    <width>70</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <format>1</format>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>WavelengthRBV</name>
+    <pv_name>$(P)$(R)Wavelength_RBV</pv_name>
+    <x>210</x>
+    <y>331</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>AttenuatorLabel</name>
+    <text>Attenuator</text>
+    <y>361</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="checkbox" version="2.0.0">
+    <name>Attenuator</name>
+    <pv_name>$(P)$(R)Attenuator</pv_name>
+    <label></label>
+    <x>130</x>
+    <y>361</y>
+    <width>20</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>AttenuatorRBV</name>
+    <pv_name>$(P)$(R)Attenuator_RBV</pv_name>
+    <x>210</x>
+    <y>361</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>6</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>UserMultiplierLabel</name>
+    <text>User Multiplier</text>
+    <y>391</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>UserMultiplier</name>
+    <pv_name>$(P)$(R)UserMultiplier</pv_name>
+    <x>130</x>
+    <y>391</y>
+    <width>70</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>UserMultiplierRBV</name>
+    <pv_name>$(P)$(R)UserMultiplier_RBV</pv_name>
+    <x>210</x>
+    <y>391</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>UserOffsetLabel</name>
+    <text>User Offset</text>
+    <y>421</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>UserOffset</name>
+    <pv_name>$(P)$(R)UserOffset</pv_name>
+    <x>130</x>
+    <y>421</y>
+    <width>70</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>UserOffsetRBV</name>
+    <pv_name>$(P)$(R)UserOffset_RBV</pv_name>
+    <x>210</x>
+    <y>421</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>SSEModeLabel</name>
+    <text>SSE Mode</text>
+    <y>451</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+    <tooltip>Single Shot Energy Mode</tooltip>
+  </widget>
+  <widget type="checkbox" version="2.0.0">
+    <name>SSEMode</name>
+    <pv_name>$(P)$(R)SingleShotEnergyMode</pv_name>
+    <label></label>
+    <x>130</x>
+    <y>451</y>
+    <width>20</width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>MeasureModeLabel</name>
+    <text>Measure Mode</text>
+    <y>481</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>MeasureModeRBV</name>
+    <pv_name>$(P)$(R)MeasureMode</pv_name>
+    <x>130</x>
+    <y>481</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>6</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>LaserRepRateLabel</name>
+    <text>Laser Rep Rate</text>
+    <y>511</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>LaserRepRate</name>
+    <pv_name>$(P)$(R)LaserFrequency</pv_name>
+    <x>130</x>
+    <y>511</y>
+    <width>80</width>
+    <height>18</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ExternalTriggerLabel</name>
+    <text>External trigger</text>
+    <y>541</y>
+    <width>120</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>2</horizontal_alignment>
+    <tooltip>Single Shot Energy Mode</tooltip>
+  </widget>
+  <widget type="checkbox" version="2.0.0">
+    <name>ExternalTrigger</name>
+    <pv_name>$(P)$(R)ExternalTrigger</pv_name>
+    <label></label>
+    <x>130</x>
+    <y>541</y>
+    <width>20</width>
+    <enabled>false</enabled>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Version</name>
+    <pv_name>$(P)$(R)Version</pv_name>
+    <y>581</y>
+    <width>160</width>
+    <height>15</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="10.0">
+      </font>
+    </font>
+  </widget>
+</display>
