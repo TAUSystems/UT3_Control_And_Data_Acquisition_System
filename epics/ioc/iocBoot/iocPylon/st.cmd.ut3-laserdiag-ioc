@@ -1,0 +1,75 @@
+< envPaths
+errlogInit(20000)
+
+dbLoadDatabase("$(TOP)/dbd/pylonApp.dbd")
+pylonApp_registerRecordDeviceDriver(pdbbase)
+
+# ===============================
+# Global Parameters
+# ===============================
+epicsEnvSet("XSIZE", "1920")
+epicsEnvSet("YSIZE", "1200")
+epicsEnvSet("NELEMENTS", "2304000")  # 1920 x 1200 x 1 (mono 12-bit)
+
+epicsEnvSet("GENICAM_DB_FILE", "$(ADGENICAM)/db/Basler-acA1920-40gm.template")
+
+# Plugin parameters
+epicsEnvSet("QSIZE", "2000")
+epicsEnvSet("NCHANS", "2048")
+epicsEnvSet("CBUFFS", "500")
+epicsEnvSet("EPICS_DB_INCLUDE_PATH", "$(ADCORE)/db:$(ADGENICAM)/db:$(ADPYLON)/db")
+
+# Common variables
+epicsEnvSet("PREFIX", "Laser:AcclChamber:")
+
+# ===============================
+# NEAR FIELD CAMERA CONFIGURATION
+# ===============================
+epicsEnvSet("PORT_NF", "PYLON_NF")
+epicsEnvSet("CAMERA_ID_NF", "24893724")
+
+ADPylonConfig("$(PORT_NF)", "$(CAMERA_ID_NF)", 0, 0, 0)
+asynSetTraceIOMask($(PORT_NF), 0, 2)
+
+dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=NF:,PORT=$(PORT_NF)")
+dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=NF:,PORT=$(PORT_NF)")
+
+NDStdArraysConfigure("ImageNF", 5, 0, "$(PORT_NF)", 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=NF:,PORT=ImageNF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_NF),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+
+# ===============================
+# FAR FIELD CAMERA CONFIGURATION
+# ===============================
+epicsEnvSet("PORT_FF", "PYLON_FF")
+epicsEnvSet("CAMERA_ID_FF", "24893727")
+
+ADPylonConfig("$(PORT_FF)", "$(CAMERA_ID_FF)", 0, 0, 0)
+asynSetTraceIOMask($(PORT_FF), 0, 2)
+
+dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=FF:,PORT=$(PORT_FF)")
+dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=FF:,PORT=$(PORT_FF)")
+
+NDStdArraysConfigure("ImageFF", 5, 0, "$(PORT_FF)", 0, 0)
+dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=FF:,PORT=ImageFF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_FF),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+
+# ===============================
+# Load Common Plugins
+# ===============================
+# < $(ADCORE)/iocBoot/commonPlugins.cmd
+
+# Request file search path
+set_requestfile_path("$(CALC)/calcApp/Db")
+set_requestfile_path("$(ADGENICAM)/GenICamApp/Db")
+set_requestfile_path("$(ADPYLON)/pylonApp/Db")
+
+# ===============================
+# Start IOC
+# ===============================
+iocInit()
+
+# ===============================
+# Autosave Config
+# ===============================
+create_monitor_set("auto_settings_nf.req", 30, "P=$(PREFIX)NF:")
+create_monitor_set("auto_settings_ff.req", 30, "P=$(PREFIX)FF:")
+
