@@ -60,3 +60,6 @@ epics/git/support
 
 venv/
 
+epics/ioc/BKUP/iocBoot/iocPS3000A/cdCommands
+epics/ioc/BKUP/iocBoot/iocPS3000A/dllPath.bat
+epics/ioc/BKUP/iocBoot/iocPS3000A/envPaths
