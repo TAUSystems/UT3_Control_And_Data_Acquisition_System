@@ -284,8 +284,6 @@ int PS3000A::PicoRunBlock() {
 	struct BlockInfo block_info;
 	block_info.ready = 0;
 	void *p_parameter = (void *)&block_info;
-	int cnt = 0;
-	const int trigger_timeout = 60000; /* ms (set to 1 min just in case the IOC waits for trigger indefinitely) */
 	PS3000A_RATIO_MODE down_sample_ratio_mode = PS3000A_RATIO_MODE_NONE;
 	uint32_t n_samples = max_points;
 	uint32_t start_index = 0;
@@ -293,17 +291,9 @@ int PS3000A::PicoRunBlock() {
 	ok = ps3000aRunBlock(ps.handle, pre_trigger, post_trigger, ps.time_base, 0, &time_indisposed_ms, segment_index, callback_block_ready, p_parameter);
 	CHKOK("RunBlock");
 
-	/* Waiting for trigger... */
-
-	/* If no trigger within timeout period */
-	cnt = 0;
+	/* Waiting for trigger indefinitely... */
 	while (block_info.ready == 0) {
-		epicsThreadSleep(1e-3);
-		cnt++;
-		if (cnt == trigger_timeout) {
-			printf("No trigger in %d ms\n", trigger_timeout);
-			return 44;
-		}
+		epicsThreadSleep(5e-2);
 	}
 
 	/* If triggered */
