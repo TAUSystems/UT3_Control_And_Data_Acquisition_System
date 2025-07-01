@@ -23,3 +23,4 @@ asynSetTraceIOMask("$(PORT)",0,0x2)
 iocInit()
 
 dbpf $(P)$(R)PicoConnect 1
+dbpf $(P)$(R)Run 1
