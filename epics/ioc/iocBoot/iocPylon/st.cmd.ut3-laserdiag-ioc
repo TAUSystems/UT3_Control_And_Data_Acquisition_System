@@ -20,37 +20,37 @@ epicsEnvSet("CBUFFS", "500")
 epicsEnvSet("EPICS_DB_INCLUDE_PATH", "$(ADCORE)/db:$(ADGENICAM)/db:$(ADPYLON)/db")
 
 # Common variables
-epicsEnvSet("PREFIX", "Laser:AcclChamber:")
+epicsEnvSet("PREFIX", "Laser:")
 
 # ===============================
 # NEAR FIELD CAMERA CONFIGURATION
 # ===============================
-epicsEnvSet("PORT_NF", "PYLON_NF")
+epicsEnvSet("PORT", "AcclChamber:NF")
 epicsEnvSet("CAMERA_ID_NF", "24893724")
 
-ADPylonConfig("$(PORT_NF)", "$(CAMERA_ID_NF)", 0, 0, 0)
-asynSetTraceIOMask($(PORT_NF), 0, 2)
+ADPylonConfig("$(PORT)", "$(CAMERA_ID_NF)", 0, 0, 0)
+asynSetTraceIOMask($(PORT), 0, 2)
 
-dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=NF:,PORT=$(PORT_NF)")
-dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=NF:,PORT=$(PORT_NF)")
+dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
+dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 
-NDStdArraysConfigure("ImageNF", 5, 0, "$(PORT_NF)", 0, 0)
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=NF:,PORT=ImageNF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_NF),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)Pva:$(PORT):Image, 0, 0, 0)
+dbLoadRecords("NDPva.template", "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 # ===============================
 # FAR FIELD CAMERA CONFIGURATION
 # ===============================
-epicsEnvSet("PORT_FF", "PYLON_FF")
+epicsEnvSet("PORT", "AcclChamber:FF")
 epicsEnvSet("CAMERA_ID_FF", "24893727")
 
-ADPylonConfig("$(PORT_FF)", "$(CAMERA_ID_FF)", 0, 0, 0)
-asynSetTraceIOMask($(PORT_FF), 0, 2)
+ADPylonConfig("$(PORT)", "$(CAMERA_ID_FF)", 0, 0, 0)
+asynSetTraceIOMask($(PORT), 0, 2)
 
-dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=FF:,PORT=$(PORT_FF)")
-dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=FF:,PORT=$(PORT_FF)")
+dbLoadRecords("$(ADPYLON)/db/pylon.template", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
+dbLoadRecords("$(GENICAM_DB_FILE)", "P=$(PREFIX),R=$(PORT):,PORT=$(PORT)")
 
-NDStdArraysConfigure("ImageFF", 5, 0, "$(PORT_FF)", 0, 0)
-dbLoadRecords("$(ADCORE)/db/NDStdArrays.template", "P=$(PREFIX),R=FF:,PORT=ImageFF,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT_FF),TYPE=Int16,FTVL=SHORT,NELEMENTS=$(NELEMENTS)")
+NDPvaConfigure("$(PORT):PVA", $(QSIZE), 0, "$(PORT)", 0, $(PREFIX)Pva:$(PORT):Image, 0, 0, 0)
+dbLoadRecords("NDPva.template", "P=$(PREFIX),R=Pva:$(PORT):, PORT=$(PORT):PVA,ADDR=0,TIMEOUT=1,NDARRAY_PORT=$(PORT)")
 
 # ===============================
 # Load Common Plugins
@@ -65,6 +65,7 @@ set_requestfile_path("$(ADPYLON)/pylonApp/Db")
 # ===============================
 # Start IOC
 # ===============================
+startPVAServer
 iocInit()
 
 # ===============================

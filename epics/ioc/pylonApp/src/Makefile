@@ -12,6 +12,7 @@ endif
 # <name>.dbd will be created from <name>Include.dbd
 DBD += $(PROD_NAME).dbd
 $(PROD_NAME)_DBD += ADPylonSupport.dbd
+$(PROD_NAME)_DBD += $(ADCORE)/dbd/NDPluginPva.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 $(PROD_NAME)_SRCS += $(PROD_NAME)_registerRecordDeviceDriver.cpp $(PROD_NAME)Main.cpp
@@ -21,6 +22,7 @@ PROD_LIBS += ADPylon
 PROD_LIBS += ADGenICam 
 
 include $(ADCORE)/ADApp/commonDriverMakefile
+include $(ADCORE)/ADApp/commonLibraryMakefile
 
 #=============================
 
