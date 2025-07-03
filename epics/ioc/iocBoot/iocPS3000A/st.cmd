@@ -20,6 +20,8 @@ dbLoadRecords("../../db/asynRecord.db","P=$(P),R=ps3000a_asyn,PORT=$(PORT),ADDR=
 
 #asynSetTraceMask("$(PORT)",0,0xff)
 asynSetTraceIOMask("$(PORT)",0,0x2)
+
+startPVAServer
 iocInit()
 
 dbpf $(P)$(R)PicoConnect 1

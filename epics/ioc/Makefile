@@ -9,10 +9,10 @@ DIRS += $(wildcard *Top)
 DIRS += $(wildcard iocBoot)
 
 # Select app to include
-DIRS += GentecIntegraApp  
+#DIRS += GentecIntegraApp  
 DIRS += TakeNShotsApp  
-DIRS += TimingApp  
-DIRS += delaygenApp  
+#DIRS += TimingApp  
+#DIRS += delaygenApp  
 DIRS += picoApp  
 # DIRS += spinnakerApp
 # DIRS += pylonApp
