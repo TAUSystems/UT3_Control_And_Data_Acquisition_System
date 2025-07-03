@@ -8,8 +8,13 @@ PS3000A_registerRecordDeviceDriver(pdbbase)
 
 PS3000AConfigure("ps3000a_port", 1000)
 
-dbLoadRecords("../../db/PS3000A.db","P=TEST:,R=scope1:,PORT=ps3000a_port,ADDR=0,TIMEOUT=1,NPOINTS=1000")
-dbLoadRecords("../../db/asynRecord.db","P=TEST:,R=asyn1,PORT=ps3000a_port,ADDR=0,OMAX=80,IMAX=80")
-#asynSetTraceMask("ps3000a_port",0,0xff)
-asynSetTraceIOMask("ps3000a_port",0,0x2)
+epicsEnvSet(P, "E:")
+epicsEnvSet(R, "ICT:")
+epicsEnvSet(PORT, "ps3000a_port")
+
+
+dbLoadRecords("../../db/PS3000A.db","P=$(P),R=$(R),PORT=$(PORT),ADDR=0,TIMEOUT=1,NPOINTS=1000")
+dbLoadRecords("../../db/asynRecord.db","P=$(P),R=ps3000a_asyn,PORT=$(PORT),ADDR=0,OMAX=80,IMAX=80")
+#asynSetTraceMask("$(PORT)",0,0xff)
+asynSetTraceIOMask("$(PORT)",0,0x2)
 iocInit()
