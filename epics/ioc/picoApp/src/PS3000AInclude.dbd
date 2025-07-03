@@ -1,5 +1,6 @@
 include "base.dbd"
 include "asyn.dbd"
 include "calc.dbd"
+include "qsrv.dbd"
 include "PVAServerRegister.dbd"
 registrar("PS3000ARegister")
