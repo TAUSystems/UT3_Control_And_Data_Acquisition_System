@@ -39,7 +39,7 @@ record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
 # Wait for cameras to all be in acquisition mode.
 record(calc, TakeNShots:CheckCamerasAcquiring) {
   field(DESC, "Check all cameras are in Acquiring mode")
-  field(CALC, "A && B && C")
+  field(CALC, "A && B && C && D && E")
   field(INPA, "E:Spectrometer:Pointing:Acquire_RBV CP")
   field(INPB, "E:Spectrometer:LowEnergy:Acquire_RBV CP")
   field(INPC, "E:Spectrometer:HighEnergy:Acquire_RBV CP")
