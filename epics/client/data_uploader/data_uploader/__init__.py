@@ -21,7 +21,7 @@ from .utils.env import get_env
 env = get_env(os=True, dotenv=True)
 
 # EPICS channel access and pvAccess
-from epics import caget_many
+from epics import caget_many, caput
 from epics.pv import PV
 from p4p.client.asyncio import Context as P4PContext
 pva = P4PContext('pva')
@@ -476,7 +476,7 @@ class DataUploader:
             if variable.source == VariableSource.monitor:
                 variable.pv = PV(variable.name, callback=make_sync_callback(partial(self.scalar_pv_callback, variable), self.event_loop))
                 # disable monitor deadband: make sure monitor is posted even if value doesn't change
-                PV(variable.name + ".MDEL").put(-1)
+                caput(variable.name + ".MDEL", -1)
                 logging.info(f"Monitoring {variable.name} over Channel Access")
 
             elif variable.source == VariableSource.fetch:
