@@ -30,6 +30,8 @@ record(dfanout, TakeNShots:CameraAcquisitionStartFanOut) {
   field(OUTA, "E:Spectrometer:Pointing:Acquire PP")
   field(OUTB, "E:Spectrometer:LowEnergy:Acquire PP")
   field(OUTC, "E:Spectrometer:HighEnergy:Acquire PP")
+  field(OUTD, "Laser:AcclChamber:NF:Acquire PP")
+  field(OUTE, "Laser:AcclChamber:FF:Acquire PP")
   field(DOL, "1")
   field(SCAN, "Passive")
 }
@@ -41,6 +43,8 @@ record(calc, TakeNShots:CheckCamerasAcquiring) {
   field(INPA, "E:Spectrometer:Pointing:Acquire_RBV CP")
   field(INPB, "E:Spectrometer:LowEnergy:Acquire_RBV CP")
   field(INPC, "E:Spectrometer:HighEnergy:Acquire_RBV CP")
+  field(INPD, "Laser:AcclChamber:NF:Acquire_RBV CP")
+  field(INPE, "Laser:AcclChamber:FF:Acquire_RBV CP")
 }
 
 # At the same time, a new Burst and Shots should be written to the measurement 
@@ -92,7 +96,9 @@ record(dfanout, TakeNShots:CameraAcquisitionStopFanOut) {
   field(DESC, "Stop acquisition on cameras")
   field(OUTA, "E:Spectrometer:Pointing:Acquire PP")
   field(OUTB, "E:Spectrometer:LowEnergy:Acquire PP")
-  field(OUTC, "E:Spectrometer:HighEnergy:Acquire PP'")
+  field(OUTC, "E:Spectrometer:HighEnergy:Acquire PP")
+  field(OUTD, "Laser:AcclChamber:NF:Acquire PP")
+  field(OUTE, "Laser:AcclChamber:FF:Acquire PP")
   field(DOL, "0")
 }
 
