@@ -5,9 +5,17 @@ include $(TOP)/configure/CONFIG
 # Directories to build, any order
 DIRS += configure
 DIRS += $(wildcard *Sup)
-DIRS += $(wildcard *App)
 DIRS += $(wildcard *Top)
 DIRS += $(wildcard iocBoot)
+
+# Select app to include
+#DIRS += GentecIntegraApp  
+DIRS += TakeNShotsApp  
+#DIRS += TimingApp  
+#DIRS += delaygenApp  
+DIRS += picoApp  
+# DIRS += spinnakerApp
+# DIRS += pylonApp
 
 # The build order is controlled by these dependency rules:
 

@@ -1,0 +1,32 @@
+# Contains records for the ICT device read out through the PicoScope
+record(waveform, "$(P)$(R)Trace") {
+    field(DESC, "ICT waveform trace")
+    field(NELM, "$(NPOINTS)")
+    field(FTVL, "FLOAT")
+    field(INP, "$(P)$(R)Waveform_$(C)_RBV CP")
+    field(EGU, "uV")
+}
+
+# ICT-122-070-05:1
+# 5 V*s/C
+record(ai, "$(P)$(R)Sensitivity") {
+    field(DESC, "Voltage response per charge/time")
+    field(EGU, "V*s/C")
+    field(VAL, 5.0)
+}
+
+# inputs:
+#   AA: waveform, in microvolts
+#   A: time of trace, in nanoseconds
+#   B: number of samples
+#   C: voltage per charge/time, in V*s/C
+record(acalcout, "$(P)$(R)Charge") {
+    field(DESC, "Charge")
+    field(CALC, "A*1e-9 / B / C * (SUM(AA) - AVG(AA[0, 199]))*1e-6 / 1e-12")
+    field(INAA, "$(P)$(R)Trace CP")
+    field(INPA, "$(P)$(R)SampleLength_RBV")
+    field(INPB, "$(P)$(R)MaxPoints_RBV")
+    field(INPC, "$(P)$(R)Sensitivity")
+    field(EGU, "pC")
+    field(PREC, "6")
+}
