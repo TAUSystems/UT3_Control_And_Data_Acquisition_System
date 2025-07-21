@@ -90,7 +90,7 @@ class ScalarsSavedTracker:
             del self.shot_ready_cache[(shot.seq, variable.source)]
             logging.warning("Updating status of a shot and variable whose shot/variable "
                             "combination had already been marked as ready for at "
-                            "least some result_status set."
+                            f"least some result_status set: {shot.timestamp:%Y-%m-%d %H:%M:%S.%f}/{variable.name}"
                            )
 
     def all_scalars_ready(self, 
