@@ -786,12 +786,17 @@ class DataUploader:
             # determine shot id
             shot_id = f"burst-{self.burst.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}/shot-{shot.timestamp:%Y-%m-%dT%H-%M-%S-%fZ}"
 
-            # put image data in queue to be uploaded to image endpoint
-            await self.image_collector.put(ImageUploadData(
+            image_upload_data = ImageUploadData(
                 device_name = image_device.name,
                 shot_id = shot_id,
                 image = image_data,
-            ))
+            )
+
+            if self.image_collector.is_part_of_instrument(image_upload_data.device_name):
+                # put image data in queue to be uploaded to image endpoint
+                await self.image_collector.put(image_upload_data)
+            else:
+                await self.image_uploader.enqueue(image_upload_data)
 
         except Exception as err:
             image_device_name = getattr(image_device, 'name', "device with no 'name' attribute")

@@ -122,6 +122,10 @@ class ImageCollector:
         await self.image_uploader.queue.put(instrument_image_data)
         del self.instrument_shot_image_data[(instrument, shot_id)]
 
+    def is_part_of_instrument(self, device_name: DeviceName) -> bool:
+        """Check if a device is part of any instrument."""
+        return device_name in self.device_instrument_map
+
     async def put(self, image_upload_data: ImageUploadData):
         """ Add an image and upload it if all images for the instrument/shot are present
         
@@ -131,10 +135,10 @@ class ImageCollector:
             Single device image data
         """
 
-        try:
-            instrument = self.device_instrument_map[image_upload_data.device_name]
-        except KeyError:
-            raise ValueError(f"Device {image_upload_data.device_name} is not in any instrument.")
+        if not self.is_part_of_instrument(image_upload_data.device_name):
+            raise ValueError(f"Device {image_upload_data.device_name} is not part of any instrument.")
+
+        instrument = self.device_instrument_map[image_upload_data.device_name]
 
         self.instrument_shot_image_data[(instrument, image_upload_data.shot_id)][image_upload_data.device_name] = image_upload_data
 
