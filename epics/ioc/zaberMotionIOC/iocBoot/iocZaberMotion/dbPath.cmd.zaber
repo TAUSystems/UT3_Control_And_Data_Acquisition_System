@@ -1,0 +1,6 @@
+###
+# ZaberMotionSetDbPath(
+#    path of local copy of zaber device database
+# )
+###
+ZaberMotionSetDbPath("/home/ubuntu/Downloads/devices-public.sqlite")
