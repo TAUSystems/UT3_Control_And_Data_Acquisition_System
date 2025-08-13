@@ -1,19 +1,22 @@
 record(int64in, "$(P)$(R)Timestamp") {
     field(DESC, "microseconds since last hardware reset")
-    field(EGU,  "us")
+    field(DTYP, "stream")
     field(INP,  "@TriggerCounter.proto getTimestamp $(PORT)")
+    field(EGU,  "us")
     field(SCAN, "I/O Intr")
 }
 
 record(int64in, "$(P)$(R)Counter") {
     field(DESC, "number of triggers since last hw reset")
-    field(EGU,  "counts")
+    field(DTYP, "stream")
     field(INP,  "@TriggerCounter.proto getCounter $(PORT)")
+    field(EGU,  "counts")
     field(SCAN, "I/O Intr")
 }
 
 record(stringout, "$(P)$(R)Reset") {
     field(DESC, "reset counter and timestamp")
+    field(DTYP, "stream")
     field(OUT, "@TriggerCounter.proto reset $(PORT)")
     field(SCAN, "Passive")
 }
