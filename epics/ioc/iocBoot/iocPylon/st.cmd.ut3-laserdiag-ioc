@@ -68,6 +68,20 @@ set_requestfile_path("$(ADPYLON)/pylonApp/Db")
 startPVAServer
 iocInit()
 
+
+dbpf Laser:Pva:AcclChamber:NF:EnableCallbacks 1
+dbpf Laser:Pva:AcclChamber:FF:EnableCallbacks 1
+
+dbpf Laser:AcclChamber:NF:GC_GevSCPSPacketSize 1500
+dbpf Laser:AcclChamber:NF:GC_GevSCPD 2000
+dbpf Laser:AcclChamber:NF:GC_GevSCFTD 100000
+
+dbpf Laser:AcclChamber:FF:GC_GevSCPSPacketSize 1500
+dbpf Laser:AcclChamber:FF:GC_GevSCPD 2000
+dbpf Laser:AcclChamber:FF:GC_GevSCFTD 100000
+
+
+
 # ===============================
 # Autosave Config
 # ===============================
