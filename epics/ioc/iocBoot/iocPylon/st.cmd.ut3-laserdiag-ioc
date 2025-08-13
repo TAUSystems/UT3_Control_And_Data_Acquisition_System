@@ -75,10 +75,12 @@ dbpf Laser:Pva:AcclChamber:FF:EnableCallbacks 1
 dbpf Laser:AcclChamber:NF:GC_GevSCPSPacketSize 1500
 dbpf Laser:AcclChamber:NF:GC_GevSCPD 2000
 dbpf Laser:AcclChamber:NF:GC_GevSCFTD 100000
+dbpf Laser:AcclChamber:NF:PixelFormat Mono8
 
 dbpf Laser:AcclChamber:FF:GC_GevSCPSPacketSize 1500
 dbpf Laser:AcclChamber:FF:GC_GevSCPD 2000
 dbpf Laser:AcclChamber:FF:GC_GevSCFTD 100000
+dbpf Laser:AcclChamber:FF:PixelFormat Mono8
 
 
 
