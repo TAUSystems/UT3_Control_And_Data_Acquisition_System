@@ -1,0 +1,13 @@
+record(int64in, "$(P)$(R)Timestamp") {
+    field(DESC, "microseconds since last hardware reset")
+    field(EGU,  "us")
+    field(INP,  "@TriggerCounter.proto getTimestamp $(PORT)")
+    field(SCAN, "I/O Intr")
+}
+
+record(int64in, "$(P)$(R)Counter") {
+    field(DESC, "number of triggers since last hw reset")
+    field(EGU,  "counts")
+    field(INP,  "@TriggerCounter.proto getCounter $(PORT)")
+    field(SCAN, "I/O Intr")
+}

@@ -1,0 +1,15 @@
+# TriggerCounter protocol definitions
+
+# The board outputs timestamp and incremental counter on every trigger in the form 
+# "%d %d\r\n". The process database has records with SCAN = I/O Intr that each parse 
+# one part of the output
+
+Terminator = CR LF;
+
+getTimestamp {
+    in "%d %*d"
+}
+
+getCounter {
+    in "%*d %d"
+}
