@@ -10,7 +10,12 @@ dbLoadDatabase "$(TOP)/dbd/TriggerCounter.dbd"
 TriggerCounter_registerRecordDeviceDriver pdbbase
 
 # Configure port
-drvAsynSerialPortConfigure ("TriggerCounterPort", "/dev/ttyACM0")
+drvAsynSerialPortConfigure ("TriggerCounterPort", "/dev/serial/by-id/usb-Texas_Instruments_In-Circuit_Debug_Interface_0E20076B-if00")
+asynSetOption("TriggerCounterPort", 0, "baud", "115200")
+asynSetOption("TriggerCounterPort", 0, "bits", "8")
+asynSetOption("TriggerCounterPort", 0, "stop", "1")
+asynSetOption("TriggerCounterPort", 0, "parity", "none")
+asynSetOption("TriggerCounterPort", 0, "ixon", "Y")
 
 ## Load record instances
 epicsEnvSet ("STREAM_PROTOCOL_PATH", "$(TOP)/db")
