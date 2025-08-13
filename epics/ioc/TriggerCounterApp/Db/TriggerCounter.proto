@@ -7,9 +7,13 @@
 Terminator = CR LF;
 
 getTimestamp {
-    in "%d %*d"
+    in "%d %*d";
 }
 
 getCounter {
-    in "%*d %d"
+    in "%*d %d";
+}
+
+reset {
+    out "reset";
 }
