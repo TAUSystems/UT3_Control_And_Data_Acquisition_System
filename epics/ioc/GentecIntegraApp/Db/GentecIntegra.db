@@ -4,7 +4,6 @@
 
 
 # # # # # Gentec Integra EPICS IOC process database
-
 # Record that checks for new data from Gentec Integra and acquires it
 #
 # The Gentec Integra does not have a hardware interrupt to notify of new data, 
@@ -14,58 +13,57 @@
 # To use this record, set PollAndRetrieve.SCAN field to the desired polling 
 # interval.
 record(seq, "$(P)$(R)PollAndRetrieve") {
-    field(DESC, "description")
-    field(SELM, "All")
-    field(DOL0, 1)
-    field(LNK0, "$(P)$(R)NewValueReady.PROC")
-    field(DLY1, 0.010)
-    field(DOL1, 1)
-    field(LNK1, "$(P)$(R)RetrieveValueIfReady.PROC")
-    field(DLY2, 0.010)
-    field(DOL2, 1)
-    field(LNK2, "$(P)$(R)NewValueReady.PROC")
-    field(SCAN, "Passive")
+  field(DESC, "description")
+  field(SELM, "All")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)NewValueReady.PROC")
+  field(DLY1, "0.010")
+  field(DOL1, "1")
+  field(LNK1, "$(P)$(R)RetrieveValueIfReady.PROC")
+  field(DLY2, "0.010")
+  field(DOL2, "1")
+  field(LNK2, "$(P)$(R)NewValueReady.PROC")
+  field(SCAN, "Passive")
 }
 
 record(calcout, "$(P)$(R)RetrieveValueIfReady") {
-    field(DESC, "Process Value rec if NewValueReady")
-    field(SCAN, "Passive")
-    field(CALC, "A")
-    field(OOPT, "When Non-zero")
-    field(DOPT, "Use OCAL")
-    field(INPA, "$(P)$(R)NewValueReady NPP")
-    field(OUT, "$(P)$(R)Value.PROC")
+  field(DESC, "Process Value rec if NewValueReady")
+  field(SCAN, "Passive")
+  field(CALC, "A")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use OCAL")
+  field(INPA, "$(P)$(R)NewValueReady NPP")
+  field(OUT, "$(P)$(R)Value.PROC")
 }
 
 # Set delay between set and read commands of the associated RBV records.
 # This is to prevent concurrent commands
 record(dfanout, "$(P)$(R)SetCommandDelay") {
-    field(DESC, "Set command delay")
-    field(DOL,  0.010)
-    field(OUTA, "$(P)$(R)SetCommandDelay0 PP")
-    field(OUTB, "$(P)$(R)SetCommandDelay1 PP")
-    field(EGU, "s")
+  field(DESC, "Set command delay")
+  field(DOL, "0.010")
+  field(OUTA, "$(P)$(R)SetCommandDelay0 PP")
+  field(OUTB, "$(P)$(R)SetCommandDelay1 PP")
+  field(EGU, "s")
 }
 
 record(dfanout, "$(P)$(R)SetCommandDelay0") {
-    field(DESC, "Set command delay for 8 instr")
-    field(OUTA, "$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
-    field(OUTB, "$(P)$(R)Delay_Autoscale_RBV.DLY0")
-    field(OUTC, "$(P)$(R)Delay_TriggerLevel_RBV.DLY0")
-    field(OUTD, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0")
-    field(OUTE, "$(P)$(R)Delay_Wavelength_RBV.DLY0")
-    field(OUTF, "$(P)$(R)Delay_UserMultiplier_RBV.DLY0")
-    field(OUTG, "$(P)$(R)Delay_UserOffset_RBV.DLY0")
-    field(OUTH, "$(P)$(R)Delay_MeasureMode.DLY0")
+  field(DESC, "Set command delay for 8 instr")
+  field(OUTA, "$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
+  field(OUTB, "$(P)$(R)Delay_Autoscale_RBV.DLY0")
+  field(OUTC, "$(P)$(R)Delay_TriggerLevel_RBV.DLY0")
+  field(OUTD, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0")
+  field(OUTE, "$(P)$(R)Delay_Wavelength_RBV.DLY0")
+  field(OUTF, "$(P)$(R)Delay_UserMultiplier_RBV.DLY0")
+  field(OUTG, "$(P)$(R)Delay_UserOffset_RBV.DLY0")
+  field(OUTH, "$(P)$(R)Delay_MeasureMode.DLY0")
 }
 
 record(dfanout, "$(P)$(R)SetCommandDelay1") {
-    field(DESC, "Set command delay for 8 instr")
-    field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
-    field(OUTB, "$(P)$(R)PollAndRetrieve.DLY1")
-    field(OUTC, "$(P)$(R)PollAndRetrieve.DLY2")
+  field(DESC, "Set command delay for 8 instr")
+  field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
+  field(OUTB, "$(P)$(R)PollAndRetrieve.DLY1")
+  field(OUTC, "$(P)$(R)PollAndRetrieve.DLY2")
 }
-
 
 # # # Display
 # 01 Manually sets the scale
@@ -84,79 +82,79 @@ record(dfanout, "$(P)$(R)SetCommandDelay1") {
 #   41 300 megawatts or megajoules
 # or roughly: scale = 10^(index/2 - 12) watts or joules
 record(longout, "$(P)$(R)ScaleIndex") {
-    field(DESC, "Set display scale")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setScale $(PORT)")
-    field(SCAN, "Passive")
-    field(DRVL, 0)
-    field(DRVH, 41)
-    field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
+  field(DESC, "Set display scale")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setScale $(PORT)")
+  field(SCAN, "Passive")
+  field(DRVL, "0")
+  field(DRVH, "41")
+  field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_ScaleIndex_RBV") {
-    field(DESC, "Delay and get scale index")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)ScaleIndex_RBV.PROC")
+  field(DESC, "Delay and get scale index")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)ScaleIndex_RBV.PROC")
 }
 
 # 02 Changes scale to the next higher scale
 record(bo, "$(P)$(R)ScaleUp") {
-    field(DESC, "Change display scale up")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setScaleUp $(PORT)")
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
+  field(DESC, "Change display scale up")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setScaleUp $(PORT)")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
 }
 
 # 03 Changes scale to the next lower scale
 record(bo, "$(P)$(R)ScaleDown") {
-    field(DESC, "Change display scale down")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setScaleDown $(PORT)")
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
+  field(DESC, "Change display scale down")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setScaleDown $(PORT)")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_ScaleIndex_RBV.PROC")
 }
 
 # 04 Returns scale index between 0 and 41
 # See the 01 setScale command for the index-to-scale mapping.
 record(longin, "$(P)$(R)ScaleIndex_RBV") {
-    field(DESC, "Get display scale index")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getCurrentScaleIndex $(PORT)")
-    field(SCAN, "Passive")
-    field(PINI, "YES")
+  field(DESC, "Get display scale index")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getCurrentScaleIndex $(PORT)")
+  field(SCAN, "Passive")
+  field(PINI, "YES")
 }
 
 # 05 Sets the autoscale
 # 0: Off, 1: On
 record(bo, "$(P)$(R)Autoscale") {
-    field(DESC, "Set autoscale on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setAutoscale $(PORT)")
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_Autoscale_RBV.PROC")
+  field(DESC, "Set autoscale on/off")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setAutoscale $(PORT)")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_Autoscale_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_Autoscale_RBV") {
-    field(DESC, "Delay and get autoscale status")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)Autoscale_RBV.PROC")
+  field(DESC, "Delay and get autoscale status")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)Autoscale_RBV.PROC")
 }
 
 # 06 Returns autoscale status
 # 0: Off, 1: On
 record(bi, "$(P)$(R)Autoscale_RBV") {
-    field(DESC, "Get autoscale status")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getAutoscale $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(PINI, "YES")
+  field(DESC, "Get autoscale status")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getAutoscale $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "Off")
+  field(ONAM, "On")
+  field(PINI, "YES")
 }
 
 # # 07 Displays the valid scales for the connected head
@@ -165,40 +163,40 @@ record(bi, "$(P)$(R)Autoscale_RBV") {
 # displayValidScales {
 #     out "*DVS";
 #     in "%s";
+#
 # }
-
 # 08 Sets the internal trigger level for pulse energy
 # This command sets the internal trigger level when using the device in energy mode.
 # Trigger level is in percentage from 0.1 to 99.9 and must be 4 numerical values
 # including the decimal point.
 record(ao, "$(P)$(R)TriggerLevel") {
-    field(DESC, "Set trigger level in percent")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setTriggerLevel $(PORT)")
-    field(EGU, "%")
-    field(DRVL, 0.1)
-    field(DRVH, 99.9)
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_TriggerLevel_RBV.PROC")
+  field(DESC, "Set trigger level in percent")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setTriggerLevel $(PORT)")
+  field(EGU, "%")
+  field(DRVL, "0.1")
+  field(DRVH, "99.9")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_TriggerLevel_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_TriggerLevel_RBV") {
-    field(DESC, "Delay and get trigger level")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)TriggerLevel_RBV.PROC")
+  field(DESC, "Delay and get trigger level")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)TriggerLevel_RBV.PROC")
 }
 
 # 09 Returns trigger level value, in percent
 # This is for joulemeters and wattmeters in energy mode only.
 record(ai, "$(P)$(R)TriggerLevel_RBV") {
-    field(DESC, "Get trigger level in percent")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getTriggerLevel $(PORT)")
-    field(SCAN, "Passive")
-    field(EGU, "%")
-    field(PINI, "YES")
+  field(DESC, "Get trigger level in percent")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getTriggerLevel $(PORT)")
+  field(SCAN, "Passive")
+  field(EGU, "%")
+  field(PINI, "YES")
 }
 
 # 10 Returns the current measure mode on INTEGRA
@@ -206,14 +204,14 @@ record(ai, "$(P)$(R)TriggerLevel_RBV") {
 # This command returns the INTEGRA’s measurement mode. Depending on the head, it can be power mode in W, 
 # energy mode in J or single shot energy mode in J (SSE).
 record(mbbi, "$(P)$(R)MeasureMode") {
-    field(DESC, "Get current measure mode")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getMeasureModeDisplay $(PORT)")
-    field(SCAN, "Passive")
-    field(ZRST, "POWER")
-    field(ONST, "ENERGY")
-    field(TWST, "SSE")
-    field(PINI, "YES")
+  field(DESC, "Get current measure mode")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getMeasureModeDisplay $(PORT)")
+  field(SCAN, "Passive")
+  field(ZRST, "POWER")
+  field(ONST, "ENERGY")
+  field(TWST, "SSE")
+  field(PINI, "YES")
 }
 
 # # # Measurement
@@ -222,12 +220,12 @@ record(mbbi, "$(P)$(R)MeasureMode") {
 # This command is used to query the value that is currently being displayed by the monitor. The value is 
 # displayed in watts or in joules. For joulemeters, the data can also be in binary format
 record(ai, "$(P)$(R)Value") {
-    field(DESC, "Get energy value")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto queryCurrentValueASCII $(PORT)")
-    field(EGU, "Joule")
-    field(SCAN, "Passive")
-    field(PINI, "YES")
+  field(DESC, "Get energy value")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto queryCurrentValueASCII $(PORT)")
+  field(EGU, "Joule")
+  field(SCAN, "Passive")
+  field(PINI, "YES")
 }
 
 # # 12 Sends the values in ASCII or binary to the serial port with the data sampling setting
@@ -237,12 +235,12 @@ record(ai, "$(P)$(R)Value") {
 #     out "*CAU";
 #     in "OK";
 # }
-
+#
 # sendContinuousTransmissionBinary {
 #     out "*CAU";
 #     in "xxx";
 # }
-
+#
 # # 13 Sends continuous value with period in ASCII or binary
 # INTEGRA will send continuous energy data and the pulse repetition rate in Hz. They are comma-separated.
 # This is for joulemeters only. For joulemeters, the data can also be in binary format
@@ -250,12 +248,12 @@ record(ai, "$(P)$(R)Value") {
 #     out "*CEU %d";
 #     in "OK";
 # }
-
+#
 # sendContinuousValueWithPeriodBinary {
 #     out "*CEU %d";
 #     in "xxx";
 # }
-
+#
 # # 14 Sends current value with frequency in ASCII or binary
 # INTEGRA will send the current measurement and the pulse repetition rate in Hz. They are comma-separated. 
 # This is for joulemeters only. For joulemeters, the data can also be in binary format
@@ -263,19 +261,19 @@ record(ai, "$(P)$(R)Value") {
 #     out "*CTU %d";
 #     in "OK";
 # }
-
+#
 # sendCurrentValueWithFrequencyBinary {
 #     out "*CTU %d";
 #     in "xxx";
 # }
-
+#
 # 15 Stops the *CAU and *CEU commands
 # This command is used to stop the real-time transfer enabled by the CAU and CEU commands
 record(bo, "$(P)$(R)StopContinuousCommands") {
-    field(DESC, "Stop continuous commands")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto stopContinuousCommands $(PORT)")
-    field(SCAN, "Passive")
+  field(DESC, "Stop continuous commands")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto stopContinuousCommands $(PORT)")
+  field(SCAN, "Passive")
 }
 
 # 16 Determines if new reading is available or not
@@ -283,57 +281,57 @@ record(bo, "$(P)$(R)StopContinuousCommands") {
 # its use is recommended when used with a single pulse operation.
 # This is for joulemeters only.
 record(bi, "$(P)$(R)NewValueReady") {
-    field(DESC, "Query if new value is ready")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto queryNewValueReady $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "NotReady")
-    field(ONAM, "Ready")
-    field(PINI, "YES")
+  field(DESC, "Query if new value is ready")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto queryNewValueReady $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "NotReady")
+  field(ONAM, "Ready")
+  field(PINI, "YES")
 }
 
 # 17 Sends the laser rep rate frequency in ASCII
 # This is for joulemeters only.
 record(ai, "$(P)$(R)LaserFrequency") {
-    field(DESC, "Get laser rep rate frequency")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getLaserFrequency $(PORT)")
-    field(SCAN, "Passive")
-    field(EGU, "Hz")
-    field(PINI, "YES")
+  field(DESC, "Get laser rep rate frequency")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getLaserFrequency $(PORT)")
+  field(SCAN, "Passive")
+  field(EGU, "Hz")
+  field(PINI, "YES")
 }
 
 # 18 Sets the binary joulemeter mode or ASCII mode
 # 0 = ASCII mode, 1 = Binary mode
 # This is for joulemeters only.
 record(bo, "$(P)$(R)BinaryJoulemeterMode") {
-    field(DESC, "Set joulemeter binary or ASCII mode")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setBinaryJoulemeterMode $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "ASCII")
-    field(ONAM, "Binary")
-    field(FLNK, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.PROC")
+  field(DESC, "Set joulemeter binary or ASCII mode")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setBinaryJoulemeterMode $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "ASCII")
+  field(ONAM, "Binary")
+  field(FLNK, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_BinaryJoulemeterMode_RBV") {
-    field(DESC, "Delay and get joulemeter binary mode")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)BinaryJoulemeterMode_RBV.PROC")
+  field(DESC, "Delay and get joulemeter binary mode")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)BinaryJoulemeterMode_RBV.PROC")
 }
 
 # 19 Returns the binary joulemeter mode or ASCII mode
 # This is for joulemeters only.
 record(bi, "$(P)$(R)BinaryJoulemeterMode_RBV") {
-    field(DESC, "Get joulemeter binary or ASCII mode")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getBinaryJoulemeterMode $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "ASCII")
-    field(ONAM, "Binary")
-    field(PINI, "YES")
+  field(DESC, "Get joulemeter binary or ASCII mode")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getBinaryJoulemeterMode $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "ASCII")
+  field(ONAM, "Binary")
+  field(PINI, "YES")
 }
 
 # # Setup
@@ -344,24 +342,24 @@ record(bi, "$(P)$(R)BinaryJoulemeterMode_RBV") {
 # The input parameter must have five digits. If the desired wavelength does not have five digits, you must 
 # enter a zero-padded number. For example, to set the wavelength at 514 nm, you must enter 00514.
 # In the new series, specifying zero as a wavelength or providing an out-of-bound value as a parameter cancels 
-# the command. 
+# the command.
 record(longout, "$(P)$(R)Wavelength") {
-    field(DESC, "Set personal wavelength correction in nm")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setPersonalWavelengthCorrectionNM $(PORT)")
-    field(EGU, "nm")
-    field(SCAN, "Passive")
-    field(DRVL, 0)
-    field(DRVH, 99999)
-    field(FLNK, "$(P)$(R)Delay_Wavelength_RBV.PROC")
+  field(DESC, "Set personal wavelength correction in nm")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setPersonalWavelengthCorrectionNM $(PORT)")
+  field(EGU, "nm")
+  field(SCAN, "Passive")
+  field(DRVL, "0")
+  field(DRVH, "99999")
+  field(FLNK, "$(P)$(R)Delay_Wavelength_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_Wavelength_RBV") {
-    field(DESC, "Delay and get wavelength correction")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)Wavelength_RBV.PROC")
+  field(DESC, "Delay and get wavelength correction")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)Wavelength_RBV.PROC")
 }
 
 # 21 Specifies the wavelength in microns (for THZ heads only)
@@ -377,24 +375,24 @@ record(seq, "$(P)$(R)Delay_Wavelength_RBV") {
 #   Greater than 999.9um; 1 μm
 # In the new series, specifying zero as a wavelength or providing an out-of-bound value as a parameter cancels 
 # the command.
-
+#
 # Not necessary. 
-
-
+#
+#
 # 22 Returns the wavelength in nm
 record(longin, "$(P)$(R)Wavelength_RBV") {
-    field(DESC, "Get personal wavelength correction in nm")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getWavelength $(PORT)")
-    field(SCAN, "Passive")
-    field(EGU, "nm")
-    field(PINI, "YES")
+  field(DESC, "Get personal wavelength correction in nm")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getWavelength $(PORT)")
+  field(SCAN, "Passive")
+  field(EGU, "nm")
+  field(PINI, "YES")
 }
 
 # # Control
-
+#
 # Anticipation appears not to be implemented.
-
+#
 # # 23 Turns the anticipation on or off
 # # 0: Off, 1: On
 # # This command is used to enable or disable the anticipation processing when the device is reading from a 
@@ -409,7 +407,7 @@ record(longin, "$(P)$(R)Wavelength_RBV") {
 #     field(ONAM, "On")
 #     field(FLNK, "$(P)$(R)Anticipation_RBV.PROC")
 # }
-
+#
 # # 24 Returns the anticipation status
 # # 0: Off, 1: On
 # record(bi, "$(P)$(R)Anticipation_RBV") {
@@ -421,7 +419,7 @@ record(longin, "$(P)$(R)Wavelength_RBV") {
 #     field(ONAM, "On")
 #     field(PINI, "YES")
 # }
-
+#
 # 25 Applies the noise suppression algorithm
 # Sets or queries the sampling size of the noise suppression. For pyroelectric detectors and UM detectors only.
 # The INTEGRA joulemeter instrument has a special proprietary algorithm that can lower the noise-induced error
@@ -433,12 +431,12 @@ record(longin, "$(P)$(R)Wavelength_RBV") {
 # works best with the external trigger. This function will greatly improve the accuracy of the lowest scale, or any
 # scale, when used in a noisy environment.
 record(longout, "$(P)$(R)NoiseSuppression") {
-    field(DESC, "Set noise suppression sampling size")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setNoiseSuppression $(PORT)")
-    field(SCAN, "Passive")
-    field(DRVL, 0)
-    field(DRVH, 999)
+  field(DESC, "Set noise suppression sampling size")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setNoiseSuppression $(PORT)")
+  field(SCAN, "Passive")
+  field(DRVL, "0")
+  field(DRVH, "999")
 }
 
 # # 26 Zeroes the reading for a power detector
@@ -448,14 +446,14 @@ record(longout, "$(P)$(R)NoiseSuppression") {
 # setZeroOffset {
 #     out "*SOU";
 # }
-
+#
 # 27 Undoes the zeroing of the reading for a power detector
 # This command undoes the zero offset command to set the zero point at zero.
 record(bo, "$(P)$(R)ClearZeroOffset") {
-    field(DESC, "Clear zero offset for power detector")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto clearZeroOffset $(PORT)")
-    field(SCAN, "Passive")
+  field(DESC, "Clear zero offset for power detector")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto clearZeroOffset $(PORT)")
+  field(SCAN, "Passive")
 }
 
 # # 28 Returns the zero offset status
@@ -470,7 +468,7 @@ record(bo, "$(P)$(R)ClearZeroOffset") {
 #     field(ONAM, "On")
 #     field(PINI, "YES")
 # }
-
+#
 # 29 Zeroes the reading for all the scales for a photo detector
 # This command subtracts the current value for all available scales from all future measurements the moment the command 
 # is issued to set a new zero point.
@@ -479,121 +477,121 @@ record(bo, "$(P)$(R)ClearZeroOffset") {
 # setDiodeZeroOffset {
 #     out "*SDZ";
 # }
-
+#
 # 30 Sets the multiplier value
 # This command is used to set the value of the multipliers.
 record(ao, "$(P)$(R)UserMultiplier") {
-    field(DESC, "Set user multiplier value")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setUserMultiplier $(PORT)")
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_UserMultiplier_RBV.PROC")
+  field(DESC, "Set user multiplier value")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setUserMultiplier $(PORT)")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_UserMultiplier_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_UserMultiplier_RBV") {
-    field(DESC, "Delay and get user multiplier")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)UserMultiplier_RBV.PROC")
+  field(DESC, "Delay and get user multiplier")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)UserMultiplier_RBV.PROC")
 }
 
 # 31 Returns the current multiplier value
 record(ai, "$(P)$(R)UserMultiplier_RBV") {
-    field(DESC, "Get user multiplier value")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getUserMultiplier $(PORT)")
-    field(SCAN, "Passive")
-    field(PINI, "YES")
+  field(DESC, "Get user multiplier value")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getUserMultiplier $(PORT)")
+  field(SCAN, "Passive")
+  field(PINI, "YES")
 }
 
 # 32 Sets the offset value, a eight-character numerical value
 record(ao, "$(P)$(R)UserOffset") {
-    field(DESC, "Set user offset value")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setUserOffset $(PORT)")
-    field(SCAN, "Passive")
-    field(FLNK, "$(P)$(R)Delay_UserOffset_RBV.PROC")
+  field(DESC, "Set user offset value")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setUserOffset $(PORT)")
+  field(SCAN, "Passive")
+  field(FLNK, "$(P)$(R)Delay_UserOffset_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_UserOffset_RBV") {
-    field(DESC, "Delay and get user offset")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)UserOffset_RBV.PROC")
+  field(DESC, "Delay and get user offset")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)UserOffset_RBV.PROC")
 }
 
 # 33 Returns the current offset value
 record(ai, "$(P)$(R)UserOffset_RBV") {
-    field(DESC, "Get user offset value")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getUserOffset $(PORT)")
-    field(SCAN, "Passive")
-    field(PINI, "YES")
+  field(DESC, "Get user offset value")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getUserOffset $(PORT)")
+  field(SCAN, "Passive")
+  field(PINI, "YES")
 }
 
 # 34 Sets the single shot energy mode
 # 0: Off, 1: On
 record(bo, "$(P)$(R)SingleShotEnergyMode") {
-    field(DESC, "Set single shot energy mode on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setSingleShotEnergyMode $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(FLNK, "$(P)$(R)Delay_MeasureMode.PROC")
+  field(DESC, "Set single shot energy mode on/off")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setSingleShotEnergyMode $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "Off")
+  field(ONAM, "On")
+  field(FLNK, "$(P)$(R)Delay_MeasureMode.PROC")
 }
 
 record(seq, "$(P)$(R)Delay_MeasureMode") {
-    field(DESC, "Delay and get measure mode")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)MeasureMode.PROC")
+  field(DESC, "Delay and get measure mode")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)MeasureMode.PROC")
 }
 
 # 35 Sets the attenuator
 # 0: Off, 1: On
 record(bo, "$(P)$(R)Attenuator") {
-    field(DESC, "Set attenuator on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setAttenuator $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(FLNK, "$(P)$(R)Delay_Attenuator_RBV.PROC")
+  field(DESC, "Set attenuator on/off")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setAttenuator $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "Off")
+  field(ONAM, "On")
+  field(FLNK, "$(P)$(R)Delay_Attenuator_RBV.PROC")
 }
 
 # Delay RBV query to prevent concurrent commands.
 record(seq, "$(P)$(R)Delay_Attenuator_RBV") {
-    field(DESC, "Delay and get attenuator status")
-    field(DLY0, "0.010")
-    field(DOL0, "1")
-    field(LNK0, "$(P)$(R)Attenuator_RBV.PROC")
+  field(DESC, "Delay and get attenuator status")
+  field(DLY0, "0.010")
+  field(DOL0, "1")
+  field(LNK0, "$(P)$(R)Attenuator_RBV.PROC")
 }
 
 # 36 Returns the attenuator status
 # If the attenuator is not available, it will always be off.
 record(bi, "$(P)$(R)Attenuator_RBV") {
-    field(DESC, "Get attenuator status")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto getAttenuator $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
-    field(PINI, "YES")
+  field(DESC, "Get attenuator status")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto getAttenuator $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "Off")
+  field(ONAM, "On")
+  field(PINI, "YES")
 }
 
 # 37 Activates or deactivates the external trigger
 # for INTEGRAs which have an external trigger option.
 # 0: Off, 1: On
 record(bo, "$(P)$(R)ExternalTrigger") {
-    field(DESC, "Set external trigger on/off")
-    field(DTYP, "stream")
-    field(OUT,  "@GentecIntegra.proto setExternalTrigger $(PORT)")
-    field(SCAN, "Passive")
-    field(ZNAM, "Off")
-    field(ONAM, "On")
+  field(DESC, "Set external trigger on/off")
+  field(DTYP, "stream")
+  field(OUT, "@GentecIntegra.proto setExternalTrigger $(PORT)")
+  field(SCAN, "Passive")
+  field(ZNAM, "Off")
+  field(ONAM, "On")
 }
 
 # # # Instrument and detector information
@@ -612,16 +610,16 @@ record(bo, "$(P)$(R)ExternalTrigger") {
 #     out "*BPS%1d";
 #     in "ACK: %d";
 # }
-
+# 
 # TODO. 
-
+#
 # 39 Gets firmware version of the monitor
 record(stringin, "$(P)$(R)Version") {
-    field(DESC, "Get device type and firmware version")
-    field(DTYP, "stream")
-    field(INP,  "@GentecIntegra.proto queryVersion $(PORT)")
-    field(SCAN, "Passive")
-    field(PINI, "YES")
+  field(DESC, "Get device type and firmware version")
+  field(DTYP, "stream")
+  field(INP, "@GentecIntegra.proto queryVersion $(PORT)")
+  field(SCAN, "Passive")
+  field(PINI, "YES")
 }
 
 # 40 Retrieves the detector information and monitor settings
@@ -644,9 +642,9 @@ record(stringin, "$(P)$(R)Version") {
 #     out "*STS";
 #     in "%s";
 # }
-
+#
 # TODO.
-
+#
 # 41 Returns the extended status
 # This command is used to query the device to get information about the following characteristics:
 #   Measure mode
@@ -675,17 +673,34 @@ record(stringin, "$(P)$(R)Version") {
 #     out "*ST2";
 #     in "%s";
 # }
-
+#
 # TODO.
+record(stringin, "$(P)$(R)GetStatus") {
+}
 
 #! Further lines contain data used by VisualDCT
-#! View(4,421,0.5)
-#! Record("$(P)$(R)SetCommandDelay",40,618,0,0,"$(P)$(R)SetCommandDelay")
+#! View(0,657,0.7)
+#! Record("$(P)$(R)PollAndRetrieve",60,125,0,0,"$(P)$(R)PollAndRetrieve")
+#! Field("$(P)$(R)PollAndRetrieve.LNK0",16777215,1,"$(P)$(R)PollAndRetrieve.LNK0")
+#! Link("$(P)$(R)PollAndRetrieve.LNK0","$(P)$(R)NewValueReady.PROC")
+#! Field("$(P)$(R)PollAndRetrieve.LNK1",16777215,1,"$(P)$(R)PollAndRetrieve.LNK1")
+#! Link("$(P)$(R)PollAndRetrieve.LNK1","$(P)$(R)RetrieveValueIfReady.PROC")
+#! Field("$(P)$(R)PollAndRetrieve.LNK2",16777215,1,"$(P)$(R)PollAndRetrieve.LNK2")
+#! Link("$(P)$(R)PollAndRetrieve.LNK2","$(P)$(R)NewValueReady.PROC")
+#! Field("$(P)$(R)PollAndRetrieve.DLY1",16777215,1,"$(P)$(R)PollAndRetrieve.DLY1")
+#! Field("$(P)$(R)PollAndRetrieve.DLY2",16777215,1,"$(P)$(R)PollAndRetrieve.DLY2")
+#! Record("$(P)$(R)RetrieveValueIfReady",560,123,0,0,"$(P)$(R)RetrieveValueIfReady")
+#! Field("$(P)$(R)RetrieveValueIfReady.PROC",16777215,0,"$(P)$(R)RetrieveValueIfReady.PROC")
+#! Field("$(P)$(R)RetrieveValueIfReady.INPA",16777215,0,"$(P)$(R)RetrieveValueIfReady.INPA")
+#! Link("$(P)$(R)RetrieveValueIfReady.INPA","$(P)$(R)NewValueReady.VAL")
+#! Field("$(P)$(R)RetrieveValueIfReady.OUT",16777215,1,"$(P)$(R)RetrieveValueIfReady.OUT")
+#! Link("$(P)$(R)RetrieveValueIfReady.OUT","$(P)$(R)Value.PROC")
+#! Record("$(P)$(R)SetCommandDelay",40,612,0,0,"$(P)$(R)SetCommandDelay")
 #! Field("$(P)$(R)SetCommandDelay.OUTA",16777215,1,"$(P)$(R)SetCommandDelay.OUTA")
 #! Link("$(P)$(R)SetCommandDelay.OUTA","$(P)$(R)SetCommandDelay0.VAL")
 #! Field("$(P)$(R)SetCommandDelay.OUTB",16777215,1,"$(P)$(R)SetCommandDelay.OUTB")
 #! Link("$(P)$(R)SetCommandDelay.OUTB","$(P)$(R)SetCommandDelay1.VAL")
-#! Record("$(P)$(R)SetCommandDelay0",360,624,0,0,"$(P)$(R)SetCommandDelay0")
+#! Record("$(P)$(R)SetCommandDelay0",360,613,0,0,"$(P)$(R)SetCommandDelay0")
 #! Field("$(P)$(R)SetCommandDelay0.VAL",16777215,0,"$(P)$(R)SetCommandDelay0.VAL")
 #! Field("$(P)$(R)SetCommandDelay0.OUTA",16777215,1,"$(P)$(R)SetCommandDelay0.OUTA")
 #! Link("$(P)$(R)SetCommandDelay0.OUTA","$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
@@ -703,7 +718,7 @@ record(stringin, "$(P)$(R)Version") {
 #! Link("$(P)$(R)SetCommandDelay0.OUTG","$(P)$(R)Delay_UserOffset_RBV.DLY0")
 #! Field("$(P)$(R)SetCommandDelay0.OUTH",16777215,1,"$(P)$(R)SetCommandDelay0.OUTH")
 #! Link("$(P)$(R)SetCommandDelay0.OUTH","$(P)$(R)Delay_MeasureMode.DLY0")
-#! Record("$(P)$(R)SetCommandDelay1",360,990,0,0,"$(P)$(R)SetCommandDelay1")
+#! Record("$(P)$(R)SetCommandDelay1",360,986,0,0,"$(P)$(R)SetCommandDelay1")
 #! Field("$(P)$(R)SetCommandDelay1.VAL",16777215,0,"$(P)$(R)SetCommandDelay1.VAL")
 #! Field("$(P)$(R)SetCommandDelay1.OUTA",16777215,1,"$(P)$(R)SetCommandDelay1.OUTA")
 #! Link("$(P)$(R)SetCommandDelay1.OUTA","$(P)$(R)Delay_Attenuator_RBV.DLY0")
@@ -711,125 +726,111 @@ record(stringin, "$(P)$(R)Version") {
 #! Link("$(P)$(R)SetCommandDelay1.OUTB","$(P)$(R)PollAndRetrieve.DLY1")
 #! Field("$(P)$(R)SetCommandDelay1.OUTC",16777215,0,"$(P)$(R)SetCommandDelay1.OUTC")
 #! Link("$(P)$(R)SetCommandDelay1.OUTC","$(P)$(R)PollAndRetrieve.DLY2")
-#! Record("$(P)$(R)ScaleIndex",720,610,0,0,"$(P)$(R)ScaleIndex")
+#! Record("$(P)$(R)ScaleIndex",720,603,0,0,"$(P)$(R)ScaleIndex")
 #! Field("$(P)$(R)ScaleIndex.FLNK",16777215,1,"$(P)$(R)ScaleIndex.FLNK")
 #! Link("$(P)$(R)ScaleIndex.FLNK","$(P)$(R)Delay_ScaleIndex_RBV")
-#! Record("$(P)$(R)Delay_ScaleIndex_RBV",1200,610,0,0,"$(P)$(R)Delay_ScaleIndex_RBV")
+#! Record("$(P)$(R)Delay_ScaleIndex_RBV",1200,606,0,0,"$(P)$(R)Delay_ScaleIndex_RBV")
 #! Field("$(P)$(R)Delay_ScaleIndex_RBV.DLY0",16777215,0,"$(P)$(R)Delay_ScaleIndex_RBV.DLY0")
 #! Field("$(P)$(R)Delay_ScaleIndex_RBV.LNK0",16777215,1,"$(P)$(R)Delay_ScaleIndex_RBV.LNK0")
 #! Link("$(P)$(R)Delay_ScaleIndex_RBV.LNK0","$(P)$(R)ScaleIndex_RBV.PROC")
-#! Record("$(P)$(R)ScaleUp",940,618,0,0,"$(P)$(R)ScaleUp")
+#! Record("$(P)$(R)ScaleUp",940,612,0,0,"$(P)$(R)ScaleUp")
 #! Field("$(P)$(R)ScaleUp.FLNK",16777215,1,"$(P)$(R)ScaleUp.FLNK")
 #! Link("$(P)$(R)ScaleUp.FLNK","$(P)$(R)Delay_ScaleIndex_RBV")
-#! Record("$(P)$(R)ScaleDown",940,798,0,0,"$(P)$(R)ScaleDown")
+#! Record("$(P)$(R)ScaleDown",940,792,0,0,"$(P)$(R)ScaleDown")
 #! Field("$(P)$(R)ScaleDown.FLNK",16777215,1,"$(P)$(R)ScaleDown.FLNK")
 #! Link("$(P)$(R)ScaleDown.FLNK","$(P)$(R)Delay_ScaleIndex_RBV")
-#! Record("$(P)$(R)ScaleIndex_RBV",1440,618,0,0,"$(P)$(R)ScaleIndex_RBV")
+#! Record("$(P)$(R)ScaleIndex_RBV",1440,612,0,0,"$(P)$(R)ScaleIndex_RBV")
 #! Field("$(P)$(R)ScaleIndex_RBV.PROC",16777215,1,"$(P)$(R)ScaleIndex_RBV.PROC")
-#! Record("$(P)$(R)Autoscale",700,1018,0,0,"$(P)$(R)Autoscale")
+#! Record("$(P)$(R)Autoscale",700,1012,0,0,"$(P)$(R)Autoscale")
 #! Field("$(P)$(R)Autoscale.FLNK",16777215,1,"$(P)$(R)Autoscale.FLNK")
 #! Link("$(P)$(R)Autoscale.FLNK","$(P)$(R)Delay_Autoscale_RBV")
-#! Record("$(P)$(R)Delay_Autoscale_RBV",980,1030,0,0,"$(P)$(R)Delay_Autoscale_RBV")
+#! Record("$(P)$(R)Delay_Autoscale_RBV",980,1026,0,0,"$(P)$(R)Delay_Autoscale_RBV")
 #! Field("$(P)$(R)Delay_Autoscale_RBV.DLY0",16777215,0,"$(P)$(R)Delay_Autoscale_RBV.DLY0")
 #! Field("$(P)$(R)Delay_Autoscale_RBV.LNK0",16777215,1,"$(P)$(R)Delay_Autoscale_RBV.LNK0")
 #! Link("$(P)$(R)Delay_Autoscale_RBV.LNK0","$(P)$(R)Autoscale_RBV.PROC")
-#! Record("$(P)$(R)Autoscale_RBV",1260,1030,0,0,"$(P)$(R)Autoscale_RBV")
+#! Record("$(P)$(R)Autoscale_RBV",1260,1023,0,0,"$(P)$(R)Autoscale_RBV")
 #! Field("$(P)$(R)Autoscale_RBV.PROC",16777215,0,"$(P)$(R)Autoscale_RBV.PROC")
-#! Record("$(P)$(R)TriggerLevel",700,1316,0,0,"$(P)$(R)TriggerLevel")
+#! Record("$(P)$(R)TriggerLevel",700,1308,0,0,"$(P)$(R)TriggerLevel")
 #! Field("$(P)$(R)TriggerLevel.FLNK",16777215,1,"$(P)$(R)TriggerLevel.FLNK")
 #! Link("$(P)$(R)TriggerLevel.FLNK","$(P)$(R)Delay_TriggerLevel_RBV")
-#! Record("$(P)$(R)Delay_TriggerLevel_RBV",980,1310,0,0,"$(P)$(R)Delay_TriggerLevel_RBV")
+#! Record("$(P)$(R)Delay_TriggerLevel_RBV",980,1306,0,0,"$(P)$(R)Delay_TriggerLevel_RBV")
 #! Field("$(P)$(R)Delay_TriggerLevel_RBV.DLY0",16777215,0,"$(P)$(R)Delay_TriggerLevel_RBV.DLY0")
 #! Field("$(P)$(R)Delay_TriggerLevel_RBV.LNK0",16777215,1,"$(P)$(R)Delay_TriggerLevel_RBV.LNK0")
 #! Link("$(P)$(R)Delay_TriggerLevel_RBV.LNK0","$(P)$(R)TriggerLevel_RBV.PROC")
-#! Record("$(P)$(R)TriggerLevel_RBV",1260,1324,0,0,"$(P)$(R)TriggerLevel_RBV")
+#! Record("$(P)$(R)TriggerLevel_RBV",1260,1318,0,0,"$(P)$(R)TriggerLevel_RBV")
 #! Field("$(P)$(R)TriggerLevel_RBV.PROC",16777215,0,"$(P)$(R)TriggerLevel_RBV.PROC")
-#! Record("$(P)$(R)MeasureMode",700,2396,0,0,"$(P)$(R)MeasureMode")
+#! Record("$(P)$(R)MeasureMode",700,2388,0,0,"$(P)$(R)MeasureMode")
 #! Field("$(P)$(R)MeasureMode.PROC",16777215,1,"$(P)$(R)MeasureMode.PROC")
-#! Record("$(P)$(R)StopContinuousCommands",40,1650,0,0,"$(P)$(R)StopContinuousCommands")
-#! Record("$(P)$(R)LaserFrequency",40,1284,0,0,"$(P)$(R)LaserFrequency")
-#! Record("$(P)$(R)BinaryJoulemeterMode",700,1550,0,0,"$(P)$(R)BinaryJoulemeterMode")
+#! Record("$(P)$(R)Value",820,138,0,0,"$(P)$(R)Value")
+#! Field("$(P)$(R)Value.PROC",16777215,1,"$(P)$(R)Value.PROC")
+#! Record("$(P)$(R)StopContinuousCommands",40,1646,0,0,"$(P)$(R)StopContinuousCommands")
+#! Record("$(P)$(R)NewValueReady",340,123,0,0,"$(P)$(R)NewValueReady")
+#! Field("$(P)$(R)NewValueReady.PROC",16777215,0,"$(P)$(R)NewValueReady.PROC")
+#! Field("$(P)$(R)NewValueReady.VAL",16777215,0,"$(P)$(R)NewValueReady.VAL")
+#! Record("$(P)$(R)LaserFrequency",40,1278,0,0,"$(P)$(R)LaserFrequency")
+#! Record("$(P)$(R)BinaryJoulemeterMode",700,1543,0,0,"$(P)$(R)BinaryJoulemeterMode")
 #! Field("$(P)$(R)BinaryJoulemeterMode.FLNK",16777215,1,"$(P)$(R)BinaryJoulemeterMode.FLNK")
 #! Link("$(P)$(R)BinaryJoulemeterMode.FLNK","$(P)$(R)Delay_BinaryJoulemeterMode_RBV")
-#! Record("$(P)$(R)Delay_BinaryJoulemeterMode_RBV",980,1550,0,0,"$(P)$(R)Delay_BinaryJoulemeterMode_RBV")
+#! Record("$(P)$(R)Delay_BinaryJoulemeterMode_RBV",980,1546,0,0,"$(P)$(R)Delay_BinaryJoulemeterMode_RBV")
 #! Field("$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0",16777215,0,"$(P)$(R)Delay_BinaryJoulemeterMode_RBV.DLY0")
 #! Field("$(P)$(R)Delay_BinaryJoulemeterMode_RBV.LNK0",16777215,1,"$(P)$(R)Delay_BinaryJoulemeterMode_RBV.LNK0")
 #! Link("$(P)$(R)Delay_BinaryJoulemeterMode_RBV.LNK0","$(P)$(R)BinaryJoulemeterMode_RBV.PROC")
-#! Record("$(P)$(R)BinaryJoulemeterMode_RBV",1260,1550,0,0,"$(P)$(R)BinaryJoulemeterMode_RBV")
+#! Record("$(P)$(R)BinaryJoulemeterMode_RBV",1260,1543,0,0,"$(P)$(R)BinaryJoulemeterMode_RBV")
 #! Field("$(P)$(R)BinaryJoulemeterMode_RBV.PROC",16777215,0,"$(P)$(R)BinaryJoulemeterMode_RBV.PROC")
-#! Record("$(P)$(R)Wavelength",700,1756,0,0,"$(P)$(R)Wavelength")
+#! Record("$(P)$(R)Wavelength",700,1748,0,0,"$(P)$(R)Wavelength")
 #! Field("$(P)$(R)Wavelength.FLNK",16777215,1,"$(P)$(R)Wavelength.FLNK")
 #! Link("$(P)$(R)Wavelength.FLNK","$(P)$(R)Delay_Wavelength_RBV")
-#! Record("$(P)$(R)Delay_Wavelength_RBV",980,1770,0,0,"$(P)$(R)Delay_Wavelength_RBV")
+#! Record("$(P)$(R)Delay_Wavelength_RBV",980,1766,0,0,"$(P)$(R)Delay_Wavelength_RBV")
 #! Field("$(P)$(R)Delay_Wavelength_RBV.DLY0",16777215,0,"$(P)$(R)Delay_Wavelength_RBV.DLY0")
 #! Field("$(P)$(R)Delay_Wavelength_RBV.LNK0",16777215,1,"$(P)$(R)Delay_Wavelength_RBV.LNK0")
 #! Link("$(P)$(R)Delay_Wavelength_RBV.LNK0","$(P)$(R)Wavelength_RBV.PROC")
-#! Record("$(P)$(R)Wavelength_RBV",1260,1764,0,0,"$(P)$(R)Wavelength_RBV")
+#! Record("$(P)$(R)Wavelength_RBV",1260,1758,0,0,"$(P)$(R)Wavelength_RBV")
 #! Field("$(P)$(R)Wavelength_RBV.PROC",16777215,0,"$(P)$(R)Wavelength_RBV.PROC")
-#! Record("$(P)$(R)NoiseSuppression",240,1464,0,0,"$(P)$(R)NoiseSuppression")
-#! Record("$(P)$(R)ClearZeroOffset",240,1650,0,0,"$(P)$(R)ClearZeroOffset")
-#! Record("$(P)$(R)UserMultiplier",700,1978,0,0,"$(P)$(R)UserMultiplier")
+#! Record("$(P)$(R)NoiseSuppression",240,1458,0,0,"$(P)$(R)NoiseSuppression")
+#! Record("$(P)$(R)ClearZeroOffset",240,1646,0,0,"$(P)$(R)ClearZeroOffset")
+#! Record("$(P)$(R)UserMultiplier",700,1972,0,0,"$(P)$(R)UserMultiplier")
 #! Field("$(P)$(R)UserMultiplier.FLNK",16777215,1,"$(P)$(R)UserMultiplier.FLNK")
 #! Link("$(P)$(R)UserMultiplier.FLNK","$(P)$(R)Delay_UserMultiplier_RBV")
-#! Record("$(P)$(R)Delay_UserMultiplier_RBV",980,1990,0,0,"$(P)$(R)Delay_UserMultiplier_RBV")
+#! Record("$(P)$(R)Delay_UserMultiplier_RBV",980,1986,0,0,"$(P)$(R)Delay_UserMultiplier_RBV")
 #! Field("$(P)$(R)Delay_UserMultiplier_RBV.DLY0",16777215,0,"$(P)$(R)Delay_UserMultiplier_RBV.DLY0")
 #! Field("$(P)$(R)Delay_UserMultiplier_RBV.LNK0",16777215,1,"$(P)$(R)Delay_UserMultiplier_RBV.LNK0")
 #! Link("$(P)$(R)Delay_UserMultiplier_RBV.LNK0","$(P)$(R)UserMultiplier_RBV.PROC")
-#! Record("$(P)$(R)UserMultiplier_RBV",1260,1978,0,0,"$(P)$(R)UserMultiplier_RBV")
+#! Record("$(P)$(R)UserMultiplier_RBV",1260,1972,0,0,"$(P)$(R)UserMultiplier_RBV")
 #! Field("$(P)$(R)UserMultiplier_RBV.PROC",16777215,0,"$(P)$(R)UserMultiplier_RBV.PROC")
-#! Record("$(P)$(R)UserOffset",700,2178,0,0,"$(P)$(R)UserOffset")
+#! Record("$(P)$(R)UserOffset",700,2172,0,0,"$(P)$(R)UserOffset")
 #! Field("$(P)$(R)UserOffset.FLNK",16777215,1,"$(P)$(R)UserOffset.FLNK")
 #! Link("$(P)$(R)UserOffset.FLNK","$(P)$(R)Delay_UserOffset_RBV")
-#! Record("$(P)$(R)Delay_UserOffset_RBV",980,2190,0,0,"$(P)$(R)Delay_UserOffset_RBV")
+#! Record("$(P)$(R)Delay_UserOffset_RBV",980,2186,0,0,"$(P)$(R)Delay_UserOffset_RBV")
 #! Field("$(P)$(R)Delay_UserOffset_RBV.DLY0",16777215,0,"$(P)$(R)Delay_UserOffset_RBV.DLY0")
 #! Field("$(P)$(R)Delay_UserOffset_RBV.LNK0",16777215,1,"$(P)$(R)Delay_UserOffset_RBV.LNK0")
 #! Link("$(P)$(R)Delay_UserOffset_RBV.LNK0","$(P)$(R)UserOffset_RBV.PROC")
-#! Record("$(P)$(R)UserOffset_RBV",1260,2178,0,0,"$(P)$(R)UserOffset_RBV")
+#! Record("$(P)$(R)UserOffset_RBV",1260,2172,0,0,"$(P)$(R)UserOffset_RBV")
 #! Field("$(P)$(R)UserOffset_RBV.PROC",16777215,0,"$(P)$(R)UserOffset_RBV.PROC")
-#! Record("$(P)$(R)SingleShotEnergyMode",1260,2390,0,0,"$(P)$(R)SingleShotEnergyMode")
+#! Record("$(P)$(R)SingleShotEnergyMode",1260,2383,0,0,"$(P)$(R)SingleShotEnergyMode")
 #! Field("$(P)$(R)SingleShotEnergyMode.FLNK",16777215,0,"$(P)$(R)SingleShotEnergyMode.FLNK")
 #! Link("$(P)$(R)SingleShotEnergyMode.FLNK","$(P)$(R)Delay_MeasureMode")
-#! Record("$(P)$(R)Delay_MeasureMode",980,2390,0,1,"$(P)$(R)Delay_MeasureMode")
+#! Record("$(P)$(R)Delay_MeasureMode",980,2386,0,1,"$(P)$(R)Delay_MeasureMode")
 #! Field("$(P)$(R)Delay_MeasureMode.DLY0",16777215,0,"$(P)$(R)Delay_MeasureMode.DLY0")
 #! Field("$(P)$(R)Delay_MeasureMode.LNK0",16777215,0,"$(P)$(R)Delay_MeasureMode.LNK0")
 #! Link("$(P)$(R)Delay_MeasureMode.LNK0","$(P)$(R)MeasureMode.PROC")
-#! Record("$(P)$(R)Attenuator",700,2630,0,0,"$(P)$(R)Attenuator")
+#! Record("$(P)$(R)Attenuator",700,2623,0,0,"$(P)$(R)Attenuator")
 #! Field("$(P)$(R)Attenuator.FLNK",16777215,1,"$(P)$(R)Attenuator.FLNK")
 #! Link("$(P)$(R)Attenuator.FLNK","$(P)$(R)Delay_Attenuator_RBV")
-#! Record("$(P)$(R)Delay_Attenuator_RBV",980,2630,0,0,"$(P)$(R)Delay_Attenuator_RBV")
+#! Record("$(P)$(R)Delay_Attenuator_RBV",980,2626,0,0,"$(P)$(R)Delay_Attenuator_RBV")
 #! Field("$(P)$(R)Delay_Attenuator_RBV.DLY0",16777215,0,"$(P)$(R)Delay_Attenuator_RBV.DLY0")
 #! Field("$(P)$(R)Delay_Attenuator_RBV.LNK0",16777215,1,"$(P)$(R)Delay_Attenuator_RBV.LNK0")
 #! Link("$(P)$(R)Delay_Attenuator_RBV.LNK0","$(P)$(R)Attenuator_RBV.PROC")
-#! Record("$(P)$(R)Attenuator_RBV",1260,2630,0,0,"$(P)$(R)Attenuator_RBV")
+#! Record("$(P)$(R)Attenuator_RBV",1260,2623,0,0,"$(P)$(R)Attenuator_RBV")
 #! Field("$(P)$(R)Attenuator_RBV.PROC",16777215,0,"$(P)$(R)Attenuator_RBV.PROC")
-#! Record("$(P)$(R)ExternalTrigger",40,1464,0,0,"$(P)$(R)ExternalTrigger")
-#! Record("$(P)$(R)Version",240,1278,0,0,"$(P)$(R)Version")
-#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,"",null)
-#! Box(Box1,20,540,620,1200,0,16777215,null)
-#! Record("$(P)$(R)PollAndRetrieve",60,136,0,0,"$(P)$(R)PollAndRetrieve")
-#! Field("$(P)$(R)PollAndRetrieve.LNK0",16777215,1,"$(P)$(R)PollAndRetrieve.LNK0")
-#! Link("$(P)$(R)PollAndRetrieve.LNK0","$(P)$(R)NewValueReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.LNK1",16777215,1,"$(P)$(R)PollAndRetrieve.LNK1")
-#! Link("$(P)$(R)PollAndRetrieve.LNK1","$(P)$(R)RetrieveValueIfReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.LNK2",16777215,1,"$(P)$(R)PollAndRetrieve.LNK2")
-#! Link("$(P)$(R)PollAndRetrieve.LNK2","$(P)$(R)NewValueReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.DLY1",16777215,1,"$(P)$(R)PollAndRetrieve.DLY1")
-#! Field("$(P)$(R)PollAndRetrieve.DLY2",16777215,1,"$(P)$(R)PollAndRetrieve.DLY2")
-#! Record("$(P)$(R)RetrieveValueIfReady",560,130,0,0,"$(P)$(R)RetrieveValueIfReady")
-#! Field("$(P)$(R)RetrieveValueIfReady.PROC",16777215,0,"$(P)$(R)RetrieveValueIfReady.PROC")
-#! Field("$(P)$(R)RetrieveValueIfReady.INPA",16777215,0,"$(P)$(R)RetrieveValueIfReady.INPA")
-#! Link("$(P)$(R)RetrieveValueIfReady.INPA","$(P)$(R)NewValueReady.VAL")
-#! Field("$(P)$(R)RetrieveValueIfReady.OUT",16777215,1,"$(P)$(R)RetrieveValueIfReady.OUT")
-#! Link("$(P)$(R)RetrieveValueIfReady.OUT","$(P)$(R)Value.PROC")
-#! Record("$(P)$(R)Value",820,144,0,0,"$(P)$(R)Value")
-#! Field("$(P)$(R)Value.PROC",16777215,1,"$(P)$(R)Value.PROC")
-#! Record("$(P)$(R)NewValueReady",340,130,0,0,"$(P)$(R)NewValueReady")
-#! Field("$(P)$(R)NewValueReady.PROC",16777215,0,"$(P)$(R)NewValueReady.PROC")
-#! Field("$(P)$(R)NewValueReady.VAL",16777215,0,"$(P)$(R)NewValueReady.VAL")
+#! Record("$(P)$(R)ExternalTrigger",40,1458,0,0,"$(P)$(R)ExternalTrigger")
+#! Record("$(P)$(R)Version",240,1272,0,0,"$(P)$(R)Version")
+#! Record("$(P)$(R)GetStatus",40,1783,0,0,"$(P)$(R)GetStatus")
 #! Box(Box0,20,20,1000,480,0,16777215,null)
-#! TextBox(TB0,60,40,980,120,0,"Dialog",12,1,16777215,"Main loop of Energy Meter measurement. \n1. Checks if new data is available\n2. If so, get value\n3. Clear New Value Ready\n",null)
-#! TextBox(TB2,40,560,600,600,0,"Dialog",12,1,16777215,"Set delay between Set and Readback commands\nPrevents concurrent commads",null)
-#! Box(Box2,680,540,1680,1220,0,16777215,null)
-#! TextBox(TB3,720,560,880,600,0,"Dialog",12,1,16777215,"Set instrument scale",null)
 #! Box(Box3,680,1260,1440,2840,0,16777215,null)
+#! Box(Box2,680,540,1680,1220,0,16777215,null)
+#! Box(Box1,20,540,620,1200,0,16777215,null)
+#! TextBox(TB0,60,40,980,120,0,"Dialog",12,1,16777215,"Main loop of Energy Meter measurement. \n1. Checks if new data is available\n2. If so, get value\n3. Clear New Value Ready\n",null)
 #! TextBox(TB4,700,1280,1040,1320,0,"Dialog",12,1,16777215,"Other settings",null)
+#! TextBox(TB3,720,560,880,600,0,"Dialog",12,1,16777215,"Set instrument scale",null)
+#! TextBox(TB2,40,560,600,600,0,"Dialog",12,1,16777215,"Set delay between Set and Readback commands\nPrevents concurrent commads",null)
+#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,"",null)
