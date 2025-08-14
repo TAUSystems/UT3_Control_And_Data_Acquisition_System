@@ -10,30 +10,40 @@
 # so this app polls the device at a regular interval to check if new data is 
 # available and acquires it if so.
 #
-# To use this record, set PollAndRetrieve.SCAN field to the desired polling 
+# To use this record, set ProcessTrigger.SCAN field to the desired polling 
 # interval.
-record(seq, "$(P)$(R)PollAndRetrieve") {
-  field(DESC, "description")
+record(seq, "$(P)$(R)ProcessTrigger") {
+  field(DESC, "Monitors trigger and starts retrieval")
   field(SELM, "All")
-  field(DOL0, "1")
-  field(LNK0, "$(P)$(R)NewValueReady.PROC")
-  field(DLY1, "0.010")
+
+  field(DOL0, "Timing:TriggerCounter:Counter CP")
+  
+  field(DLY1, 0.010)
   field(DOL1, "1")
-  field(LNK1, "$(P)$(R)RetrieveValueIfReady.PROC")
-  field(DLY2, "0.010")
-  field(DOL2, "1")
-  field(LNK2, "$(P)$(R)NewValueReady.PROC")
+  field(LNK1, "$(P)$(R)AssertNewValueReady.PROC")
+
+  field(DLY2, 0)
+  field(DOL2, 1)
+  field(LNK2, "")
+
+  field(DLY3, 0.010)
+  field(DOL3, "1")
+  field(LNK3, "$(P)$(R)Value.PROC")
+
+  field(DLY4, 0)
+  field(DOL4, 0)
+  field(LNK4, "$(P)$(R)NewValueReady")
+
   field(SCAN, "Passive")
 }
 
-record(calcout, "$(P)$(R)RetrieveValueIfReady") {
-  field(DESC, "Process Value rec if NewValueReady")
-  field(SCAN, "Passive")
-  field(CALC, "A")
-  field(OOPT, "When Non-zero")
-  field(DOPT, "Use OCAL")
-  field(INPA, "$(P)$(R)NewValueReady NPP")
-  field(OUT, "$(P)$(R)Value.PROC")
+record(calc, "$(P)$(R)AssertNewValueReady") {
+    field(DESC, "Confirms new value ready on device")
+    field(INPA, "$(P)$(R)NewValueReady PP")
+    field(CALC, "A == 1")
+    field(ZSV,  "MAJOR")
+    field(OSV,  "NO_ALARM")
+    field(VAL, 1)
 }
 
 # Set delay between set and read commands of the associated RBV records.
@@ -61,8 +71,14 @@ record(dfanout, "$(P)$(R)SetCommandDelay0") {
 record(dfanout, "$(P)$(R)SetCommandDelay1") {
   field(DESC, "Set command delay for 8 instr")
   field(OUTA, "$(P)$(R)Delay_Attenuator_RBV.DLY0")
-  field(OUTB, "$(P)$(R)PollAndRetrieve.DLY1")
-  field(OUTC, "$(P)$(R)PollAndRetrieve.DLY2")
+  field(OUTB, "$(P)$(R)ProcessTrigger.DLY3")
+}
+
+# Set delay between receiving TriggerCounter monitor and reading data
+record(dfanout, "$(P)$(R)SetTriggerDelay") {
+    field(DESC, "Set trigger delay")
+    field(OUTA, "$(P)$(R)ProcessTrigger.DLY1 NPP")
+    field(EGU, "s")
 }
 
 # # # Display
@@ -680,15 +696,15 @@ record(stringin, "$(P)$(R)GetStatus") {
 
 #! Further lines contain data used by VisualDCT
 #! View(0,657,0.7)
-#! Record("$(P)$(R)PollAndRetrieve",60,125,0,0,"$(P)$(R)PollAndRetrieve")
-#! Field("$(P)$(R)PollAndRetrieve.LNK0",16777215,1,"$(P)$(R)PollAndRetrieve.LNK0")
-#! Link("$(P)$(R)PollAndRetrieve.LNK0","$(P)$(R)NewValueReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.LNK1",16777215,1,"$(P)$(R)PollAndRetrieve.LNK1")
-#! Link("$(P)$(R)PollAndRetrieve.LNK1","$(P)$(R)RetrieveValueIfReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.LNK2",16777215,1,"$(P)$(R)PollAndRetrieve.LNK2")
-#! Link("$(P)$(R)PollAndRetrieve.LNK2","$(P)$(R)NewValueReady.PROC")
-#! Field("$(P)$(R)PollAndRetrieve.DLY1",16777215,1,"$(P)$(R)PollAndRetrieve.DLY1")
-#! Field("$(P)$(R)PollAndRetrieve.DLY2",16777215,1,"$(P)$(R)PollAndRetrieve.DLY2")
+#! Record("$(P)$(R)ProcessTrigger",60,125,0,0,"$(P)$(R)ProcessTrigger")
+#! Field("$(P)$(R)ProcessTrigger.LNK0",16777215,1,"$(P)$(R)ProcessTrigger.LNK0")
+#! Link("$(P)$(R)ProcessTrigger.LNK0","$(P)$(R)NewValueReady.PROC")
+#! Field("$(P)$(R)ProcessTrigger.LNK1",16777215,1,"$(P)$(R)ProcessTrigger.LNK1")
+#! Link("$(P)$(R)ProcessTrigger.LNK1","$(P)$(R)RetrieveValueIfReady.PROC")
+#! Field("$(P)$(R)ProcessTrigger.LNK2",16777215,1,"$(P)$(R)ProcessTrigger.LNK2")
+#! Link("$(P)$(R)ProcessTrigger.LNK2","$(P)$(R)NewValueReady.PROC")
+#! Field("$(P)$(R)ProcessTrigger.DLY1",16777215,1,"$(P)$(R)ProcessTrigger.DLY1")
+#! Field("$(P)$(R)ProcessTrigger.DLY2",16777215,1,"$(P)$(R)ProcessTrigger.DLY2")
 #! Record("$(P)$(R)RetrieveValueIfReady",560,123,0,0,"$(P)$(R)RetrieveValueIfReady")
 #! Field("$(P)$(R)RetrieveValueIfReady.PROC",16777215,0,"$(P)$(R)RetrieveValueIfReady.PROC")
 #! Field("$(P)$(R)RetrieveValueIfReady.INPA",16777215,0,"$(P)$(R)RetrieveValueIfReady.INPA")
@@ -723,9 +739,9 @@ record(stringin, "$(P)$(R)GetStatus") {
 #! Field("$(P)$(R)SetCommandDelay1.OUTA",16777215,1,"$(P)$(R)SetCommandDelay1.OUTA")
 #! Link("$(P)$(R)SetCommandDelay1.OUTA","$(P)$(R)Delay_Attenuator_RBV.DLY0")
 #! Field("$(P)$(R)SetCommandDelay1.OUTB",16777215,0,"$(P)$(R)SetCommandDelay1.OUTB")
-#! Link("$(P)$(R)SetCommandDelay1.OUTB","$(P)$(R)PollAndRetrieve.DLY1")
+#! Link("$(P)$(R)SetCommandDelay1.OUTB","$(P)$(R)ProcessTrigger.DLY1")
 #! Field("$(P)$(R)SetCommandDelay1.OUTC",16777215,0,"$(P)$(R)SetCommandDelay1.OUTC")
-#! Link("$(P)$(R)SetCommandDelay1.OUTC","$(P)$(R)PollAndRetrieve.DLY2")
+#! Link("$(P)$(R)SetCommandDelay1.OUTC","$(P)$(R)ProcessTrigger.DLY2")
 #! Record("$(P)$(R)ScaleIndex",720,603,0,0,"$(P)$(R)ScaleIndex")
 #! Field("$(P)$(R)ScaleIndex.FLNK",16777215,1,"$(P)$(R)ScaleIndex.FLNK")
 #! Link("$(P)$(R)ScaleIndex.FLNK","$(P)$(R)Delay_ScaleIndex_RBV")
@@ -833,4 +849,4 @@ record(stringin, "$(P)$(R)GetStatus") {
 #! TextBox(TB4,700,1280,1040,1320,0,"Dialog",12,1,16777215,"Other settings",null)
 #! TextBox(TB3,720,560,880,600,0,"Dialog",12,1,16777215,"Set instrument scale",null)
 #! TextBox(TB2,40,560,600,600,0,"Dialog",12,1,16777215,"Set delay between Set and Readback commands\nPrevents concurrent commads",null)
-#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,"",null)
+#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,""
