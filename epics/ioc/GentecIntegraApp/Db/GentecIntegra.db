@@ -41,8 +41,8 @@ record(calc, "$(P)$(R)AssertNewValueReady") {
     field(DESC, "Confirms new value ready on device")
     field(INPA, "$(P)$(R)NewValueReady PP")
     field(CALC, "A == 1")
-    field(ZSV,  "MAJOR")
-    field(OSV,  "NO_ALARM")
+    field(LOW, 0.5)
+    field(LSV,  "MAJOR")
     field(VAL, 1)
 }
 
@@ -849,4 +849,4 @@ record(stringin, "$(P)$(R)GetStatus") {
 #! TextBox(TB4,700,1280,1040,1320,0,"Dialog",12,1,16777215,"Other settings",null)
 #! TextBox(TB3,720,560,880,600,0,"Dialog",12,1,16777215,"Set instrument scale",null)
 #! TextBox(TB2,40,560,600,600,0,"Dialog",12,1,16777215,"Set delay between Set and Readback commands\nPrevents concurrent commads",null)
-#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,""
+#! TextBox(TB1,540,440,580,520,0,"Dialog",12,1,16777215,"",null)
