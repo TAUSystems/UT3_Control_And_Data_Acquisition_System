@@ -1,9 +1,0 @@
-# RELEASE - Location of external support modules
-
-SUPPORT = /home/reinier/EPICS/synApps_6_1/support
-
-ASYN = $(SUPPORT)/asyn-R4-44-2
-SEQ = $(SUPPORT)/seq-2-2-6
-MOTOR = $(SUPPORT)/motor-R7-3-1
-
-EPICS_BASE = /home/reinier/EPICS/epics-base

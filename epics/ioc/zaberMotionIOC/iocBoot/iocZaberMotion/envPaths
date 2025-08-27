@@ -1,7 +1,0 @@
-epicsEnvSet("IOC","iocZaberMotion")
-epicsEnvSet("TOP","/home/reinier/github/TAUSystems/UT3_Control_And_Data_Acquisition_System/epics/ioc/zaberMotionIOC")
-epicsEnvSet("SUPPORT","/home/reinier/EPICS/synApps_6_1/support")
-epicsEnvSet("ASYN","/home/reinier/EPICS/synApps_6_1/support/asyn-R4-44-2")
-epicsEnvSet("SEQ","/home/reinier/EPICS/synApps_6_1/support/seq-2-2-6")
-epicsEnvSet("MOTOR","/home/reinier/EPICS/synApps_6_1/support/motor-R7-3-1")
-epicsEnvSet("EPICS_BASE","/home/reinier/EPICS/epics-base")
