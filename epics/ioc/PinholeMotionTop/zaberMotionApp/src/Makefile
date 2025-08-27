@@ -5,8 +5,14 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
+# The following are used for debugging messages.
+#!USR_CXXFLAGS += -DDEBUG
+
 #=============================
 # Build the IOC application
+
+# This module must be built with c++17
+USR_CXXFLAGS += -std=c++17
 
 PROD_IOC = zaberMotion
 # zaberMotion.dbd will be created and installed
@@ -16,10 +22,38 @@ DBD += zaberMotion.dbd
 zaberMotion_DBD += base.dbd
 
 # Include dbd files from all support applications:
-#zaberMotion_DBD += xxx.dbd
+#ifdef ASYN
+zaberMotion_DBD += asyn.dbd
+zaberMotion_DBD += drvAsynSerialPort.dbd
+#endif
+zaberMotion_DBD += motorSupport.dbd
+zaberMotion_DBD += zaberMotionSupport.dbd
 
 # Add all the support libraries needed by this IOC
-#zaberMotion_LIBS += xxx
+zaberMotion_LIBS += ZaberMotion
+zaberMotion_LIBS += motor
+#ifdef ASYN
+zaberMotion_LIBS += asyn
+#endif
+#ifdef SNCSEQ
+zaberMotion_LIBS += seq pv
+#endif
+
+# Add PVAccess support
+# https://epics.anl.gov/tech-talk/2024/msg00460.php
+# QSRV2
+ifdef PVXS_MAJOR_VERSION # prefer QSRV2 :)
+zaberMotion_DBD += pvxsIoc.dbd
+zaberMotion_LIBS += pvxsIoc pvxs
+else
+ifdef EPICS_QSRV_MAJOR_VERSION # fallback to QSRV1
+zaberMotion_LIBS += qsrv
+zaberMotion_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+zaberMotion_DBD += PVAServerRegister.dbd
+zaberMotion_DBD += qsrv.dbd
+endif
+endif
+
 
 # zaberMotion_registerRecordDeviceDriver.cpp derives from zaberMotion.dbd
 zaberMotion_SRCS += zaberMotion_registerRecordDeviceDriver.cpp

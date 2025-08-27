@@ -8,6 +8,7 @@ DIRS += $(wildcard *Sup)
 DIRS += $(wildcard *App)
 DIRS += $(wildcard *Top)
 DIRS += $(wildcard iocBoot)
+DIRS += motorZaberMotion
 
 # The build order is controlled by these dependency rules:
 
@@ -27,5 +28,6 @@ $(foreach dir, $(filter %Top, $(DIRS)), \
 iocBoot_DEPEND_DIRS += $(filter %App,$(DIRS))
 
 # Add any additional dependency rules here:
+zaberMotionApp_DEPEND_DIRS += motorZaberMotion
 
 include $(TOP)/configure/RULES_TOP
