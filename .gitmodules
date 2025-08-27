@@ -1,3 +1,6 @@
 [submodule "epics/epics-base"]
 	path = epics/epics-base
 	url = https://github.com/epics-base/epics-base.git
+[submodule "epics/ioc/PinholeMotionTop/motorZaberMotion"]
+	path = epics/ioc/PinholeMotionTop/motorZaberMotion
+	url = https://github.com/zabertech/motorZaberMotion.git
