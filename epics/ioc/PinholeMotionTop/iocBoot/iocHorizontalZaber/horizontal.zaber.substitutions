@@ -1,0 +1,11 @@
+file "$(MOTOR)/motorApp/Db/asyn_motor.db"
+{
+  pattern
+  {P,          N,     M,         DTYP,         PORT,   ADDR,    DESC,        EGU,   DIR,   VELO,  VBAS, ACCL,  BDST, BVEL, BACC,   MRES, PREC,                DLLM,               DHLM, INIT}
+  {XY_STAGE:,  1, "axis$(N)", "asynMotor",      XMCC2,    0,   "Lower",       mm,   Pos,   20.0,   5.0,   .5,     0,    1,   .2,  0.001,    3,                   0,                100,   ""}
+  {XY_STAGE:,  2, "axis$(N)", "asynMotor",      XMCC2,    1,   "Upper",       mm,   Pos,   20.0,   5.0,   .5,     0,    1,   .2,  0.001,    3,                   0,                120,   ""}
+  {L_STAGE:,   1, "axis$(N)", "asynMotor",       XLDQ,    0,   "Stage",       mm,   Pos,  100.0,   5.0,   .5,     0,    1,   .2,  0.001,    3,                   0,                150,   ""}
+  {R_STAGE:,   1, "axis$(N)", "asynMotor",      XFWRE,    0,   "Stage",  degrees,   Pos,  100.0,   5.0,  1.0,     0,    1,   .2,      1,    3, -10714285.714071427, 10714285.714071427,   ""}
+  {XY_GANTRY:, 1, "axis$(N)", "asynMotor",  XMCC2_tcp,    0,   "AxisX",       mm,   Pos,   50.0,   5.0,   .5,     0,    1,   .2,  0.001,    3,                   0,                300,   ""}
+  {XY_GANTRY:, 2, "axis$(N)", "asynMotor",  XMCC2_tcp,    1,   "AxisY",       mm,   Pos,   50.0,   5.0,   .5,     0,    1,   .2,  0.001,    3,                   0,                240,   ""}
+}
