@@ -1,6 +1,9 @@
 file "$(MOTOR)/db/motor.db"
 {
 pattern
-{P,         N,      M,      DTYP,    C,  S,  DESC,          EGU,      DIR,  VELO,  VBAS,  ACCL,  BDST,  BVEL,  BACC,  MRES,  PREC,  DHLM,  DLLM,  INIT}
-{thorlabs:, 1,  "m$(N)",  "MDT695",  0,  0,  "motor $(N)",  degrees,  Pos,  1,     .1,    .2,    0,     1,     .2,    0.01,  5,     100,   -100,  ""}
+{P,                           N,      M,       DTYP,  C,  S,                       DESC,      EGU,  DIR,  VELO,  VBAS,  ACCL,  BDST,  BVEL,  BACC,  MRES,  PREC,  DHLM,  DLLM,  INIT}
+{Beamline:DivergencePinhole:, 1,    Tip,   "MDT695",  0,  0,   "Divergence Pinhole tip",  degrees,  Pos,  1,     .1,    .2,    0,     1,     .2,    0.01,  5,     100,   -100,  ""}
+{Beamline:DivergencePinhole:, 2,   Tilt,   "MDT695",  0,  1,  "Divergence Pinhole tilt",  degrees,  Pos,  1,     .1,    .2,    0,     1,     .2,    0.01,  5,     100,   -100,  ""}
+{Beamline:EnergyPinhole:,     3,    Tip,   "MDT695",  0,  2,       "Energy Pinhole tip",  degrees,  Pos,  1,     .1,    .2,    0,     1,     .2,    0.01,  5,     100,   -100,  ""}
+{Beamline:EnergyPinhole:,     4,   Tilt,   "MDT695",  1,  0,      "Energy Pinhole tilt",  degrees,  Pos,  1,     .1,    .2,    0,     1,     .2,    0.01,  5,     100,   -100,  ""}
 }

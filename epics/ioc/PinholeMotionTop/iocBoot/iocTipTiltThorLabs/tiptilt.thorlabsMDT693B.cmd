@@ -12,23 +12,29 @@ cd "${TOP}/iocBoot/${IOC}"
 dbLoadRecords("$(MOTOR)/db/motorUtil.db", "P=thorlabs:")
 
 ## 
+# 3-axis piezo controller for xxx, xxx, and xxx
+drvAsynSerialPortConfigure("PinholeMTD693B", "/dev/ttyS0", 0, 0, 0)
+asynOctetSetOutputEos("PinholeMTD693B",0,"\r")
+asynOctetSetInputEos("PinholeMTD693B",0,"\r")
 
-drvAsynSerialPortConfigure("serial1", "/dev/ttyS0", 0, 0, 0)
-asynOctetSetOutputEos("serial1",0,"\r")
-asynOctetSetInputEos("serial1",0,"\r")
+# 1-axis piezo controller for xxx
+drvAsynSerialPortConfigure("PinholeMTD694B", "/dev/ttyS1", 0, 0, 0)
+asynOctetSetOutputEos("PinholeMTD694B",0,"\r")
+asynOctetSetInputEos("PinholeMTD694B",0,"\r")
 
-dbLoadTemplate("tiptilt.thorlabsMDT693B.substitutions")
 
 # ThorLabs MDT695 Piezo - driver setup parameters:
 #     (1) maximum number of controllers in system
 #     (2) motor task polling rate (min=1Hz, max=60Hz)
-MDT695Setup(1, 10)
+MDT695Setup(2, 10)
 
 # Thor driver configuration parameters:
 #     (1) controller being configured
 #     (2) asyn port name (string)
-MDT695Config(0, "serial1")
+MDT695Config(0, "PinholeMTD693B")
+MDT695Config(1, "PinholeMTD694B")
 
+dbLoadTemplate("tiptilt.thorlabsMDT693B.substitutions")
 
 iocInit
 

@@ -1,9 +1,8 @@
 file "$(TOP)/db/basic_asyn_motor.db"
 {
 pattern
-{P,    N,   M,         DTYP,      PORT,   ADDR, DESC, EGU,  DIR,  VELO,  VBAS, ACCL, BDST, BVEL, BACC,    MRES,       PREC, DHLM, DLLM, INIT}
+{P,    N,   M,                              DTYP,                    PORT, ADDR,                         DESC,   EGU,  DIR,  VELO,  VBAS, ACCL, BDST, BVEL, BACC,    MRES,       PREC, DHLM, DLLM, INIT}
 # Newport NSA12 stage, 6.35 microns/full step, 128 micro-steps/s
-{IOC:, 1, "m$(N)", "asynMotor",  CONEX1,    0, "X",    mm,  Pos,   1.,    0.1,  .25,    0,    1,   .2,  4.9609375e-5,   4,   28,   -1,   ""}
-{IOC:, 2, "m$(N)", "asynMotor",  CONEX2,    0, "Y",    mm,  Pos,   1.,    0.1,  .25,    0,    1,   .2,  4.9609375e-5,   4,   28,   -1,   ""}
-{IOC:, 3, "m$(N)", "asynMotor",  CONEX3,    0, "Z",    mm,  Pos,   1.,    0.1,  .25,    0,    1,   .2,  4.9609375e-5,   4,   28,   -1,   ""}
-} 
+{Beamline:DivergencePinhole:, 1,  V, "asynMotor",  DivergencePinholeVCtlr,    0, "DivergencePinhole vertical",    mm,  Pos,   1.,    0.1,  .25,    0,    1,   .2,  4.9609375e-5,   4,   28,   -1,   ""}
+{Beamline:EnergyPinhole:,     2,  V, "asynMotor",      EnergyPinholeVCtlr,    0,     "EnergyPinhole vertical",    mm,  Pos,   1.,    0.1,  .25,    0,    1,   .2,  4.9609375e-5,   4,   28,   -1,   ""}
+}
