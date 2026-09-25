@@ -91,3 +91,9 @@ Since EPICS isn't installed outright in this container, the CA library can't
 spawn its own `caRepeater` process, so it's important (I think?) that `caRepeater` is running 
 elsewhere if the host runs multiple clients. See 
 [CA Repeater in EPICS Channel Access reference manual](https://epics.anl.gov/base/R3-15/5-docs/CAref.html#Repeater). 
+
+## Authors
+
+This project was developed by Reinier van Mourik <reinier.vanmourik@tausystems.com> 
+at TAU Systems Inc. in collaboration with theUT3 group at The University of Texas 
+at Austin.

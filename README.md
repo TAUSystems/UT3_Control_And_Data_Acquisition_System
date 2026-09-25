@@ -2,6 +2,9 @@
 The control and data acquisition system for the UT3 laser wakefield accelerator 
 experiment.
 
+It was developed by [TAU Systems Inc](https://www.tausystems.com) in collaboration 
+with the UT3 group at the University of Texas at Austin. See [Authors](#authors) for more information.
+
 ## Overview
 The UT3 C&DAQ system consists of several components:
 * EPICS Control System
@@ -72,6 +75,27 @@ abcd
 
 ## Bug Report and Issues
 
+## Authors
+This repository contains software developed through a collaboration involving personnel 
+affiliated with TAU Systems and The University of Texas at Austin. Individual contributions 
+were made by contributors acting in their respective employment or collaborative 
+capacities.
+
+The control system makes use of the [EPICS framework](https://epics-controls.org/)
+
+### Primary Authors
+
+- Reinier van Mourik <reinier.vanmourik@tausystems.com>
+- Dung Duc Phan <brianp.dung@utexas.edu>
+
+## Related Projects and Contributions
+
+- [eSpecAnalysis](https://github.com/TAUSystems/eSpecAnalysis), by Thanh Ha
+	<thanh.ha@tausystems.com>
+- [User interface](https://github.com/TAUSystems/UT3_LabVIEW_2025), by Guillaume Plateau
+	<guillaume.plateau@tausystems.com>
+- [image processing backend](https://github.com/TAUSystems/image-processing-backend), by Reinier van Mourik
+	<reinier.vanmourik@tausystems.com>
 
 ## History
 In the early stage, this repository held the codebase of UT3 Control and DAQ (CDAQ) system written on TANGO framework. As Tau Systems moves toward EPICS, we transitioned the development of CDAQ to a new code base. Commit history and early release versions of TANGO-era are still available for access.
